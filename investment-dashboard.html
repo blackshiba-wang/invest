@@ -279,6 +279,36 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
     </div>
   </div>
 
+  <!-- NEW CHARTS ROW -->
+  <div class="g3 mb20">
+    <!-- Waterfall PnL chart -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">📊 損益瀑布圖</div>
+        <select id="wfTarget" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderWaterfall()">
+          <option value="total">全部</option>
+        </select>
+      </div>
+      <div class="chart-wrap ch260"><canvas id="wfChart" role="img" aria-label="損益瀑布圖">損益瀑布</canvas></div>
+    </div>
+    <!-- Bubble chart: risk vs return -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">🫧 風險報酬泡泡圖</div>
+        <div style="font-size:10px;color:var(--text3)">氣泡大小 = 市值</div>
+      </div>
+      <div class="chart-wrap ch260"><canvas id="bubbleChart" role="img" aria-label="風險報酬泡泡圖">風險報酬</canvas></div>
+    </div>
+    <!-- Gauge: overall pnl -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">🎯 投資組合健康度</div>
+      </div>
+      <div class="chart-wrap ch260"><canvas id="gaugeChart" role="img" aria-label="投資組合健康度">健康度</canvas></div>
+      <div id="gaugeStats" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;justify-content:center;font-size:11px"></div>
+    </div>
+  </div>
+
   <!-- REBALANCE SECTION -->
   <div class="shd mb12"><div class="dot" style="background:var(--teal)"></div>再平衡試算</div>
   <div id="rebalSection" class="mb20"></div>
@@ -406,6 +436,20 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeModal('targetModal')">關閉</button>
       <button class="btn btn-primary" onclick="saveTargets()">儲存目標</button>
+    </div>
+  </div>
+</div>
+
+<!-- COL CONFIG MODAL -->
+<div class="modal-bg" id="colConfigModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title" id="colConfigTitle">欄位設定</div>
+    <input type="hidden" id="colConfigPid">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px">勾選要顯示的欄位（可複選）</div>
+    <div id="colConfigList"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeModal('colConfigModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveColConfig()">儲存</button>
     </div>
   </div>
 </div>
@@ -733,11 +777,220 @@ function fp(v){return(v>=0?'+':'')+v.toFixed(2)+'%';}
 function pc(v){return v>0?'pos':v<0?'neg':'neu';}
 function posClass(v){return v>0?'b-green':v<0?'b-red':'b-gray';}
 
+// ── 可切換欄位系統 ───────────────────────────────────────────
+// 每個組合可獨立設定顯示欄位，預設欄位如下
+const DEFAULT_COLS = ['ticker','shares','totalCost','price','dayPct','mktVal','pnlPct','weight'];
+const ALL_COLS = [
+  {id:'ticker',    label:'代號',      render:(h,t)=>`<td><span class="ticker">${h.ticker}</span><span class="age-pill">${ageLabel(h.lots?.[0]?.date||'')}</span><div style="font-size:9px;color:var(--text3)">${(prices[h.ticker]?.name||h.name||'')}</div></td>`},
+  {id:'shares',    label:'股數',      render:(h)=>`<td>${h.shares.toFixed(2)}</td>`},
+  {id:'totalCost', label:'總成本',    render:(h)=>`<td>${fm(h.totalCost)}</td>`},
+  {id:'avgCost',   label:'均成本/股', render:(h)=>`<td>${h.cost.toFixed(2)}</td>`},
+  {id:'price',     label:'現價',      render:(h)=>`<td>${prices[h.ticker]?prices[h.ticker].price.toFixed(2):'--'}</td>`},
+  {id:'dayPct',    label:'今日%',     render:(h)=>`<td style="color:${h.hv.changePct>=0?'var(--green)':'var(--red)'}">${prices[h.ticker]?fp(h.hv.changePct):'--'}</td>`},
+  {id:'dayGain',   label:'今日損益',  render:(h)=>`<td style="color:${(h.hv.dayPnl||0)>=0?'var(--green)':'var(--red)'}">${prices[h.ticker]?(h.hv.dayPnl>=0?'+':'')+fm(h.hv.dayPnl):'--'}</td>`},
+  {id:'mktVal',    label:'市值',      render:(h)=>`<td>${fm(h.hv.mktVal)}</td>`},
+  {id:'pnl',       label:'損益金額',  render:(h)=>`<td style="color:${h.hv.pnl>=0?'var(--green)':'var(--red)'}">${(h.hv.pnl>=0?'+':'')+fm(h.hv.pnl)}</td>`},
+  {id:'pnlPct',    label:'損益%',     render:(h)=>`<td style="color:${h.hv.pnlPct>=0?'var(--green)':'var(--red)'}">${fp(h.hv.pnlPct)}</td>`},
+  {id:'weight',    label:'佔比',      render:(h)=>`<td style="color:var(--text2)">${h.curPct.toFixed(1)}%</td>`},
+  {id:'target',    label:'目標偏移',  render:(h,t)=>`<td>${h.tgt!==null?`<span class="dev-badge" style="background:${Math.abs(h.dev||0)<=2?'rgba(0,229,160,.15)':h.dev>2?'rgba(255,77,106,.15)':'rgba(255,184,77,.15)'};color:${Math.abs(h.dev||0)<=2?'var(--green)':h.dev>2?'var(--red)':'var(--amber)'};">${h.dev>=0?'+':''}${(h.dev||0).toFixed(1)}%</span>`:'--'}</td>`},
+  {id:'ma5',       label:'5日均價',   render:(h)=>{const p=prices[h.ticker];return`<td style="color:var(--text2)">${p?.ma5?p.ma5.toFixed(2):'--'}</td>`;}},
+  {id:'ma10',      label:'10日均價',  render:(h)=>{const p=prices[h.ticker];return`<td style="color:var(--text2)">${p?.ma10?p.ma10.toFixed(2):'--'}</td>`;}},
+  {id:'ma20',      label:'20日均價',  render:(h)=>{const p=prices[h.ticker];return`<td style="color:var(--text2)">${p?.ma20?p.ma20.toFixed(2):'--'}</td>`;}},
+];
+
+// 每個組合目前選用的欄位（存在 DB）
+function getPortCols(pid){
+  if(!DB.colConfig) DB.colConfig={};
+  return DB.colConfig[pid] || [...DEFAULT_COLS];
+}
+function setPortCols(pid, cols){
+  if(!DB.colConfig) DB.colConfig={};
+  DB.colConfig[pid]=cols;
+  saveDB();
+}
+
+function renderHoldingHeaders(pid, targets){
+  const cols = getPortCols(pid);
+  const hasTgt = Object.keys(targets).length > 0;
+  const colSet = hasTgt ? [...cols.filter(c=>c!=='target'), 'target'] : cols.filter(c=>c!=='target');
+  const headers = colSet.map(cid=>{
+    const col = ALL_COLS.find(c=>c.id===cid);
+    return col ? `<th>${col.label}</th>` : '';
+  }).join('');
+  return headers + `<th style="text-align:right"><button class="btn btn-xs btn-ghost" onclick="openColConfig('${pid}')" title="設定欄位">⚙列</button></th>`;
+}
+
+function renderHoldingCells(h, pid, targets){
+  const cols = getPortCols(pid);
+  const hasTgt = Object.keys(targets).length > 0;
+  const colSet = hasTgt ? [...cols.filter(c=>c!=='target'), 'target'] : cols.filter(c=>c!=='target');
+  return colSet.map(cid=>{
+    const col = ALL_COLS.find(c=>c.id===cid);
+    return col ? col.render(h, targets) : '<td>--</td>';
+  }).join('') + '<td></td>';
+}
+
+// 欄位設定 modal
+function openColConfig(pid){
+  const cols = getPortCols(pid);
+  const p = DB.portfolios.find(x=>x.id===pid);
+  const modal = document.getElementById('colConfigModal');
+  document.getElementById('colConfigTitle').textContent = `欄位設定：組合${pid} · ${p?.name||''}`;
+  document.getElementById('colConfigPid').value = pid;
+  document.getElementById('colConfigList').innerHTML = ALL_COLS.map(col=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer">
+      <input type="checkbox" data-col-id="${col.id}" ${cols.includes(col.id)?'checked':''} 
+             style="width:14px;height:14px;accent-color:var(--blue)">
+      <span style="font-size:13px">${col.label}</span>
+    </label>`).join('');
+  openModal('colConfigModal');
+}
+function saveColConfig(){
+  const pid = document.getElementById('colConfigPid').value;
+  const checked = [...document.querySelectorAll('[data-col-id]:checked')].map(el=>el.dataset.colId);
+  if(checked.length === 0){ showStatus('至少選一個欄位',2000); return; }
+  setPortCols(pid, checked);
+  closeModal('colConfigModal');
+  renderAll();
+  showStatus('欄位設定已儲存 ✓',2000);
+}
+
+
+// ── 新圖表 ────────────────────────────────────────────────────
+
+// 1. 損益瀑布圖
+function renderWaterfall(){
+  dc('waterfall');
+  const target = document.getElementById('wfTarget')?.value || 'total';
+  const hs = target==='total' ? getAllHoldings() : getHoldings(target);
+  if(!hs.length) return;
+  const items = hs.map(h=>({
+    ticker: h.ticker,
+    pnl: calcHV(h).pnl,
+    mktVal: calcHV(h).mktVal
+  })).sort((a,b)=>b.pnl-a.pnl);
+  const labels = items.map(it=>it.ticker);
+  const data = items.map(it=>it.pnl);
+  const colors = data.map(v=>v>=0?'rgba(0,229,160,0.8)':'rgba(255,77,106,0.8)');
+  const ctx = document.getElementById('wfChart')?.getContext('2d');
+  if(!ctx) return;
+  charts['waterfall'] = new Chart(ctx,{
+    type:'bar',
+    data:{labels, datasets:[{data, backgroundColor:colors, borderRadius:4, borderSkipped:false}]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>' '+fm(c.raw)}}},
+      scales:{
+        x:{ticks:{color:'#7e87b8',font:{size:10}}},
+        y:{ticks:{color:'#7e87b8', callback:v=>fm(v)}, grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+// 2. 風險報酬泡泡圖（X=損益%，Y=今日%，Bubble=市值）
+function renderBubble(){
+  dc('bubble');
+  const hs = getAllHoldings();
+  if(!hs.length) return;
+  const datasets = hs.map((h,i)=>{
+    const hv = calcHV(h);
+    const totalMkt = getAllHoldings().reduce((s,x)=>s+calcHV(x).mktVal,0);
+    const r = totalMkt > 0 ? Math.max(4, Math.sqrt(hv.mktVal/totalMkt)*80) : 8;
+    return {
+      label: h.ticker,
+      data:[{x: hv.pnlPct, y: hv.changePct||0, r}],
+      backgroundColor: COLORS[i%COLORS.length]+'99',
+      borderColor: COLORS[i%COLORS.length],
+      borderWidth:1
+    };
+  });
+  const ctx = document.getElementById('bubbleChart')?.getContext('2d');
+  if(!ctx) return;
+  charts['bubble'] = new Chart(ctx,{
+    type:'bubble',
+    data:{datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}  報酬:${c.parsed.x.toFixed(1)}%  今日:${c.parsed.y.toFixed(1)}%`}}
+      },
+      scales:{
+        x:{title:{display:true,text:'總損益 %',color:'#7e87b8',font:{size:10}}, ticks:{color:'#7e87b8',callback:v=>v+'%'}, grid:{color:'rgba(255,255,255,0.04)'},
+           afterDataLimits(s){const pad=Math.max(Math.abs(s.max),Math.abs(s.min))*0.2;s.min-=pad;s.max+=pad;}},
+        y:{title:{display:true,text:'今日 %',color:'#7e87b8',font:{size:10}}, ticks:{color:'#7e87b8',callback:v=>v+'%'}, grid:{color:'rgba(255,255,255,0.04)'},
+           afterDataLimits(s){const pad=Math.max(Math.abs(s.max),Math.abs(s.min))*0.3;s.min-=pad;s.max+=pad;}}
+      }
+    }
+  });
+}
+
+// 3. 投資組合健康度半圓儀表板
+function renderGauge(){
+  dc('gauge');
+  const snap = calcTotalSnap();
+  // 計算健康分數：報酬率 + 多元分散度 + 正獲利標的比例
+  const hs = getAllHoldings();
+  const positiveCount = hs.filter(h=>calcHV(h).pnlPct>0).length;
+  const diverseScore = Math.min(100, hs.length * 8);  // 多元分散
+  const pnlScore = Math.min(100, Math.max(0, 50 + snap.pnlPct * 3));  // 報酬
+  const positiveScore = hs.length > 0 ? (positiveCount/hs.length)*100 : 50;
+  const healthScore = Math.round((diverseScore*0.3 + pnlScore*0.4 + positiveScore*0.3));
+  const remaining = 100 - healthScore;
+  const color = healthScore >= 70 ? '#00e5a0' : healthScore >= 45 ? '#ffb84d' : '#ff4d6a';
+  const ctx = document.getElementById('gaugeChart')?.getContext('2d');
+  if(!ctx) return;
+  charts['gauge'] = new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      datasets:[{
+        data:[healthScore, remaining],
+        backgroundColor:[color,'rgba(255,255,255,0.04)'],
+        borderWidth:0, borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      circumference:180, rotation:-90,
+      cutout:'72%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{enabled:false},
+      }
+    },
+    plugins:[{
+      id:'gaugeText',
+      afterDraw(chart){
+        const {ctx,chartArea:{top,left,width,height}}=chart;
+        ctx.save();
+        const cx=left+width/2, cy=top+height*0.88;
+        ctx.font='bold 36px -apple-system,sans-serif';
+        ctx.fillStyle=color;
+        ctx.textAlign='center';
+        ctx.fillText(healthScore, cx, cy);
+        ctx.font='13px -apple-system,sans-serif';
+        ctx.fillStyle='#7e87b8';
+        ctx.fillText('健康分數 /100', cx, cy+22);
+        ctx.restore();
+      }
+    }]
+  });
+  // stats below gauge
+  const statsEl = document.getElementById('gaugeStats');
+  if(statsEl) statsEl.innerHTML = [
+    {l:'正獲利標的', v:`${positiveCount}/${hs.length}`, c: positiveScore>=60?'var(--green)':'var(--amber)'},
+    {l:'分散度', v:hs.length+'檔', c:'var(--text2)'},
+    {l:'總報酬', v:fp(snap.pnlPct), c:snap.pnlPct>=0?'var(--green)':'var(--red)'},
+  ].map(s=>`<div style="text-align:center"><div style="color:var(--text3);font-size:10px">${s.l}</div><div style="font-weight:700;color:${s.c}">${s.v}</div></div>`).join('');
+}
+
 // ── RENDER ALL ────────────────────────────────────────────────
 function renderAll(){
   renderBanner();
   renderPortfolios();
   renderPie();renderLine();renderHeat();renderBar();
+  renderWaterfall();renderBubble();renderGauge();
   renderRebalance();
   renderTrades();
   populateSelects();
@@ -815,26 +1068,19 @@ function buildPortCard(p){
       </div>`:''}
 
       <table class="hl-table">
-        <thead><tr><th>代號</th><th>股數</th><th>均成本</th><th>現價</th><th>今日%</th><th>市值</th><th>損益%</th><th>佔比</th>${Object.keys(targets).length?'<th>目標</th>':''}<th></th></tr></thead>
+        <thead>
+          <tr id="hl-hd-${p.id}">
+            ${renderHoldingHeaders(p.id, targets)}
+            <th></th>
+          </tr>
+        </thead>
         <tbody>
           ${deviations.map(h=>{
             const pp=prices[h.ticker];
             const totalBuyTrades=DB.trades.filter(t=>t.ticker===h.ticker&&t.portfolio===p.id&&t.action==='BUY');
             const firstDate=totalBuyTrades.length?totalBuyTrades.sort((a,b)=>a.date<b.date?-1:1)[0].date:'';
             const ageStr=firstDate?ageLabel(firstDate):'';
-            return`<tr>
-              <td><span class="ticker">${h.ticker}</span>${ageStr?`<span class="age-pill">${ageStr}</span>`:''}
-              <div style="font-size:9px;color:var(--text3)">${pp?.name||h.name||''}</div></td>
-              <td>${h.shares.toFixed(2)}</td>
-              <td>${h.cost.toFixed(2)}</td>
-              <td>${pp?pp.price.toFixed(2):'--'}</td>
-              <td style="color:${h.hv.changePct>=0?'var(--green)':'var(--red)'}">${pp?fp(h.hv.changePct):'--'}</td>
-              <td>${fm(h.hv.mktVal)}</td>
-              <td style="color:${h.hv.pnlPct>=0?'var(--green)':'var(--red)'}">${fp(h.hv.pnlPct)}</td>
-              <td style="color:var(--text2)">${h.curPct.toFixed(1)}%</td>
-              ${Object.keys(targets).length?`<td>${h.tgt!==null?`<span class="dev-badge" style="background:${Math.abs(h.dev||0)<=2?'rgba(0,229,160,.15)':h.dev>2?'rgba(255,77,106,.15)':'rgba(255,184,77,.15)'};color:${Math.abs(h.dev||0)<=2?'var(--green)':h.dev>2?'var(--red)':'var(--amber)'};">${h.dev>=0?'+':''}${(h.dev||0).toFixed(1)}%</span>`:'--'}</td>`:''}
-              <td><button class="btn btn-xs btn-ghost" onclick="openTradeHistory('${p.id}','${h.ticker}')">記錄</button></td>
-            </tr>`;
+            return`<tr>${renderHoldingCells(h, p.id, targets)}<td><button class="btn btn-xs btn-ghost" onclick="openTradeHistory('${p.id}','${h.ticker}')">記錄</button></td></tr>`;
           }).join('')}
         </tbody>
       </table>` : `<div class="empty" style="padding:14px">尚無持倉。<button class="btn btn-sm btn-ghost" onclick="openAddTrade('','${p.id}')">+ 新增交易</button></div>`}
@@ -859,7 +1105,8 @@ function ageLabel(dateStr){
 // ── REBALANCE SECTION ─────────────────────────────────────────
 function renderRebalance(){
   const el=document.getElementById('rebalSection');
-  el.innerHTML=DB.portfolios.filter(p=>p.included).map(p=>buildRbCard(p)).join('');
+  // 顯示全部組合（包含新增的C/D/E），不限 included
+  el.innerHTML=DB.portfolios.map(p=>buildRbCard(p)).filter(h=>h).join('');
 }
 function buildRbCard(p){
   const hs=getHoldings(p.id);
@@ -1142,7 +1389,7 @@ function openTargetModal(pid){
       <span class="ticker" style="width:90px">${h.ticker}</span>
       <span style="color:var(--text2);font-size:11px;flex:1">現況 ${curPct}%</span>
       <label style="font-size:11px;color:var(--text3)">目標%：</label>
-      <input type="number" class="finput" id="tgt_${h.ticker}" value="${targets[h.ticker]||''}" placeholder="0" min="0" max="100" step="0.1" style="width:70px;padding:5px 8px;font-size:12px" oninput="updateTargetSum()">
+      <input type="number" class="finput" data-tgt-ticker="${h.ticker}" value="${targets[h.ticker]||''}" placeholder="0" min="0" max="100" step="0.1" style="width:70px;padding:5px 8px;font-size:12px" oninput="updateTargetSum()">
     </div>`;
   }).join('')+`<div id="targetSumRow" style="display:flex;justify-content:flex-end;margin-top:8px;font-size:12px;color:var(--text2)">合計：<span id="targetSum" style="font-weight:700;color:var(--blue)">0</span>%（應等於 100）</div>`;
   updateTargetSum();
@@ -1151,19 +1398,30 @@ function openTargetModal(pid){
 function updateTargetSum(){
   const pid=_editTargetPortId;const p=DB.portfolios.find(x=>x.id===pid);if(!p)return;
   const hs=getHoldings(pid);
-  const sum=hs.reduce((s,h)=>{const v=parseFloat(document.getElementById('tgt_'+h.ticker)?.value)||0;return s+v;},0);
+  const sum=hs.reduce((s,h)=>{
+    const el=document.querySelector(`[data-tgt-ticker="${h.ticker}"]`);
+    return s+(parseFloat(el?.value)||0);
+  },0);
   const el=document.getElementById('targetSum');
   if(el){el.textContent=sum.toFixed(1);el.style.color=Math.abs(sum-100)<0.1?'var(--green)':'var(--amber)';}
 }
 function saveTargets(){
-  const pid=_editTargetPortId;const p=DB.portfolios.find(x=>x.id===pid);if(!p)return;
+  const pid=_editTargetPortId;
+  const p=DB.portfolios.find(x=>x.id===pid);
+  if(!p)return;
   const hs=getHoldings(pid);
   if(!p.targets)p.targets={};
   hs.forEach(h=>{
-    const v=parseFloat(document.getElementById('tgt_'+h.ticker)?.value)||0;
+    // 用 data attribute 取值，避免 ticker 含點號造成 getElementById 失敗
+    const el=document.querySelector(`[data-tgt-ticker="${h.ticker}"]`);
+    const v=parseFloat(el?.value)||0;
     p.targets[h.ticker]=v;
   });
-  saveDB();closeModal('targetModal');renderAll();
+  // 強制深複製確保 Firebase 也存到
+  DB.portfolios=JSON.parse(JSON.stringify(DB.portfolios));
+  saveDB();
+  closeModal('targetModal');
+  renderAll();
   showStatus('目標比例已儲存 ✓',2000);
 }
 
@@ -1233,7 +1491,7 @@ function populatePortSelect(id){
 function populateSelects(){
   populatePortSelect('tPortfolio');
   const portOpts='<option value="all">全部組合</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id} · ${p.name}</option>`).join('');
-  ['pieSel','lineSel','heatSel','txPortSel'].forEach(id=>{
+  ['pieSel','lineSel','heatSel','txPortSel','wfTarget'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const prev=el.value;
     if(id==='pieSel')el.innerHTML='<option value="total">全部</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id}</option>`).join('');
