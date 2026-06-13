@@ -516,190 +516,159 @@ function getAllHoldings(){
 
 // ── PRICE FETCH ──────────────────────────────────────────────
 // ── PROXY LIST：依序嘗試，第一個成功就回傳 ──────────────────
-// ── 股價抓取：三路徑策略 ─────────────────────────────────────
-// 台股上市 (.TW)  → TWSE 官方 OpenAPI（批次，CORS開放，零proxy）
-// 台股上櫃 (.TWO) → TPEX 官方 OpenAPI（批次，CORS開放，零proxy）
-// 美股/ETF        → Yahoo Finance（瀏覽器直連，帶 crumb）
-// 匯率            → open.er-api.com（免費，CORS開放）
-// 延遲說明：台股盤中≈15分鐘、美股盤中≈15分鐘、盤後近即時
+// ── 股價來源：Google Sheet（最穩定，CORS完全無問題）──────────
+// 台股上市/上櫃/美股 全部由你的 Google Sheet 提供
+// 延遲：台股≈20分鐘、美股≈20分鐘（Google Finance限制）
+// 匯率：GOOGLEFINANCE("USDTWD") 即時更新
 
-let _twseData = null;
-let _tpexData = null;
-let _yfCrumb  = null;
-let _yfCrumbTs = 0;
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSTDzMQ4ZaFdNU4lJaiyHNXbfX-ad-PvQpDflUffhZ1Cxp6XW3wJzkmci-waM9rCwsgNDgOPMFT008K/pub?output=csv';
 
-async function loadTWSE(){
-  const today = new Date().toISOString().slice(0,10);
-  if(_twseData?.date === today) return _twseData.map;
-  try{
-    const ctrl = new AbortController();
-    setTimeout(()=>ctrl.abort(), 12000);
-    const r = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL',
-      {signal:ctrl.signal, headers:{Accept:'application/json'}});
-    if(!r.ok) throw new Error(r.status);
-    const arr = await r.json();
-    const map = {};
-    arr.forEach(d=>{ map[d.Code] = d; });
-    _twseData = {date:today, map};
-    return map;
-  }catch(e){ return null; }
+let _sheetCache = null;   // {ts, map: {ticker → {price, prevClose, change, changePct, name}}}
+
+// 解析 CSV 文字
+function parseCSV(text){
+  const lines = text.trim().split('\n');
+  const rows = lines.map(l => l.split(',').map(c => c.trim().replace(/^"|"$/g,'')));
+  return rows;
 }
 
-async function loadTPEX(){
-  const today = new Date().toISOString().slice(0,10);
-  if(_tpexData?.date === today) return _tpexData.map;
-  try{
-    const ctrl = new AbortController();
-    setTimeout(()=>ctrl.abort(), 12000);
-    const r = await fetch('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_quotes',
-      {signal:ctrl.signal, headers:{Accept:'application/json'}});
-    if(!r.ok) throw new Error(r.status);
-    const arr = await r.json();
-    const map = {};
-    arr.forEach(d=>{
-      const code = d.SecuritiesCompanyCode || d.Code;
-      if(code) map[code] = d;
-    });
-    _tpexData = {date:today, map};
-    return map;
-  }catch(e){ return null; }
-}
-
-async function getYFCrumb(){
+// 從 Google Sheet 載入所有股價（快取5分鐘）
+async function loadSheetPrices(){
   const now = Date.now();
-  if(_yfCrumb && now - _yfCrumbTs < 3600000) return _yfCrumb;
-  try{
-    await fetch('https://finance.yahoo.com/', {mode:'no-cors', credentials:'include'}).catch(()=>{});
-    await sleep(400);
-    const r = await fetch('https://query1.finance.yahoo.com/v1/test/getcrumb',
-      {credentials:'include'});
-    if(r.ok){
-      const c = (await r.text()).trim();
-      if(c && c.length > 2){ _yfCrumb = c; _yfCrumbTs = now; return c; }
-    }
-  }catch(e){}
-  return _yfCrumb || '';
-}
+  if(_sheetCache && now - _sheetCache.ts < 5 * 60 * 1000) return _sheetCache.map;
 
-async function fetchYahoo(ticker){
-  const crumb = await getYFCrumb();
-  const url = 'https://query1.finance.yahoo.com/v8/finance/chart/'
-    + encodeURIComponent(ticker)
-    + '?interval=1d&range=5d'
-    + (crumb ? '&crumb='+encodeURIComponent(crumb) : '');
   try{
     const ctrl = new AbortController();
-    setTimeout(()=>ctrl.abort(), 10000);
-    const r = await fetch(url, {credentials:'include', signal:ctrl.signal});
-    if(!r.ok) throw new Error(r.status);
-    const d = await r.json();
-    const meta = d.chart.result[0].meta;
-    const prev = meta.chartPreviousClose || meta.previousClose || meta.regularMarketOpen;
-    const cur  = meta.regularMarketPrice;
-    if(!cur) return null;
-    return{price:cur, prevClose:prev, change:cur-prev,
-           changePct:prev?((cur-prev)/prev)*100:0,
-           currency:meta.currency||'USD', name:meta.shortName||meta.longName||ticker};
-  }catch(e){ return null; }
+    setTimeout(()=>ctrl.abort(), 15000);
+    // 加時間戳避免瀏覽器快取
+    const url = SHEET_CSV_URL + '&t=' + now;
+    const r = await fetch(url, {signal: ctrl.signal});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const text = await r.text();
+    const rows = parseCSV(text);
+
+    // 第一行是標題: ticker, name, price, prev_close, change, change_pct
+    const map = {};
+    for(let i = 1; i < rows.length; i++){
+      const [ticker, name, priceStr, prevStr, changeStr, changePctStr] = rows[i];
+      if(!ticker || ticker === '-') continue;
+      const price    = parseFloat(priceStr);
+      const prev     = parseFloat(prevStr);
+      const change   = parseFloat(changeStr);
+      const changePct= parseFloat(changePctStr);
+      if(isNaN(price) || price <= 0) continue;
+      map[ticker] = {
+        price,
+        prevClose: isNaN(prev) ? price : prev,
+        change:    isNaN(change) ? 0 : change,
+        changePct: isNaN(changePct) ? 0 : changePct,
+        currency:  ticker.endsWith('.TW') || ticker.endsWith('.TWO') ? 'TWD' : 'USD',
+        name:      name || ticker
+      };
+    }
+    _sheetCache = {ts: now, map};
+    return map;
+  }catch(e){
+    console.warn('Sheet load failed:', e);
+    return _sheetCache?.map || null;
+  }
 }
 
+// 主入口：從 Sheet 取單一股票價格
 async function fetchPrice(ticker){
   const t = ticker.toUpperCase().trim();
-  if(t.endsWith('.TW')){
-    const code = t.replace('.TW','');
-    const map = await loadTWSE();
-    if(map && map[code]){
-      const d = map[code];
-      const price = parseFloat(d.ClosingPrice);
-      const chg   = parseFloat(d.Change || 0);
-      const prev  = price - chg;
-      if(price > 0) return{price, prevClose:prev, change:chg,
-        changePct:prev>0?(chg/prev)*100:0, currency:'TWD', name:d.Name||code};
-    }
-    return await fetchYahoo(t);
-  }
-  if(t.endsWith('.TWO')){
-    const code = t.replace('.TWO','');
-    const map = await loadTPEX();
-    if(map && map[code]){
-      const d = map[code];
-      const price = parseFloat(d.Close || d.ClosingPrice || 0);
-      const prev  = parseFloat(d.PreviousClose || d.YesterdayClosingPrice || price);
-      if(price > 0) return{price, prevClose:prev, change:price-prev,
-        changePct:prev>0?(price-prev)/prev*100:0, currency:'TWD', name:d.CompanyName||d.Name||code};
-    }
-    return null;
-  }
-  return await fetchYahoo(t);
+  const map = await loadSheetPrices();
+  if(!map) return null;
+  return map[t] || null;
 }
 
+// 匯率：從 Sheet 的 USDTWD 列取得，或 fallback open.er-api.com
 async function fetchUsdTwd(){
+  // 先從 Sheet 找
+  const map = await loadSheetPrices();
+  if(map && map['USDTWD']){
+    const rate = map['USDTWD'].price;
+    if(rate > 20 && rate < 50) return rate;
+  }
+  // fallback: open.er-api.com
   try{
     const r = await fetch('https://open.er-api.com/v6/latest/USD');
     if(r.ok){ const d=await r.json(); const rate=d.rates?.TWD; if(rate>20&&rate<50) return rate; }
   }catch(e){}
-  try{
-    const r2 = await fetch('https://api.frankfurter.app/latest?from=USD&to=TWD');
-    if(r2.ok){ const d2=await r2.json(); return d2.rates?.TWD||null; }
-  }catch(e){}
   return null;
 }
 
+// 更新全部
 async function refreshAll(){
   const btn=document.getElementById('btnRef');
   const icon=document.getElementById('refIcon');
   btn.classList.add('loading');
   icon.innerHTML='<span class="spin">↻</span>';
-  showStatus('更新匯率...');
+  showStatus('從 Google Sheet 載入股價...');
 
-  const fxRate = await fetchUsdTwd();
-  if(fxRate){
-    DB.settings.usdRate = parseFloat(fxRate.toFixed(3));
-    const srEl = document.getElementById('sRate');
-    if(srEl) srEl.value = DB.settings.usdRate;
-    saveDB();
-  }
-  const fxStr = fxRate ? `USD/TWD ${fxRate.toFixed(2)}` : '';
-  updateFxBadge(fxRate);
+  // 強制清除快取，重新抓最新資料
+  _sheetCache = null;
 
-  showStatus('載入台股資料...');
-  await Promise.all([loadTWSE(), loadTPEX()]);
+  // 載入所有股價
+  const map = await loadSheetPrices();
 
-  const tickers = [...new Set(DB.trades.map(t=>t.ticker))];
-  let done=0, failed=0;
-  for(const t of tickers){
-    const p = await fetchPrice(t);
-    if(p) prices[t]=p; else failed++;
-    done++;
-    showStatus(`更新 ${done}/${tickers.length}　${fxStr}`);
-    if(!t.endsWith('.TW') && !t.endsWith('.TWO') && done < tickers.length) await sleep(300);
-  }
-
-  const today=new Date().toISOString().slice(0,10);
-  if(!DB.history) DB.history={};
-  const snap=calcTotalSnap();
-  if(snap.total>0){
-    if(!DB.history.total) DB.history.total={};
-    DB.history.total[today]=snap.total;
-    DB.portfolios.forEach(p=>{
-      if(!DB.history[p.id]) DB.history[p.id]={};
-      DB.history[p.id][today]=snap.byPort[p.id]||0;
+  if(map){
+    // 更新 prices 物件
+    const tickers = [...new Set(DB.trades.map(t=>t.ticker))];
+    let found = 0;
+    tickers.forEach(t => {
+      const p = map[t.toUpperCase()];
+      if(p){ prices[t] = p; found++; }
     });
-    saveDB();
-  }
 
-  document.getElementById('lastUpd').textContent =
-    '更新：'+new Date().toLocaleTimeString('zh-TW')+(fxStr?' · '+fxStr:'');
-  btn.classList.remove('loading'); icon.innerHTML='↻';
-  renderAll();
-  if(failed>0) showStatus(`完成（${failed} 檔未取得 | 格式：上市→0050.TW  上櫃→1234.TWO  美股→VTI）`,7000);
-  else showStatus('✓ 全部更新完成',3000);
+    // 匯率
+    const fxRate = await fetchUsdTwd();
+    if(fxRate){
+      DB.settings.usdRate = parseFloat(fxRate.toFixed(3));
+      const srEl = document.getElementById('sRate');
+      if(srEl) srEl.value = DB.settings.usdRate;
+    }
+    updateFxBadge(fxRate);
+
+    // 存快照
+    const today = new Date().toISOString().slice(0,10);
+    if(!DB.history) DB.history = {};
+    const snap = calcTotalSnap();
+    if(snap.total > 0){
+      if(!DB.history.total) DB.history.total = {};
+      DB.history.total[today] = snap.total;
+      DB.portfolios.forEach(p => {
+        if(!DB.history[p.id]) DB.history[p.id] = {};
+        DB.history[p.id][today] = snap.byPort[p.id] || 0;
+      });
+      saveDB();
+    }
+
+    const fxStr = fxRate ? `USD/TWD ${fxRate.toFixed(2)}` : '';
+    document.getElementById('lastUpd').textContent =
+      '更新：' + new Date().toLocaleTimeString('zh-TW') + (fxStr ? ' · ' + fxStr : '');
+    updateFxBadge(fxRate);
+    btn.classList.remove('loading'); icon.innerHTML = '↻';
+    renderAll();
+
+    const failed = [...new Set(DB.trades.map(t=>t.ticker))].filter(t=>!prices[t]).length;
+    if(failed > 0){
+      showStatus(`完成（${failed} 檔在 Sheet 中找不到，請確認代號是否一致）`, 6000);
+    } else {
+      showStatus(`✓ 全部 ${found} 檔更新完成`, 3000);
+    }
+  } else {
+    btn.classList.remove('loading'); icon.innerHTML = '↻';
+    showStatus('⚠️ 無法讀取 Google Sheet，請確認網路連線', 5000);
+  }
 }
 
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function updateFxBadge(rate){
   const el = document.getElementById('fxBadge');
   if(el) el.textContent = rate ? `USD/TWD ${rate.toFixed(2)}` : '--';
+}
+ : '--';
 }
 
 // ── CALC ──────────────────────────────────────────────────────
