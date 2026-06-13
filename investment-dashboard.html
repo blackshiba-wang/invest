@@ -350,6 +350,26 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
     </div>
   </div>
 
+  <!-- DRAWDOWN CHART -->
+  <div class="card mb20">
+    <div class="card-hd">
+      <div class="card-title">📉 最大回撤圖</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="ddSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderDrawdown()">
+          <option value="total">總資產</option>
+        </select>
+        <div class="ptabs" id="ddPtabs">
+          <button class="ptab active" onclick="setDDP('3M',this)">3M</button>
+          <button class="ptab" onclick="setDDP('6M',this)">6M</button>
+          <button class="ptab" onclick="setDDP('1Y',this)">1Y</button>
+          <button class="ptab" onclick="setDDP('ALL',this)">全部</button>
+        </div>
+      </div>
+    </div>
+    <div class="chart-wrap ch260"><canvas id="ddChart" role="img" aria-label="最大回撤圖">最大回撤</canvas></div>
+    <div id="ddStats" style="display:flex;flex-wrap:wrap;gap:20px;margin-top:12px;font-size:11px;padding:0 4px"></div>
+  </div>
+
   <!-- REBALANCE SECTION -->
   <div class="shd mb12"><div class="dot" style="background:var(--teal)"></div>再平衡試算</div>
   <div id="rebalSection" class="mb20"></div>
@@ -1265,6 +1285,134 @@ function renderGrowthChart(){
   });
 }
 
+
+// ── 最大回撤圖 ────────────────────────────────────────────────
+let ddPeriod = '3M';
+function setDDP(p, btn){
+  ddPeriod = p;
+  document.querySelectorAll('#ddPtabs .ptab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderDrawdown();
+}
+
+function renderDrawdown(){
+  dc('drawdown');
+  const sel = document.getElementById('ddSel')?.value || 'total';
+  const hist = DB.history?.[sel] || {};
+  const allDates = Object.keys(hist).sort();
+  if(allDates.length < 3){
+    const ctx = document.getElementById('ddChart')?.getContext('2d');
+    if(ctx){ charts['drawdown']=new Chart(ctx,{type:'line',data:{labels:['資料不足，需累積更多每日快照'],datasets:[{data:[0],borderColor:'#ff4d6a',tension:.4,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#484e72'}},y:{ticks:{color:'#484e72'}}}}});}
+    const statsEl=document.getElementById('ddStats');
+    if(statsEl) statsEl.innerHTML='<span style="color:var(--text3)">每天按一次更新，累積快照後圖表會自動完整</span>';
+    return;
+  }
+
+  // 篩選日期範圍
+  const dayMap = {'3M':90,'6M':180,'1Y':365,'ALL':9999};
+  const days = dayMap[ddPeriod]||90;
+  const cut = new Date(); cut.setDate(cut.getDate()-days);
+  const cutStr = days===9999 ? '2000-01-01' : cut.toISOString().slice(0,10);
+  const dates = allDates.filter(d=>d>=cutStr);
+  if(dates.length < 2){ renderDrawdown_empty(); return; }
+
+  const values = dates.map(d=>hist[d]);
+
+  // 計算回撤序列
+  let peak = values[0];
+  const drawdowns = values.map(v=>{
+    if(v > peak) peak = v;
+    return peak > 0 ? ((v - peak) / peak * 100) : 0;
+  });
+
+  // 統計數據
+  const maxDD = Math.min(...drawdowns);
+  const maxDDIdx = drawdowns.indexOf(maxDD);
+  const maxDDDate = dates[maxDDIdx];
+
+  // 計算恢復天數
+  let recoveryDays = null;
+  if(maxDDIdx < dates.length-1){
+    const peakVal = values.slice(0, maxDDIdx+1).reduce((m,v)=>Math.max(m,v), 0);
+    for(let i=maxDDIdx+1; i<values.length; i++){
+      if(values[i] >= peakVal){ recoveryDays = i - maxDDIdx; break; }
+    }
+  }
+
+  // 目前回撤
+  const curDD = drawdowns[drawdowns.length-1];
+  const curPeak = Math.max(...values);
+  const curVal = values[values.length-1];
+
+  const ctx = document.getElementById('ddChart')?.getContext('2d');
+  if(!ctx) return;
+
+  charts['drawdown'] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dates.map(d=>d.slice(5)),
+      datasets: [{
+        label: '回撤 %',
+        data: drawdowns,
+        borderColor: '#ff4d6a',
+        backgroundColor: 'rgba(255,77,106,0.12)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        borderWidth: 1.5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {display:false},
+        tooltip: {callbacks:{label:c=>` 回撤: ${c.parsed.y.toFixed(2)}%`}}
+      },
+      scales: {
+        x: {ticks:{color:'#7e87b8',maxTicksLimit:8,font:{size:10}}, grid:{color:'rgba(255,255,255,0.03)'}},
+        y: {
+          max: 0,
+          ticks: {color:'#7e87b8', font:{size:10}, callback:v=>v.toFixed(1)+'%'},
+          grid: {color:'rgba(255,255,255,0.04)'},
+          title: {display:true, text:'回撤幅度', color:'#484e72', font:{size:9}}
+        }
+      }
+    },
+    plugins:[{
+      id:'ddZeroLine',
+      afterDraw(chart){
+        const {ctx, chartArea:{left,right,top}, scales:{y}} = chart;
+        const zeroY = y.getPixelForValue(0);
+        ctx.save();
+        ctx.strokeStyle='rgba(255,255,255,0.15)';
+        ctx.lineWidth=1;
+        ctx.setLineDash([4,3]);
+        ctx.beginPath(); ctx.moveTo(left,zeroY); ctx.lineTo(right,zeroY); ctx.stroke();
+        ctx.restore();
+      }
+    }]
+  });
+
+  // 統計區塊
+  const statsEl = document.getElementById('ddStats');
+  if(statsEl){
+    const p = DB.portfolios.find(x=>x.id===sel);
+    const portName = sel==='total' ? '總資產' : `組合${sel}`;
+    statsEl.innerHTML = [
+      {l:'最大回撤',    v: maxDD.toFixed(2)+'%',               c:'var(--red)'},
+      {l:'最大回撤日',  v: maxDDDate||'--',                    c:'var(--text2)'},
+      {l:'目前回撤',    v: curDD.toFixed(2)+'%',               c: curDD<-5?'var(--red)':curDD<-2?'var(--amber)':'var(--green)'},
+      {l:'恢復天數',    v: recoveryDays ? recoveryDays+'天' : (maxDD===curDD?'尚未恢復':'已恢復'), c:'var(--text2)'},
+      {l:'歷史高點',    v: fm(curPeak),                        c:'var(--text2)'},
+      {l:'目前距高點',  v: fm(curVal-curPeak),                  c: curVal>=curPeak?'var(--green)':'var(--red)'},
+    ].map(s=>`<div style="text-align:center;background:var(--bg3);padding:8px 12px;border-radius:8px">
+      <div style="color:var(--text3);font-size:10px;margin-bottom:3px">${s.l}</div>
+      <div style="font-weight:700;color:${s.c}">${s.v}</div>
+    </div>`).join('');
+  }
+}
+
 // ── RENDER ALL ────────────────────────────────────────────────
 function renderAll(){
   renderBanner();
@@ -1272,6 +1420,7 @@ function renderAll(){
   renderPie();renderLine();renderHeat();renderBar();
   renderWaterfall();renderBubble();renderGauge();
   renderSankey();renderGrowthChart();
+  renderDrawdown();
   renderRebalance();
   renderTrades();
   populateSelects();
@@ -1786,7 +1935,7 @@ function populatePortSelect(id){
 function populateSelects(){
   populatePortSelect('tPortfolio');
   const portOpts='<option value="all">全部組合</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id} · ${p.name}</option>`).join('');
-  ['pieSel','lineSel','heatSel','txPortSel','wfTarget','gaugeSel'].forEach(id=>{
+  ['pieSel','lineSel','heatSel','txPortSel','wfTarget','gaugeSel','ddSel'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const prev=el.value;
     if(id==='pieSel')el.innerHTML='<option value="total">全部</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id}</option>`).join('');
