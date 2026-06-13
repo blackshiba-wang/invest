@@ -316,9 +316,37 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
     <div class="card">
       <div class="card-hd">
         <div class="card-title">🎯 投資組合健康度</div>
+        <select id="gaugeSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderGauge()">
+          <option value="total">全部組合</option>
+        </select>
       </div>
       <div class="chart-wrap ch260"><canvas id="gaugeChart" role="img" aria-label="投資組合健康度">健康度</canvas></div>
       <div id="gaugeStats" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;justify-content:center;font-size:11px"></div>
+    </div>
+  </div>
+
+  <!-- SANKEY + GROWTH CHARTS -->
+  <div class="g2 mb20">
+    <!-- Sankey 資金流向 -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">🌊 資金流向圖</div>
+        <div style="font-size:10px;color:var(--text3)">總資產 → 組合 → 個股</div>
+      </div>
+      <div id="sankeyChart" style="width:100%;height:280px;overflow:hidden"></div>
+    </div>
+    <!-- 累積報酬曲線 -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">📈 各組合累積報酬曲線</div>
+        <div class="ptabs" id="growthPtabs">
+          <button class="ptab active" onclick="setGrowthP('1M',this)">1M</button>
+          <button class="ptab" onclick="setGrowthP('3M',this)">3M</button>
+          <button class="ptab" onclick="setGrowthP('6M',this)">6M</button>
+          <button class="ptab" onclick="setGrowthP('1Y',this)">1Y</button>
+        </div>
+      </div>
+      <div class="chart-wrap ch260"><canvas id="growthChart" role="img" aria-label="累積報酬曲線">累積報酬</canvas></div>
     </div>
   </div>
 
@@ -1018,16 +1046,33 @@ function renderBubble(){
 // 3. 投資組合健康度半圓儀表板
 function renderGauge(){
   dc('gauge');
-  const snap = calcTotalSnap();
-  // 計算健康分數：報酬率 + 多元分散度 + 正獲利標的比例
-  const hs = getAllHoldings();
+  const sel = document.getElementById('gaugeSel')?.value || 'total';
+
+  // 取得要計算的持倉和快照
+  let hs, pnlPct, portLabel;
+  if(sel === 'total'){
+    hs = getAllHoldings();
+    const snap = calcTotalSnap();
+    pnlPct = snap.pnlPct;
+    portLabel = '全部組合';
+  } else {
+    hs = getHoldings(sel);
+    const v = calcPortSnap(sel);
+    pnlPct = v.pnlPct;
+    const p = DB.portfolios.find(x=>x.id===sel);
+    portLabel = p ? `組合${p.id}·${p.name}` : sel;
+  }
+
+  // 健康分數計算（三維度）
   const positiveCount = hs.filter(h=>calcHV(h).pnlPct>0).length;
-  const diverseScore = Math.min(100, hs.length * 8);  // 多元分散
-  const pnlScore = Math.min(100, Math.max(0, 50 + snap.pnlPct * 3));  // 報酬
+  const diverseScore  = Math.min(100, hs.length * 10);
+  const pnlScore      = Math.min(100, Math.max(0, 50 + pnlPct * 3));
   const positiveScore = hs.length > 0 ? (positiveCount/hs.length)*100 : 50;
-  const healthScore = Math.round((diverseScore*0.3 + pnlScore*0.4 + positiveScore*0.3));
-  const remaining = 100 - healthScore;
+  const healthScore   = Math.round(diverseScore*0.3 + pnlScore*0.4 + positiveScore*0.3);
+  const remaining     = Math.max(0, 100 - healthScore);
   const color = healthScore >= 70 ? '#00e5a0' : healthScore >= 45 ? '#ffb84d' : '#ff4d6a';
+  const label = healthScore >= 70 ? '健康' : healthScore >= 45 ? '普通' : '需留意';
+
   const ctx = document.getElementById('gaugeChart')?.getContext('2d');
   if(!ctx) return;
   charts['gauge'] = new Chart(ctx,{
@@ -1043,35 +1088,167 @@ function renderGauge(){
       responsive:true, maintainAspectRatio:false,
       circumference:180, rotation:-90,
       cutout:'72%',
-      plugins:{
-        legend:{display:false},
-        tooltip:{enabled:false},
-      }
+      plugins:{ legend:{display:false}, tooltip:{enabled:false} }
     },
     plugins:[{
       id:'gaugeText',
       afterDraw(chart){
         const {ctx,chartArea:{top,left,width,height}}=chart;
         ctx.save();
-        const cx=left+width/2, cy=top+height*0.88;
-        ctx.font='bold 36px -apple-system,sans-serif';
+        const cx=left+width/2, cy=top+height*0.90;
+        ctx.font='bold 38px -apple-system,sans-serif';
         ctx.fillStyle=color;
         ctx.textAlign='center';
         ctx.fillText(healthScore, cx, cy);
-        ctx.font='13px -apple-system,sans-serif';
+        ctx.font='12px -apple-system,sans-serif';
         ctx.fillStyle='#7e87b8';
-        ctx.fillText('健康分數 /100', cx, cy+22);
+        ctx.fillText('健康分數 /100', cx, cy+20);
+        ctx.font='bold 12px -apple-system,sans-serif';
+        ctx.fillStyle=color;
+        ctx.fillText(label, cx, cy+38);
         ctx.restore();
       }
     }]
   });
-  // stats below gauge
+
   const statsEl = document.getElementById('gaugeStats');
   if(statsEl) statsEl.innerHTML = [
-    {l:'正獲利標的', v:`${positiveCount}/${hs.length}`, c: positiveScore>=60?'var(--green)':'var(--amber)'},
-    {l:'分散度', v:hs.length+'檔', c:'var(--text2)'},
-    {l:'總報酬', v:fp(snap.pnlPct), c:snap.pnlPct>=0?'var(--green)':'var(--red)'},
-  ].map(s=>`<div style="text-align:center"><div style="color:var(--text3);font-size:10px">${s.l}</div><div style="font-weight:700;color:${s.c}">${s.v}</div></div>`).join('');
+    {l:'正獲利標的', v:`${positiveCount}/${hs.length}`, c:positiveScore>=60?'var(--green)':'var(--amber)'},
+    {l:'分散檔數',   v:hs.length+'檔',                  c:'var(--text2)'},
+    {l:'總報酬',     v:fp(pnlPct),                      c:pnlPct>=0?'var(--green)':'var(--red)'},
+    {l:'查看',       v:portLabel,                       c:'var(--text3)'},
+  ].map(s=>`<div style="text-align:center"><div style="color:var(--text3);font-size:10px">${s.l}</div><div style="font-weight:700;color:${s.c};font-size:11px">${s.v}</div></div>`).join('');
+}
+
+
+// ── 桑基圖（純 SVG，不依賴外部套件）──────────────────────────
+function renderSankey(){
+  const el = document.getElementById('sankeyChart');
+  if(!el) return;
+  const allHs = getAllHoldings();
+  if(!allHs.length){ el.innerHTML='<div class="empty">尚無持倉資料</div>'; return; }
+
+  const W=el.clientWidth||400, H=280;
+  const totalVal = calcTotalSnap().total;
+  if(totalVal<=0){ el.innerHTML='<div class="empty">請先更新股價</div>'; return; }
+
+  // 節點：總資產 → 組合 → 個股（前5大）
+  const COLORS_S=['#5b8ff9','#00e5a0','#a370f7','#ffb84d','#00d4c2','#ff4d6a'];
+  const ports = DB.portfolios.map((p,i)=>({
+    id:p.id, name:`組合${p.id}`, color:p.color||COLORS_S[i],
+    val: calcPortSnap(p.id).total
+  })).filter(p=>p.val>0);
+
+  // SVG 繪製
+  const col0x=W*0.05, col1x=W*0.38, col2x=W*0.72;
+  const colW=14;
+  let svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:-apple-system,sans-serif">`;
+
+  // 左：總資產方塊
+  svg+=`<rect x="${col0x}" y="${H*0.1}" width="${colW}" height="${H*0.8}" rx="4" fill="#5b8ff9" opacity=".9"/>`;
+  svg+=`<text x="${col0x+colW+6}" y="${H*0.52}" fill="#dde2f5" font-size="11" dominant-baseline="middle">總資產</text>`;
+  svg+=`<text x="${col0x+colW+6}" y="${H*0.52+14}" fill="#7e87b8" font-size="10">${fm(totalVal)}</text>`;
+
+  // 中：各組合
+  let portY=H*0.05;
+  ports.forEach((p,i)=>{
+    const h = (p.val/totalVal)*(H*0.9);
+    const cy=portY+h/2;
+    // 流向帶
+    const sx=col0x+colW, sy=H*0.5;
+    const tx=col1x, ty=cy;
+    svg+=`<path d="M${sx},${sy} C${(sx+tx)/2},${sy} ${(sx+tx)/2},${ty} ${tx},${ty}" stroke="${p.color}" stroke-width="${Math.max(2,h*0.6)}" fill="none" opacity=".35"/>`;
+    // 組合方塊
+    svg+=`<rect x="${col1x}" y="${portY}" width="${colW}" height="${h}" rx="3" fill="${p.color}" opacity=".9"/>`;
+    svg+=`<text x="${col1x+colW+6}" y="${cy-6}" fill="#dde2f5" font-size="11" dominant-baseline="middle">${p.name}</text>`;
+    svg+=`<text x="${col1x+colW+6}" y="${cy+8}" fill="#7e87b8" font-size="10">${(p.val/totalVal*100).toFixed(1)}%</text>`;
+
+    // 右：前4大個股
+    const hs2=getHoldings(p.id).map(h=>({...h,mv:calcHV(h).mktVal})).sort((a,b)=>b.mv-a.mv).slice(0,4);
+    let hsY=portY;
+    hs2.forEach((h,j)=>{
+      const hh=Math.max(4,(h.mv/totalVal)*(H*0.9));
+      const hcy=hsY+hh/2;
+      svg+=`<path d="M${col1x+colW},${cy} C${(col1x+colW+col2x)/2},${cy} ${(col1x+colW+col2x)/2},${hcy} ${col2x},${hcy}" stroke="${p.color}" stroke-width="${Math.max(1.5,hh*0.5)}" fill="none" opacity=".25"/>`;
+      svg+=`<rect x="${col2x}" y="${hsY}" width="${colW}" height="${hh}" rx="2" fill="${p.color}" opacity=".8"/>`;
+      if(hh>12) svg+=`<text x="${col2x+colW+5}" y="${hcy}" fill="#dde2f5" font-size="10" dominant-baseline="middle">${h.ticker}</text>`;
+      hsY+=hh+2;
+    });
+    portY+=h+4;
+  });
+  svg+='</svg>';
+  el.innerHTML=svg;
+}
+
+// ── 累積報酬曲線 ───────────────────────────────────────────────
+let growthPeriod='1M';
+function setGrowthP(p,btn){
+  growthPeriod=p;
+  document.querySelectorAll('#growthPtabs .ptab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrowthChart();
+}
+function renderGrowthChart(){
+  dc('growth');
+  const dayMap={'1M':30,'3M':90,'6M':180,'1Y':365};
+  const days=dayMap[growthPeriod]||30;
+  const cut=new Date(); cut.setDate(cut.getDate()-days);
+  const cutStr=cut.toISOString().slice(0,10);
+
+  // 收集各組合歷史，基準化為100
+  const datasets=[];
+  const sources=[
+    {id:'total', label:'總資產', color:'#5b8ff9', hist:DB.history?.total||{}},
+    ...DB.portfolios.map(p=>({id:p.id, label:`組合${p.id}`, color:p.color||'#888', hist:DB.history?.[p.id]||{}}))
+  ];
+
+  // 收集所有日期
+  const allDates=[...new Set(sources.flatMap(s=>Object.keys(s.hist)))].filter(d=>d>=cutStr).sort();
+  if(allDates.length<2){ 
+    const ctx=document.getElementById('growthChart')?.getContext('2d');
+    if(ctx){ charts['growth']=new Chart(ctx,{type:'line',data:{labels:['資料不足'],datasets:[{data:[100],label:'',borderColor:'#5b8ff9',tension:.4,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#484e72'}},y:{ticks:{color:'#484e72'}}}}});}
+    return;
+  }
+
+  sources.forEach(s=>{
+    const entries=allDates.map(d=>s.hist[d]||null);
+    // 找第一個有值的基準
+    const firstVal=entries.find(v=>v!==null);
+    if(!firstVal) return;
+    const normalized=entries.map(v=>v!==null?parseFloat((v/firstVal*100).toFixed(2)):null);
+    datasets.push({
+      label:s.label,
+      data:normalized,
+      borderColor:s.color,
+      backgroundColor:'transparent',
+      tension:.4,
+      pointRadius:0,
+      pointHoverRadius:4,
+      borderWidth:s.id==='total'?2.5:1.5,
+      borderDash:s.id==='total'?[]:[4,3],
+      spanGaps:true
+    });
+  });
+
+  const ctx=document.getElementById('growthChart')?.getContext('2d');
+  if(!ctx||!datasets.length) return;
+  charts['growth']=new Chart(ctx,{
+    type:'line',
+    data:{labels:allDates.map(d=>d.slice(5)), datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:true, position:'bottom', labels:{color:'#7e87b8',font:{size:10},boxWidth:12,padding:8}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y?.toFixed(1)||'--'}  (基準100)`}}
+      },
+      scales:{
+        x:{ticks:{color:'#7e87b8',maxTicksLimit:8,font:{size:10}}, grid:{color:'rgba(255,255,255,0.03)'}},
+        y:{ticks:{color:'#7e87b8',font:{size:10},callback:v=>v.toFixed(0)}, grid:{color:'rgba(255,255,255,0.04)'},
+           title:{display:true,text:'相對績效（基準=100）',color:'#484e72',font:{size:9}}}
+      }
+    }
+  });
 }
 
 // ── RENDER ALL ────────────────────────────────────────────────
@@ -1080,6 +1257,7 @@ function renderAll(){
   renderPortfolios();
   renderPie();renderLine();renderHeat();renderBar();
   renderWaterfall();renderBubble();renderGauge();
+  renderSankey();renderGrowthChart();
   renderRebalance();
   renderTrades();
   populateSelects();
@@ -1591,7 +1769,7 @@ function populatePortSelect(id){
 function populateSelects(){
   populatePortSelect('tPortfolio');
   const portOpts='<option value="all">全部組合</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id} · ${p.name}</option>`).join('');
-  ['pieSel','lineSel','heatSel','txPortSel','wfTarget'].forEach(id=>{
+  ['pieSel','lineSel','heatSel','txPortSel','wfTarget','gaugeSel'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const prev=el.value;
     if(id==='pieSel')el.innerHTML='<option value="total">全部</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id}</option>`).join('');
