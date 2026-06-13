@@ -668,8 +668,6 @@ function updateFxBadge(rate){
   const el = document.getElementById('fxBadge');
   if(el) el.textContent = rate ? `USD/TWD ${rate.toFixed(2)}` : '--';
 }
- : '--';
-}
 
 // ── CALC ──────────────────────────────────────────────────────
 function getRate(c){return c==='USD'?DB.settings.usdRate||32:1;}
