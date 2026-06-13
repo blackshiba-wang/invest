@@ -155,6 +155,12 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 /* EMPTY STATE */
 .empty{text-align:center;padding:28px;color:var(--text3);font-size:13px}
 
+/* LOADING OVERLAY */
+.load-overlay{position:fixed;inset:0;background:rgba(13,15,26,.92);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.load-overlay.hidden{display:none}
+.load-spinner{width:44px;height:44px;border:3px solid rgba(91,143,249,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+.load-text{color:var(--text2);font-size:14px}
+
 /* RESPONSIVE */
 @media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr}.banner{padding:18px}.banner-metrics{gap:16px}}
 @media(max-width:600px){.banner-left .val{font-size:28px}.nav-btns{gap:4px}.btn{padding:6px 10px}}
@@ -175,6 +181,13 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 <body>
 
 <!-- NAV -->
+<!-- LOADING OVERLAY -->
+<div class="load-overlay hidden" id="loadOverlay">
+  <div class="load-spinner"></div>
+  <div class="load-text">正在從 Firebase 載入您的資料...</div>
+  <div style="font-size:11px;color:var(--text3)">請稍候，載入完成前請勿操作</div>
+</div>
+
 <div class="nav">
   <div class="logo">投資<em>觀測</em>面板</div>
   <div class="nav-btns">
@@ -490,42 +503,108 @@ let linePeriod = '1M';
 let _editTargetPortId = null;
 
 // ── STORAGE ──────────────────────────────────────────────────
+// 核心安全機制：Firebase 讀取完成前，絕對不寫入
+let _fbReady = false;      // Firebase 已讀取完成
+let _fbLoading = false;    // 正在讀取中
+let _saveQueue = false;    // 等待中的存檔請求
+
 function saveDB(){
-  try{localStorage.setItem('inv_dashboard',JSON.stringify(DB));}catch(e){}
-  if(DB.settings.firebaseUrl) fbSave();
+  try{ localStorage.setItem('inv_dashboard', JSON.stringify(DB)); }catch(e){}
+  // 如果 Firebase 還沒準備好，排隊等待，不立刻寫入
+  if(DB.settings.firebaseUrl){
+    if(_fbReady){ fbSave(); }
+    else { _saveQueue = true; }  // 等 fbLoad 完成後再存
+  }
 }
+
 function loadDB(){
-  // 統一 key：自動遷移舊版資料（inv_db、inv2_db → inv_dashboard）
   try{
     const KEYS = ['inv_dashboard','inv2_db','inv_db'];
-    let loaded = false;
     for(const key of KEYS){
       const raw = localStorage.getItem(key);
       if(raw){
         const d = JSON.parse(raw);
-        // 深合併：保留預設組合設定，但以存檔資料為主
         if(d.portfolios && d.portfolios.length) DB.portfolios = d.portfolios;
         if(d.trades) DB.trades = d.trades;
         if(d.history) DB.history = d.history;
         if(d.realized) DB.realized = d.realized;
         if(d.settings) DB.settings = Object.assign(DB.settings, d.settings);
-        // 若非主 key，搬移到主 key 並刪除舊 key
         if(key !== 'inv_dashboard'){
           localStorage.setItem('inv_dashboard', JSON.stringify(DB));
           localStorage.removeItem(key);
         }
-        loaded = true;
         break;
       }
     }
   }catch(e){ console.warn('loadDB error', e); }
 }
+
 async function fbSave(){
-  try{await fetch(DB.settings.firebaseUrl+'/data.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(DB)});}catch(e){}
+  if(!DB.settings.firebaseUrl || !_fbReady) return;
+  try{
+    await fetch(DB.settings.firebaseUrl+'/data.json',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(DB)
+    });
+  }catch(e){ console.warn('fbSave error',e); }
 }
+
+// 每日自動備份（存到 /backup/YYYY-MM-DD）
+async function fbBackup(){
+  if(!DB.settings.firebaseUrl || !_fbReady) return;
+  try{
+    const today = new Date().toISOString().slice(0,10);
+    const backupUrl = DB.settings.firebaseUrl + '/backup/' + today + '.json';
+    const existing = await fetch(backupUrl);
+    // 每天只備份一次，若今天已有備份就跳過
+    if(existing.ok){ const d = await existing.json(); if(d) return; }
+    await fetch(backupUrl,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({trades: DB.trades, portfolios: DB.portfolios, backedAt: new Date().toISOString()})
+    });
+    console.log('✅ 每日備份完成:', today);
+  }catch(e){ console.warn('fbBackup error',e); }
+}
+
 async function fbLoad(){
-  if(!DB.settings.firebaseUrl)return;
-  try{const r=await fetch(DB.settings.firebaseUrl+'/data.json');if(r.ok){const d=await r.json();if(d){DB=Object.assign({},DB,d);renderAll();}}}catch(e){}
+  if(!DB.settings.firebaseUrl) return;
+  if(_fbLoading) return;
+  _fbLoading = true;
+  showStatus('從 Firebase 載入資料...');
+  try{
+    const r = await fetch(DB.settings.firebaseUrl+'/data.json');
+    if(r.ok){
+      const d = await r.json();
+      if(d){
+        // 深合併：Firebase 的資料優先，但用 trade id 去重避免重複
+        if(d.portfolios && d.portfolios.length) DB.portfolios = d.portfolios;
+        if(d.trades){
+          // 合併 trades：以 Firebase 為主，本機有但 Firebase 沒有的也保留
+          const fbIds = new Set(d.trades.map(t=>t.id));
+          const localOnly = (DB.trades||[]).filter(t=>!fbIds.has(t.id));
+          DB.trades = [...d.trades, ...localOnly];
+        }
+        if(d.history) DB.history = d.history;
+        if(d.realized) DB.realized = d.realized;
+        if(d.settings) DB.settings = Object.assign(DB.settings, d.settings);
+        if(d.colConfig) DB.colConfig = d.colConfig;
+        // 同步回 localStorage
+        localStorage.setItem('inv_dashboard', JSON.stringify(DB));
+      }
+    }
+  }catch(e){ console.warn('fbLoad error',e); }
+  finally{
+    _fbLoading = false;
+    _fbReady = true;
+    // 如果載入期間有排隊的存檔，現在執行
+    if(_saveQueue){ _saveQueue = false; fbSave(); }
+    renderAll();
+    showStatus('資料載入完成 ✓', 2000);
+    // 載入完成後執行每日備份
+    fbBackup();
+  }
 }
 
 // ── COMPUTED HOLDINGS (from trades) ─────────────────────────
@@ -708,6 +787,10 @@ async function refreshAll(){
 }
 
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function showLoadingOverlay(show){
+  const el = document.getElementById('loadOverlay');
+  if(el){ if(show) el.classList.remove('hidden'); else el.classList.add('hidden'); }
+}
 function updateFxBadge(rate){
   const el = document.getElementById('fxBadge');
   if(el) el.textContent = rate ? `USD/TWD ${rate.toFixed(2)}` : '--';
@@ -1520,10 +1603,21 @@ function closeSetupAlert(){document.getElementById('setupAlert').style.display='
 // ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',()=>{
   loadDB();
-  if(!DB.settings.firebaseUrl&&!DB.trades.length)document.getElementById('setupAlert').style.display='block';
-  if(DB.settings.firebaseUrl)fbLoad().then(()=>renderAll());else renderAll();
+  if(!DB.settings.firebaseUrl && !DB.trades.length){
+    document.getElementById('setupAlert').style.display='block';
+    _fbReady = true; // 沒有 Firebase，直接解鎖
+    renderAll();
+  } else if(DB.settings.firebaseUrl){
+    // 有 Firebase：先 lock，等讀完再 unlock 並 render
+    // 顯示載入遮罩避免使用者在讀取中操作
+    showLoadingOverlay(true);
+    fbLoad().finally(()=> showLoadingOverlay(false));
+  } else {
+    _fbReady = true;
+    renderAll();
+  }
   // Auto-refresh every 5 min
-  setInterval(()=>{if(DB.trades.length)refreshAll();},5*60*1000);
+  setInterval(()=>{ if(DB.trades.length && _fbReady) refreshAll(); }, 5*60*1000);
 });
 </script>
 </body>
