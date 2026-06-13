@@ -1568,9 +1568,11 @@ function calcRebal(pid){
   const targets=p.targets||{};
   const id='rb_'+pid;
   const newInvestEl=document.getElementById(id+'_new');
-  const newInvest=parseFloat(newInvestEl?.value||0)||0;
-  const totalMkt=hs.reduce((s,h)=>s+calcHV(h).mktVal,0);
-  const grandTotal=totalMkt+newInvest;
+  const newInvestTWD=parseFloat(newInvestEl?.value||0)||0;
+  // 所有市值統一用 TWD 計算（calcHV 已經做匯率換算）
+  const totalMkt=hs.reduce((s,h)=>s+calcHV(h).mktVal,0); // 已是 TWD
+  const grandTotal=totalMkt+newInvestTWD; // TWD
+  const newInvest=newInvestTWD; // 保持變數名稱相容
   const body=document.getElementById(id+'_body');
   const foot=document.getElementById(id+'_foot');
   if(!body)return;
@@ -1579,29 +1581,39 @@ function calcRebal(pid){
   const rows=hs.map(h=>{
     const hv=calcHV(h);
     const pr=prices[h.ticker];
-    const limitPrice=pr?pr.price:h.cost; // 現價作為限價基準
+    // 判斷幣別
+    const isCurrency = h.currency==='USD' || (pr?.currency==='USD');
+    const fxRate = getRate(isCurrency?'USD':'TWD'); // USD→TWD 匯率
+    // limitPrice：用原始幣別顯示（方便下單）
+    const limitPriceOrig = pr ? pr.price : h.cost;
+    // limitPriceTWD：換算成台幣，用於金額計算
+    const limitPriceTWD = limitPriceOrig * fxRate;
+
     const curPct=totalMkt>0?hv.mktVal/totalMkt*100:0;
     const tgt=targets[h.ticker]||0;
-    const targetVal=grandTotal*tgt/100;
-    const diff=targetVal-hv.mktVal;
+    const targetVal=grandTotal*tgt/100; // TWD
+    const diff=targetVal-hv.mktVal;     // TWD
     const isBuy=diff>=0;
     const dev=curPct-tgt;
     const devColor=Math.abs(dev)<=2?'var(--green)':dev>2?'var(--red)':'var(--amber)';
 
-    // 預估成交價：買入掛稍高、賣出掛稍低，確保99%成交
-    // 買入：限價 × 1.0015（高於市價，確保買到）
-    // 賣出：限價 × 0.9985（低於市價，確保賣出）
-    const estPrice = isBuy ? limitPrice*1.0015 : limitPrice*0.9985;
+    // 預估成交價（原始幣別，用於下單）
+    // 買入：限價 × 1.0015（略高，確保買到）
+    // 賣出：限價 × 0.9985（略低，確保賣出）
+    const estPriceOrig = isBuy ? limitPriceOrig*1.0015 : limitPriceOrig*0.9985;
+    const estPriceTWD  = estPriceOrig * fxRate;
 
-    // 應買/賣股數 = 買賣金額 ÷ 預估成交價（無條件捨去，避免超出預算）
-    const shares = estPrice>0 ? Math.floor(Math.abs(diff)/estPrice) : 0;
-    const actualAmount = shares * estPrice; // 實際執行金額
+    // 應買/賣股數 = 買賣金額(TWD) ÷ 預估成交價(TWD)
+    const shares = estPriceTWD>0 ? Math.floor(Math.abs(diff)/estPriceTWD) : 0;
+    const actualAmountTWD = shares * estPriceTWD;
 
-    if(isBuy) totalBuy+=actualAmount;
-    else totalSell+=actualAmount;
+    if(isBuy) totalBuy+=actualAmountTWD;
+    else totalSell+=actualAmountTWD;
 
-    const isCurrency = h.currency==='USD' || (pr?.currency==='USD');
     const priceUnit = isCurrency ? 'USD' : 'TWD';
+    const limitPrice = limitPriceOrig; // 顯示用
+    const estPrice = estPriceOrig;     // 顯示用
+    const actualAmount = actualAmountTWD; // 顯示用（TWD）
 
     return`<tr>
       <td>
@@ -1612,8 +1624,8 @@ function calcRebal(pid){
       <td>${curPct.toFixed(1)}%</td>
       <td>${tgt>0?tgt+'%':'<span style="color:var(--text3)">--</span>'}</td>
       <td><span class="dev-badge" style="background:${Math.abs(dev)<=2?'rgba(0,229,160,.15)':dev>2?'rgba(255,77,106,.15)':'rgba(255,184,77,.15)'};color:${devColor}">${dev>0?'+':''}${dev.toFixed(1)}%</span></td>
-      <td style="color:var(--text2);font-size:11px">${limitPrice>0?limitPrice.toFixed(2):'--'}<br><span style="color:var(--text3);font-size:9px">${priceUnit}</span></td>
-      <td style="color:${isBuy?'var(--green)':'var(--red)'};font-size:11px">${estPrice>0?estPrice.toFixed(2):'--'}<br><span style="color:var(--text3);font-size:9px">${isBuy?'×1.0015':'×0.9985'}</span></td>
+      <td style="color:var(--text2);font-size:11px">${limitPrice>0?limitPrice.toFixed(isCurrency?4:2):'--'}<br><span style="color:var(--text3);font-size:9px">${priceUnit}${isCurrency?' (×'+fxRate.toFixed(1)+'=TWD)':''}</span></td>
+      <td style="color:${isBuy?'var(--green)':'var(--red)'};font-size:11px">${estPrice>0?estPrice.toFixed(isCurrency?4:2):'--'}<br><span style="color:var(--text3);font-size:9px">${isBuy?'×1.0015':'×0.9985'} ${priceUnit}</span></td>
       <td style="color:${isBuy?'var(--green)':'var(--red)'};font-weight:600">${isBuy?'📈 買入':'📉 賣出'}</td>
       <td style="color:${isBuy?'var(--green)':'var(--red)'};font-weight:700">${isBuy?'+':''}${fm(diff)}</td>
       <td style="font-weight:800;font-size:14px;color:${isBuy?'var(--green)':'var(--red)'}">
