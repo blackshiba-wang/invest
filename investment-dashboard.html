@@ -551,18 +551,11 @@ let linePeriod = '1M';
 let _editTargetPortId = null;
 
 // ── STORAGE ──────────────────────────────────────────────────
-// 核心安全機制：Firebase 讀取完成前，絕對不寫入
-let _fbReady = false;      // Firebase 已讀取完成
-let _fbLoading = false;    // 正在讀取中
-let _saveQueue = false;    // 等待中的存檔請求
+let _fbLoading = false;
 
 function saveDB(){
   try{ localStorage.setItem('inv_dashboard', JSON.stringify(DB)); }catch(e){}
-  // 如果 Firebase 還沒準備好，排隊等待，不立刻寫入
-  if(DB.settings.firebaseUrl){
-    if(_fbReady){ fbSave(); }
-    else { _saveQueue = true; }  // 等 fbLoad 完成後再存
-  }
+  if(DB.settings.firebaseUrl) fbSave();
 }
 
 function loadDB(){
@@ -588,7 +581,7 @@ function loadDB(){
 }
 
 async function fbSave(){
-  if(!DB.settings.firebaseUrl || !_fbReady) return;
+  if(!DB.settings.firebaseUrl) return;
   try{
     await fetch(DB.settings.firebaseUrl+'/data.json',{
       method:'PUT',
@@ -600,7 +593,7 @@ async function fbSave(){
 
 // 每日自動備份（存到 /backup/YYYY-MM-DD）
 async function fbBackup(){
-  if(!DB.settings.firebaseUrl || !_fbReady) return;
+  if(!DB.settings.firebaseUrl) return;
   try{
     const today = new Date().toISOString().slice(0,10);
     const backupUrl = DB.settings.firebaseUrl + '/backup/' + today + '.json';
@@ -659,12 +652,8 @@ async function fbLoad(){
   }catch(e){ console.warn('fbLoad error',e); }
   finally{
     _fbLoading = false;
-    _fbReady = true;
-    // 如果載入期間有排隊的存檔，現在執行
-    if(_saveQueue){ _saveQueue = false; fbSave(); }
     renderAll();
     showStatus('資料載入完成 ✓', 2000);
-    // 載入完成後執行每日備份
     fbBackup();
   }
 }
@@ -1851,7 +1840,6 @@ function saveTargets(){
   DB.portfolios=JSON.parse(JSON.stringify(DB.portfolios));
   // 直接存 localStorage（立即）
   try{ localStorage.setItem('inv_dashboard', JSON.stringify(DB)); }catch(e){}
-  // 直接存 Firebase（強制，不管 _fbReady 狀態）
   if(DB.settings.firebaseUrl){
     fetch(DB.settings.firebaseUrl+'/data.json',{
       method:'PUT',
@@ -1966,19 +1954,14 @@ window.addEventListener('DOMContentLoaded',()=>{
   loadDB();
   if(!DB.settings.firebaseUrl && !DB.trades.length){
     document.getElementById('setupAlert').style.display='block';
-    _fbReady = true; // 沒有 Firebase，直接解鎖
     renderAll();
   } else if(DB.settings.firebaseUrl){
-    // 有 Firebase：先 lock，等讀完再 unlock 並 render
-    // 顯示載入遮罩避免使用者在讀取中操作
     showLoadingOverlay(true);
     fbLoad().finally(()=> showLoadingOverlay(false));
   } else {
-    _fbReady = true;
     renderAll();
   }
-  // Auto-refresh every 5 min
-  setInterval(()=>{ if(DB.trades.length && _fbReady) refreshAll(); }, 5*60*1000);
+  setInterval(()=>{ if(DB.trades.length) refreshAll(); }, 5*60*1000);
 });
 </script>
 </body>
