@@ -535,7 +535,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────
-let DB = {
+var DB = {
   portfolios: [
     {id:'A',name:'台股組合',market:'TW',included:true,color:'#00e5a0',targets:{}},
     {id:'B',name:'美股組合',market:'US',included:true,color:'#5b8ff9',targets:{}}
@@ -545,13 +545,13 @@ let DB = {
   realized: {},
   settings: {usdRate:32, displayCurrency:'TWD', firebaseUrl:''}
 };
-let prices = {};
-let charts = {};
-let linePeriod = '1M';
-let _editTargetPortId = null;
+var prices = {};
+var charts = {};
+var linePeriod = '1M';
+var _editTargetPortId = null;
 
 // ── STORAGE ──────────────────────────────────────────────────
-let _fbLoading = false;
+var _fbLoading = false;
 
 function saveDB(){
   try{ localStorage.setItem('inv_dashboard', JSON.stringify(DB)); }catch(e){}
