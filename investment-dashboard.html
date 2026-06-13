@@ -606,8 +606,22 @@ async function fbLoad(){
     if(r.ok){
       const d = await r.json();
       if(d){
-        // 深合併：Firebase 的資料優先，但用 trade id 去重避免重複
-        if(d.portfolios && d.portfolios.length) DB.portfolios = d.portfolios;
+        // 深合併：Firebase 的資料優先
+        if(d.portfolios && d.portfolios.length){
+          // portfolios 合併：以 Firebase 為主，但保留本機已有的 targets/colConfig
+          const localPortMap = {};
+          (DB.portfolios||[]).forEach(p=>{ localPortMap[p.id]=p; });
+          DB.portfolios = d.portfolios.map(fbP=>{
+            const local = localPortMap[fbP.id]||{};
+            return {
+              ...fbP,
+              // targets：Firebase 有就用 Firebase，否則保留本機的
+              targets: (fbP.targets && Object.keys(fbP.targets).length>0)
+                        ? fbP.targets
+                        : (local.targets||{})
+            };
+          });
+        }
         if(d.trades){
           // 合併 trades：以 Firebase 為主，本機有但 Firebase 沒有的也保留
           const fbIds = new Set(d.trades.map(t=>t.id));
@@ -1694,8 +1708,11 @@ function saveTargets(){
       method:'PUT',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify(DB)
-    }).then(()=>showStatus('目標比例已儲存 ✓',2000))
-      .catch(()=>showStatus('目標比例已存至本機（Firebase 連線中）',3000));
+    }).then(r=>{
+        if(r.ok) showStatus('✅ 目標比例已儲存到 Firebase',2500);
+        else showStatus('⚠️ Firebase 儲存失敗（HTTP '+r.status+'）',4000);
+      })
+      .catch(()=>showStatus('目標比例已存至本機（Firebase 暫時無法連線）',3000));
   } else {
     showStatus('目標比例已儲存 ✓',2000);
   }
