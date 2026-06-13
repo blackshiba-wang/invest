@@ -1554,7 +1554,7 @@ function buildRbCard(p){
     ${Object.keys(targets).length===0?`<div class="alert a-warn" style="font-size:11px">尚未設定目標比例。<button class="btn btn-xs btn-ghost" onclick="openTargetModal('${p.id}')">點此設定</button></div>`:`
     <div style="overflow-x:auto">
     <table class="rb-table" id="${id}_tbl">
-      <thead><tr><th>標的</th><th>現值</th><th>現比例</th><th>目標%</th><th>偏移</th><th>再平衡動作</th><th>買入/賣出金額</th></tr></thead>
+      <thead><tr><th>標的</th><th>現值</th><th>現比例</th><th>目標%</th><th>偏移</th><th>限價</th><th>預估成交價</th><th>動作</th><th>買賣金額</th><th>應買/賣股數</th></tr></thead>
       <tbody id="${id}_body"></tbody>
       <tfoot id="${id}_foot"></tfoot>
     </table></div>
@@ -1575,30 +1575,67 @@ function calcRebal(pid){
   const foot=document.getElementById(id+'_foot');
   if(!body)return;
 
-  let totalAction=0;
+  let totalBuy=0, totalSell=0;
   const rows=hs.map(h=>{
     const hv=calcHV(h);
+    const pr=prices[h.ticker];
+    const limitPrice=pr?pr.price:h.cost; // 現價作為限價基準
     const curPct=totalMkt>0?hv.mktVal/totalMkt*100:0;
     const tgt=targets[h.ticker]||0;
     const targetVal=grandTotal*tgt/100;
     const diff=targetVal-hv.mktVal;
-    totalAction+=Math.max(0,diff);
+    const isBuy=diff>=0;
     const dev=curPct-tgt;
     const devColor=Math.abs(dev)<=2?'var(--green)':dev>2?'var(--red)':'var(--amber)';
+
+    // 預估成交價：買入掛稍高、賣出掛稍低，確保99%成交
+    // 買入：限價 × 1.0015（高於市價，確保買到）
+    // 賣出：限價 × 0.9985（低於市價，確保賣出）
+    const estPrice = isBuy ? limitPrice*1.0015 : limitPrice*0.9985;
+
+    // 應買/賣股數 = 買賣金額 ÷ 預估成交價（無條件捨去，避免超出預算）
+    const shares = estPrice>0 ? Math.floor(Math.abs(diff)/estPrice) : 0;
+    const actualAmount = shares * estPrice; // 實際執行金額
+
+    if(isBuy) totalBuy+=actualAmount;
+    else totalSell+=actualAmount;
+
+    const isCurrency = h.currency==='USD' || (pr?.currency==='USD');
+    const priceUnit = isCurrency ? 'USD' : 'TWD';
+
     return`<tr>
-      <td class="ticker">${h.ticker}</td>
+      <td>
+        <span class="ticker">${h.ticker}</span>
+        <div style="font-size:9px;color:var(--text3)">${pr?.name||h.name||''}</div>
+      </td>
       <td>${fm(hv.mktVal)}</td>
       <td>${curPct.toFixed(1)}%</td>
       <td>${tgt>0?tgt+'%':'<span style="color:var(--text3)">--</span>'}</td>
       <td><span class="dev-badge" style="background:${Math.abs(dev)<=2?'rgba(0,229,160,.15)':dev>2?'rgba(255,77,106,.15)':'rgba(255,184,77,.15)'};color:${devColor}">${dev>0?'+':''}${dev.toFixed(1)}%</span></td>
-      <td style="color:${diff>=0?'var(--green)':'var(--red)'};">${diff>=0?'📈 加碼':'📉 減倉'}</td>
-      <td style="color:${diff>=0?'var(--green)':'var(--red)'};font-weight:700">${diff>=0?'+':''}${fm(diff)}</td>
+      <td style="color:var(--text2);font-size:11px">${limitPrice>0?limitPrice.toFixed(2):'--'}<br><span style="color:var(--text3);font-size:9px">${priceUnit}</span></td>
+      <td style="color:${isBuy?'var(--green)':'var(--red)'};font-size:11px">${estPrice>0?estPrice.toFixed(2):'--'}<br><span style="color:var(--text3);font-size:9px">${isBuy?'×1.0015':'×0.9985'}</span></td>
+      <td style="color:${isBuy?'var(--green)':'var(--red)'};font-weight:600">${isBuy?'📈 買入':'📉 賣出'}</td>
+      <td style="color:${isBuy?'var(--green)':'var(--red)'};font-weight:700">${isBuy?'+':''}${fm(diff)}</td>
+      <td style="font-weight:800;font-size:14px;color:${isBuy?'var(--green)':'var(--red)'}">
+        ${shares>0?`${isBuy?'+':'−'}${shares} 股`:'<span style="color:var(--text3)">不動</span>'}
+        ${shares>0?`<div style="font-size:9px;color:var(--text3)">≈${fm(actualAmount)}</div>`:''}
+      </td>
     </tr>`;
   });
   body.innerHTML=rows.join('');
   foot.innerHTML=`<tr style="border-top:1px solid var(--border2)">
-    <td colspan="5" style="color:var(--text2);font-size:11px;padding-top:8px">總投入：${fm(grandTotal)}　新增：<strong style="color:var(--blue)">${fm(newInvest)}</strong></td>
-    <td colspan="2" style="text-align:right;font-weight:700;color:var(--blue);padding-top:8px">預計總買入：${fm(totalAction)}</td>
+    <td colspan="4" style="color:var(--text2);font-size:11px;padding-top:10px">
+      總市值：${fm(totalMkt)}　新增投入：<strong style="color:var(--blue)">${fm(newInvest)}</strong>　→　再平衡後總額：${fm(grandTotal)}
+    </td>
+    <td colspan="3" style="padding-top:10px;text-align:center">
+      <span style="color:var(--green);font-weight:700">買入 ${fm(totalBuy)}</span>
+      <span style="color:var(--text3);margin:0 8px">/</span>
+      <span style="color:var(--red);font-weight:700">賣出 ${fm(totalSell)}</span>
+    </td>
+    <td colspan="3" style="text-align:right;padding-top:10px">
+      <div style="font-size:10px;color:var(--text3)">買入限價=現價×1.0015</div>
+      <div style="font-size:10px;color:var(--text3)">賣出限價=現價×0.9985</div>
+    </td>
   </tr>`;
 }
 
