@@ -583,11 +583,15 @@ function loadDB(){
 async function fbSave(){
   if(!DB.settings.firebaseUrl) return;
   try{
-    await fetch(DB.settings.firebaseUrl+'/data.json',{
+    // Firebase 不允許 key 含有 . $ # [ ] /
+    // 解法：把整個 DB 包在一個 "d" 欄位裡存成字串，避免 Firebase 解析內部 key
+    const payload = JSON.stringify({ d: JSON.stringify(DB) });
+    const r = await fetch(DB.settings.firebaseUrl+'/data.json',{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(DB)
+      body: payload
     });
+    if(!r.ok) console.warn('fbSave failed:', r.status, await r.text());
   }catch(e){ console.warn('fbSave error',e); }
 }
 
@@ -603,7 +607,7 @@ async function fbBackup(){
     await fetch(backupUrl,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({trades: DB.trades, portfolios: DB.portfolios, backedAt: new Date().toISOString()})
+      body: JSON.stringify({ d: JSON.stringify({trades: DB.trades, portfolios: DB.portfolios, backedAt: new Date().toISOString()}) })
     });
     console.log('✅ 每日備份完成:', today);
   }catch(e){ console.warn('fbBackup error',e); }
@@ -617,7 +621,9 @@ async function fbLoad(){
   try{
     const r = await fetch(DB.settings.firebaseUrl+'/data.json');
     if(r.ok){
-      const d = await r.json();
+      const raw = await r.json();
+      // 支援新格式（包在 d 欄位）和舊格式（直接存）
+      const d = raw?.d ? JSON.parse(raw.d) : raw;
       if(d){
         // 深合併：Firebase 的資料優先
         if(d.portfolios && d.portfolios.length){
@@ -944,7 +950,7 @@ function setPortCols(pid, cols){
   try{ localStorage.setItem('inv_dashboard', JSON.stringify(DB)); }catch(e){}
   if(DB.settings.firebaseUrl){
     fetch(DB.settings.firebaseUrl+'/data.json',{
-      method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(DB)
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ d: JSON.stringify(DB) })
     }).catch(e=>console.warn('setPortCols fbSave error',e));
   }
 }
@@ -1844,7 +1850,7 @@ function saveTargets(){
     fetch(DB.settings.firebaseUrl+'/data.json',{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(DB)
+      body: JSON.stringify({ d: JSON.stringify(DB) })
     }).then(r=>{
         if(r.ok) showStatus('✅ 目標比例已儲存到 Firebase',2500);
         else showStatus('⚠️ Firebase 儲存失敗（HTTP '+r.status+'）',4000);
