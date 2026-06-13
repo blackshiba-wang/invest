@@ -889,7 +889,13 @@ function getPortCols(pid){
 function setPortCols(pid, cols){
   if(!DB.colConfig) DB.colConfig={};
   DB.colConfig[pid]=cols;
-  saveDB();
+  // 直接強制存兩處
+  try{ localStorage.setItem('inv_dashboard', JSON.stringify(DB)); }catch(e){}
+  if(DB.settings.firebaseUrl){
+    fetch(DB.settings.firebaseUrl+'/data.json',{
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(DB)
+    }).catch(e=>console.warn('setPortCols fbSave error',e));
+  }
 }
 
 function renderHoldingHeaders(pid, targets){
@@ -1502,10 +1508,21 @@ function saveTargets(){
   });
   // 強制深複製確保 Firebase 也存到
   DB.portfolios=JSON.parse(JSON.stringify(DB.portfolios));
-  saveDB();
+  // 直接存 localStorage（立即）
+  try{ localStorage.setItem('inv_dashboard', JSON.stringify(DB)); }catch(e){}
+  // 直接存 Firebase（強制，不管 _fbReady 狀態）
+  if(DB.settings.firebaseUrl){
+    fetch(DB.settings.firebaseUrl+'/data.json',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(DB)
+    }).then(()=>showStatus('目標比例已儲存 ✓',2000))
+      .catch(()=>showStatus('目標比例已存至本機（Firebase 連線中）',3000));
+  } else {
+    showStatus('目標比例已儲存 ✓',2000);
+  }
   closeModal('targetModal');
   renderAll();
-  showStatus('目標比例已儲存 ✓',2000);
 }
 
 function openManagePortfolio(){
