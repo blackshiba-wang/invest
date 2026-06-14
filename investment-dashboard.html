@@ -162,8 +162,66 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 .load-text{color:var(--text2);font-size:14px}
 
 /* RESPONSIVE */
-@media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr}.banner{padding:18px}.banner-metrics{gap:16px}}
-@media(max-width:600px){.banner-left .val{font-size:28px}.nav-btns{gap:4px}.btn{padding:6px 10px}}
+@media(max-width:900px){
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .banner{padding:18px}
+  .banner-metrics{gap:16px}
+  .card[style*="grid-column:span 2"]{grid-column:span 1 !important}
+}
+@media(max-width:768px){
+  .wrap{padding:12px}
+  .nav{padding:0 12px;height:auto;min-height:54px;flex-wrap:wrap;gap:8px;padding-top:8px;padding-bottom:8px}
+  .nav-btns{flex-wrap:wrap;justify-content:flex-end;gap:6px;width:100%}
+  .logo{font-size:15px}
+  .last-upd{display:none}
+  #fxBadge{font-size:11px;padding:3px 8px}
+  .btn{padding:7px 11px;font-size:12px}
+  .btn-sm{padding:5px 9px;font-size:11px}
+
+  .banner{flex-direction:column;align-items:flex-start;padding:16px;gap:14px}
+  .banner-left .val{font-size:30px}
+  .banner-metrics{width:100%;justify-content:space-between;gap:10px}
+  .bm-item{flex:1;min-width:0}
+  .bm-item .bm-val{font-size:15px}
+
+  .p-hd{flex-direction:column;gap:8px}
+  .p-mktval{font-size:20px;text-align:left}
+  .p-pnl{text-align:left}
+  .ret-row{gap:5px}
+  .ret-chip{min-width:48px;padding:4px 6px}
+
+  .card-hd{flex-wrap:wrap;gap:8px}
+  .card-hd > div:last-child{width:100%;justify-content:flex-start}
+  .ch240,.ch260,.ch300{height:220px}
+
+  /* 表格在手機上字體縮小、可橫向滑動 */
+  .hl-table th,.tx-table th,.rb-table th{font-size:9px;padding:4px 5px}
+  .hl-table td,.tx-table td,.rb-table td{font-size:11px;padding:6px 5px}
+  .ticker{font-size:11px}
+
+  /* Modal 全寬 */
+  .modal{width:95%;padding:18px;max-height:92vh}
+  .half-grid{grid-template-columns:1fr}
+
+  /* Heatmap 縮小格子 */
+  .heatmap{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
+  .hm-cell{padding:7px 5px}
+  .hm-val{font-size:12px}
+
+  /* Treemap */
+  .treemap-wrap{min-height:200px}
+}
+@media(max-width:480px){
+  .banner-left .val{font-size:26px}
+  .bm-item .bm-lbl{font-size:9px}
+  .bm-item .bm-val{font-size:13px}
+  .nav-btns{gap:4px}
+  .btn{padding:6px 9px;font-size:11px}
+  .logo{font-size:14px}
+  .shd{font-size:13px}
+  .ret-chip{min-width:42px}
+  .ret-chip .rv{font-size:11px}
+}
 
 /* AGE PILL */
 .age-pill{font-size:9px;padding:1px 5px;border-radius:3px;background:var(--bg3);color:var(--text3);margin-left:4px}
@@ -322,6 +380,51 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
       </div>
       <div class="chart-wrap ch260"><canvas id="gaugeChart" role="img" aria-label="投資組合健康度">健康度</canvas></div>
       <div id="gaugeStats" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;justify-content:center;font-size:11px"></div>
+    </div>
+  </div>
+
+  <!-- ADVANCED VISUALS -->
+  <div class="shd mb12"><div class="dot" style="background:var(--pink)"></div>進階戰情室</div>
+  <div class="g3 mb20">
+    <!-- Treemap -->
+    <div class="card" style="grid-column:span 2">
+      <div class="card-hd">
+        <div class="card-title">🟦 資產市值權重熱力圖</div>
+        <select id="treemapSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderTreemap()">
+          <option value="total">全部</option>
+        </select>
+      </div>
+      <div id="treemapWrap" class="treemap-wrap" style="position:relative;width:100%;height:280px;border-radius:8px;overflow:hidden"></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:8px">
+        <span>方塊大小＝市值佔比　顏色＝今日漲跌</span>
+        <span><span style="color:var(--red)">●</span>跌 <span style="color:var(--text2)">●</span>平 <span style="color:var(--green)">●</span>漲</span>
+      </div>
+    </div>
+    <!-- 財富自由進度 -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">🏁 財富自由進度</div>
+        <button class="btn btn-xs btn-ghost" onclick="openFireGoal()">🎯 設定目標</button>
+      </div>
+      <div id="fireWidget"></div>
+    </div>
+  </div>
+
+  <!-- CALENDAR HEATMAP -->
+  <div class="card mb20">
+    <div class="card-hd">
+      <div class="card-title">📅 投資獲利日曆熱力圖</div>
+      <select id="calSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderCalendarHeatmap()">
+        <option value="total">總資產</option>
+      </select>
+    </div>
+    <div id="calHeatmapWrap" style="overflow-x:auto"></div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:10px;color:var(--text3);justify-content:flex-end">
+      跌
+      <span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:rgba(255,77,106,.6)"></span>
+      <span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:rgba(255,255,255,.05)"></span>
+      <span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:rgba(0,229,160,.6)"></span>
+      漲
     </div>
   </div>
 
@@ -515,6 +618,25 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
   </div>
 </div>
 
+<!-- FIRE GOAL MODAL -->
+<div class="modal-bg" id="fireGoalModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">🎯 設定財富自由目標</div>
+    <div class="frow">
+      <label class="flbl">目標淨資產（TWD）</label>
+      <input type="number" class="finput" id="fireTarget" placeholder="例：3000000" step="10000">
+    </div>
+    <div class="frow">
+      <label class="flbl">退休／目標日期</label>
+      <input type="date" class="finput" id="fireDate">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeModal('fireGoalModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveFireGoal()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- SETTINGS MODAL -->
 <div class="modal-bg" id="settingsModal">
   <div class="modal">
@@ -692,6 +814,10 @@ function getHoldings(portfolioId){
 }
 function getAllHoldings(){
   return DB.portfolios.flatMap(p=>getHoldings(p.id));
+}
+// "全部" = 計入總資產的組合（與 calcTotalSnap 規則一致）
+function getIncludedHoldings(){
+  return DB.portfolios.filter(p=>p.included).flatMap(p=>getHoldings(p.id));
 }
 
 // ── PRICE FETCH ──────────────────────────────────────────────
@@ -1008,7 +1134,7 @@ function saveColConfig(){
 function renderWaterfall(){
   dc('waterfall');
   const target = document.getElementById('wfTarget')?.value || 'total';
-  const hs = target==='total' ? getAllHoldings() : getHoldings(target);
+  const hs = target==='total' ? getIncludedHoldings() : getHoldings(target);
   if(!hs.length) return;
   const items = hs.map(h=>({
     ticker: h.ticker,
@@ -1037,11 +1163,11 @@ function renderWaterfall(){
 // 2. 風險報酬泡泡圖（X=損益%，Y=今日%，Bubble=市值）
 function renderBubble(){
   dc('bubble');
-  const hs = getAllHoldings();
+  const hs = getIncludedHoldings();
   if(!hs.length) return;
   const datasets = hs.map((h,i)=>{
     const hv = calcHV(h);
-    const totalMkt = getAllHoldings().reduce((s,x)=>s+calcHV(x).mktVal,0);
+    const totalMkt = getIncludedHoldings().reduce((s,x)=>s+calcHV(x).mktVal,0);
     const r = totalMkt > 0 ? Math.max(4, Math.sqrt(hv.mktVal/totalMkt)*80) : 8;
     return {
       label: h.ticker,
@@ -1080,7 +1206,7 @@ function renderGauge(){
   // 取得要計算的持倉和快照
   let hs, pnlPct, portLabel;
   if(sel === 'total'){
-    hs = getAllHoldings();
+    hs = getIncludedHoldings();
     const snap = calcTotalSnap();
     pnlPct = snap.pnlPct;
     portLabel = '全部組合';
@@ -1154,7 +1280,7 @@ function renderGauge(){
 function renderSankey(){
   const el = document.getElementById('sankeyChart');
   if(!el) return;
-  const allHs = getAllHoldings();
+  const allHs = getIncludedHoldings();
   if(!allHs.length){ el.innerHTML='<div class="empty">尚無持倉資料</div>'; return; }
 
   const W=el.clientWidth||400, H=280;
@@ -1408,6 +1534,223 @@ function renderDrawdown(){
   }
 }
 
+
+// ── 資產市值權重熱力圖（Treemap，純 div 實作）─────────────────
+function renderTreemap(){
+  const sel = document.getElementById('treemapSel')?.value || 'total';
+  const hs = sel==='total' ? getIncludedHoldings() : getHoldings(sel);
+  const wrap = document.getElementById('treemapWrap');
+  if(!wrap) return;
+  if(!hs.length){ wrap.innerHTML='<div class="empty">尚無持倉資料</div>'; return; }
+
+  const items = hs.map(h=>{
+    const hv = calcHV(h);
+    return { ticker:h.ticker, val: hv.mktVal, pct: hv.changePct||0, portfolio: h.portfolio };
+  }).filter(it=>it.val>0).sort((a,b)=>b.val-a.val);
+
+  const total = items.reduce((s,it)=>s+it.val,0);
+  if(total<=0){ wrap.innerHTML='<div class="empty">請先按更新取得股價</div>'; return; }
+
+  const W = wrap.clientWidth || 600, H = wrap.clientHeight || 280;
+
+  // squarified treemap（簡化版 slice-and-dice）
+  function layout(items, x, y, w, h){
+    if(!items.length) return [];
+    if(items.length===1){
+      return [{...items[0], x, y, w, h}];
+    }
+    const total = items.reduce((s,it)=>s+it.val,0);
+    // 切割：依長寬比決定橫切或縱切
+    let acc=0, splitIdx=1;
+    for(let i=0;i<items.length;i++){
+      acc+=items[i].val;
+      if(acc >= total/2){ splitIdx=Math.max(1,i+1); break; }
+    }
+    const group1=items.slice(0,splitIdx), group2=items.slice(splitIdx);
+    const sum1=group1.reduce((s,it)=>s+it.val,0);
+    const ratio1=sum1/total;
+    if(w >= h){
+      const w1=w*ratio1;
+      return [...layout(group1,x,y,w1,h), ...layout(group2,x+w1,y,w-w1,h)];
+    } else {
+      const h1=h*ratio1;
+      return [...layout(group1,x,y,w,h1), ...layout(group2,x,y+h1,w,h-h1)];
+    }
+  }
+
+  const boxes = layout(items, 0, 0, W, H);
+  const colors_treemap = c => {
+    if(c>0.05) return `rgba(0,229,160,${Math.min(0.85, 0.25+Math.abs(c)/4)})`;
+    if(c<-0.05) return `rgba(255,77,106,${Math.min(0.85, 0.25+Math.abs(c)/4)})`;
+    return 'rgba(255,255,255,0.06)';
+  };
+
+  wrap.innerHTML = boxes.map(b=>{
+    const pctOfTotal = (b.val/total*100);
+    const showText = b.w>50 && b.h>30;
+    return `<div onclick="openTradeHistory('${b.portfolio}','${b.ticker}')"
+      style="position:absolute;left:${b.x}px;top:${b.y}px;width:${b.w-2}px;height:${b.h-2}px;
+             background:${colors_treemap(b.pct)};border:1px solid rgba(255,255,255,0.06);
+             border-radius:4px;cursor:pointer;transition:opacity .15s;
+             display:flex;flex-direction:column;align-items:center;justify-content:center;
+             overflow:hidden;padding:4px"
+      onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'"
+      title="${b.ticker}: ${fm(b.val)} (${pctOfTotal.toFixed(1)}%) 今日${b.pct>=0?'+':''}${b.pct.toFixed(2)}%">
+      ${showText?`<div style="font-weight:700;font-size:${Math.min(15,Math.max(10,b.w/8))}px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)">${b.ticker}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.85);margin-top:2px">${b.pct>=0?'+':''}${b.pct.toFixed(2)}%</div>
+      ${b.h>55?`<div style="font-size:9px;color:rgba(255,255,255,.65)">${fm(b.val)}</div>`:''}`
+      :`<div style="font-size:9px;color:#fff;font-weight:700">${b.ticker}</div>`}
+    </div>`;
+  }).join('');
+}
+
+// ── 財富自由進度 ──────────────────────────────────────────────
+function openFireGoal(){
+  document.getElementById('fireTarget').value = DB.settings.fireTarget || '';
+  document.getElementById('fireDate').value = DB.settings.fireDate || '';
+  openModal('fireGoalModal');
+}
+function saveFireGoal(){
+  DB.settings.fireTarget = parseFloat(document.getElementById('fireTarget').value)||0;
+  DB.settings.fireDate = document.getElementById('fireDate').value || '';
+  saveDB();
+  closeModal('fireGoalModal');
+  renderFireWidget();
+  showStatus('財富自由目標已儲存 ✓',2000);
+}
+function renderFireWidget(){
+  const el = document.getElementById('fireWidget');
+  if(!el) return;
+  const target = DB.settings.fireTarget||0;
+  const dateStr = DB.settings.fireDate||'';
+  const snap = calcTotalSnap();
+  const current = snap.total;
+
+  if(!target){
+    el.innerHTML = `<div class="empty" style="padding:20px 10px">尚未設定目標<br><button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="openFireGoal()">立即設定</button></div>`;
+    return;
+  }
+
+  const pct = Math.min(100, Math.max(0, (current/target)*100));
+  const remaining = Math.max(0, target-current);
+
+  let daysLeft = null, dateLabel = '';
+  if(dateStr){
+    const d = new Date(dateStr);
+    const now = new Date();
+    daysLeft = Math.ceil((d-now)/86400000);
+    dateLabel = dateStr;
+  }
+
+  const color = pct>=100?'var(--green)':pct>=70?'var(--teal)':pct>=40?'var(--blue)':'var(--amber)';
+
+  el.innerHTML = `
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="font-size:32px;font-weight:900;color:${color}">${pct.toFixed(1)}%</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">已達成目標</div>
+    </div>
+    <div class="prog-bar" style="height:10px;margin-bottom:10px">
+      <div class="prog-fill" style="width:${pct}%;background:${color}"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:14px">
+      <span>${fm(current)}</span>
+      <span style="color:var(--text3)">目標 ${fm(target)}</span>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
+      <div style="font-size:11px;color:var(--text3)">距離目標還差</div>
+      <div style="font-size:18px;font-weight:800;color:${remaining>0?'var(--amber)':'var(--green)'};margin-top:2px">${remaining>0?fm(remaining):'🎉 已達成！'}</div>
+    </div>
+    ${daysLeft!==null?`
+    <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center;margin-top:8px">
+      <div style="font-size:11px;color:var(--text3)">${daysLeft>=0?'距離目標日期':'已超過目標日期'}</div>
+      <div style="font-size:18px;font-weight:800;color:${daysLeft>=0?'var(--blue)':'var(--text3)'};margin-top:2px">${Math.abs(daysLeft)} 天</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px">${dateLabel}</div>
+    </div>`:''}
+  `;
+}
+
+// ── 投資獲利日曆熱力圖（GitHub風格）──────────────────────────
+function renderCalendarHeatmap(){
+  const sel = document.getElementById('calSel')?.value || 'total';
+  const hist = DB.history?.[sel] || {};
+  const wrap = document.getElementById('calHeatmapWrap');
+  if(!wrap) return;
+
+  const dates = Object.keys(hist).sort();
+  if(dates.length < 2){
+    wrap.innerHTML = '<div class="empty">每天按一次更新，累積快照後日曆會自動填滿</div>';
+    return;
+  }
+
+  // 計算每日漲跌 %
+  const dayChanges = {};
+  for(let i=1;i<dates.length;i++){
+    const prev = hist[dates[i-1]], cur = hist[dates[i]];
+    if(prev>0) dayChanges[dates[i]] = ((cur-prev)/prev)*100;
+  }
+
+  // 建立最近 ~ 12 週（84天）的日曆網格，週一為每列起點
+  const today = new Date(dates[dates.length-1]);
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - 83);
+  // 對齊到週一
+  const startDow = (startDate.getDay()+6)%7; // 0=Mon
+  startDate.setDate(startDate.getDate() - startDow);
+
+  const weeks = [];
+  let cur = new Date(startDate);
+  while(cur <= today){
+    const week = [];
+    for(let d=0; d<7; d++){
+      const dStr = cur.toISOString().slice(0,10);
+      week.push({date:dStr, change: dayChanges[dStr]});
+      cur.setDate(cur.getDate()+1);
+    }
+    weeks.push(week);
+  }
+
+  const cellColor = c => {
+    if(c===undefined) return 'rgba(255,255,255,0.03)';
+    if(c>0) return `rgba(0,229,160,${Math.min(0.85,0.15+Math.abs(c)*0.4)})`;
+    if(c<0) return `rgba(255,77,106,${Math.min(0.85,0.15+Math.abs(c)*0.4)})`;
+    return 'rgba(255,255,255,0.06)';
+  };
+
+  const dayLabels=['一','二','三','四','五','六','日'];
+  let html = '<div style="display:flex;gap:3px;min-width:max-content">';
+  // 星期標籤欄
+  html += '<div style="display:flex;flex-direction:column;gap:3px;margin-right:4px">';
+  dayLabels.forEach(l=>{ html += `<div style="width:16px;height:16px;font-size:9px;color:var(--text3);display:flex;align-items:center;justify-content:center">${l}</div>`; });
+  html += '</div>';
+  // 每週一列
+  weeks.forEach(week=>{
+    html += '<div style="display:flex;flex-direction:column;gap:3px">';
+    week.forEach(d=>{
+      const c = d.change;
+      const title = c!==undefined ? `${d.date}: ${c>=0?'+':''}${c.toFixed(2)}%` : d.date;
+      html += `<div title="${title}" style="width:16px;height:16px;border-radius:3px;background:${cellColor(c)};cursor:default"></div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // 統計
+  const changes = Object.values(dayChanges);
+  const upDays = changes.filter(c=>c>0).length;
+  const downDays = changes.filter(c=>c<0).length;
+  const bestDay = changes.length?Math.max(...changes):0;
+  const worstDay = changes.length?Math.min(...changes):0;
+
+  html += `<div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--text2);flex-wrap:wrap">
+    <span>📈 上漲 <strong style="color:var(--green)">${upDays}</strong> 天</span>
+    <span>📉 下跌 <strong style="color:var(--red)">${downDays}</strong> 天</span>
+    <span>🔥 最佳單日 <strong style="color:var(--green)">+${bestDay.toFixed(2)}%</strong></span>
+    <span>❄️ 最差單日 <strong style="color:var(--red)">${worstDay.toFixed(2)}%</strong></span>
+  </div>`;
+
+  wrap.innerHTML = html;
+}
+
 // ── RENDER ALL ────────────────────────────────────────────────
 function renderAll(){
   renderBanner();
@@ -1416,6 +1759,7 @@ function renderAll(){
   renderWaterfall();renderBubble();renderGauge();
   renderSankey();renderGrowthChart();
   renderDrawdown();
+  renderTreemap();renderFireWidget();renderCalendarHeatmap();
   renderRebalance();
   renderTrades();
   populateSelects();
@@ -1492,7 +1836,7 @@ function buildPortCard(p){
         }).join('')}
       </div>`:''}
 
-      <table class="hl-table">
+      <div style="overflow-x:auto"><table class="hl-table">
         <thead>
           <tr id="hl-hd-${p.id}">
             ${renderHoldingHeaders(p.id, targets)}
@@ -1508,7 +1852,7 @@ function buildPortCard(p){
             return`<tr>${renderHoldingCells(h, p.id, targets)}<td><button class="btn btn-xs btn-ghost" onclick="openTradeHistory('${p.id}','${h.ticker}')">記錄</button></td></tr>`;
           }).join('')}
         </tbody>
-      </table>` : `<div class="empty" style="padding:14px">尚無持倉。<button class="btn btn-sm btn-ghost" onclick="openAddTrade('','${p.id}')">+ 新增交易</button></div>`}
+      </table></div>` : `<div class="empty" style="padding:14px">尚無持倉。<button class="btn btn-sm btn-ghost" onclick="openAddTrade('','${p.id}')">+ 新增交易</button></div>`}
 
       <div style="display:flex;gap:6px;margin-top:10px;justify-content:flex-end">
         <button class="btn btn-xs btn-ghost" onclick="openTargetModal('${p.id}')">🎯 設定目標比例</button>
@@ -1709,7 +2053,7 @@ function renderLine(){
 
 function renderHeat(){
   const sel=document.getElementById('heatSel').value;
-  const hs=sel==='total'?getAllHoldings():getHoldings(sel);
+  const hs=sel==='total'?getIncludedHoldings():getHoldings(sel);
   const el=document.getElementById('heatmap');
   if(!hs.length){el.innerHTML='<div class="empty">無持倉資料</div>';return;}
   el.innerHTML=hs.map(h=>{
@@ -1978,13 +2322,17 @@ function populatePortSelect(id){
 function populateSelects(){
   populatePortSelect('tPortfolio');
   const portOpts='<option value="all">全部組合</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id} · ${p.name}</option>`).join('');
-  ['pieSel','lineSel','heatSel','txPortSel','wfTarget','gaugeSel','ddSel'].forEach(id=>{
+  // 視覺化圖表選單：統一規則
+  //   「全部」= 計入總資產的組合（A+B...）
+  //   個別 = 任一組合（A/B/C/D/E...），不論是否計入總資產
+  const vizOpts_total = '<option value="total">全部</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id}・${p.name}</option>`).join('');
+  const vizOpts_asset = '<option value="total">總資產</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id}・${p.name}</option>`).join('');
+  ['pieSel','lineSel','heatSel','txPortSel','wfTarget','gaugeSel','ddSel','treemapSel','calSel'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const prev=el.value;
-    if(id==='pieSel')el.innerHTML='<option value="total">全部</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id}</option>`).join('');
-    else if(id==='lineSel')el.innerHTML='<option value="total">總資產</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id}</option>`).join('');
-    else if(id==='heatSel')el.innerHTML='<option value="total">全部</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id}</option>`).join('');
-    else el.innerHTML=portOpts;
+    if(id==='txPortSel') el.innerHTML=portOpts;
+    else if(id==='lineSel'||id==='ddSel'||id==='calSel') el.innerHTML=vizOpts_asset;
+    else el.innerHTML=vizOpts_total;
     if(prev&&el.querySelector(`option[value="${prev}"]`))el.value=prev;
   });
   const allTickers=[...new Set(DB.trades.map(t=>t.ticker))];
@@ -2002,13 +2350,18 @@ function showStatus(msg,dur){
   el.textContent=msg;el.classList.add('show');
   if(dur)setTimeout(()=>el.classList.remove('show'),dur);
 }
-function closeSetupAlert(){document.getElementById('setupAlert').style.display='none';}
+function closeSetupAlert(){
+  document.getElementById('setupAlert').style.display='none';
+  try{ localStorage.setItem('inv_hideSetupAlert','1'); }catch(e){}
+}
 
 // ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',()=>{
   loadDB();
   if(!DB.settings.firebaseUrl && !DB.trades.length){
-    document.getElementById('setupAlert').style.display='block';
+    let hideAlert=false;
+    try{ hideAlert = localStorage.getItem('inv_hideSetupAlert')==='1'; }catch(e){}
+    if(!hideAlert) document.getElementById('setupAlert').style.display='block';
     renderAll();
   } else if(DB.settings.firebaseUrl){
     showLoadingOverlay(true);
