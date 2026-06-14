@@ -2166,13 +2166,16 @@ function renderPie(){
         legend:{display:false},
         tooltip:{callbacks:{label:c=>` ${c.label}: ${fm(c.raw)} (${total>0?(c.raw/total*100).toFixed(1):'0'}%)`}},
         datalabels:{
+          display:(ctx)=>{
+            if(total<=0) return false;
+            const pct=(ctx.dataset.data[ctx.dataIndex]/total*100);
+            return pct >= 4; // 太小不顯示避免擠
+          },
           color:'#fff',
           font:{weight:'700',size:11},
           textAlign:'center',
           formatter:(val,ctx)=>{
-            if(total<=0) return '';
             const pct=(val/total*100);
-            if(pct < 4) return ''; // 太小不顯示避免擠
             return ctx.chart.data.labels[ctx.dataIndex] + '\n' + pct.toFixed(1)+'%';
           },
           textShadowBlur:4, textShadowColor:'rgba(0,0,0,.6)',
