@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>投資觀測面板</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <style>
 :root{
   --bg:#0d0f1a;--bg2:#13162a;--bg3:#1a1e35;--card:#181c30;
@@ -249,6 +250,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 <div class="nav">
   <div class="logo">投資<em>觀測</em>面板</div>
   <div class="nav-btns">
+    <span id="nonTradingBadge" style="display:none;background:rgba(255,184,77,.12);color:var(--amber);padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600" title="台股/美股皆休市，今日漲跌% 為上一交易日數據">📅 非交易日，數據為上次收盤</span>
     <span style="background:rgba(0,229,160,.12);color:var(--green);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700" id="fxBadge">USD/TWD --</span>
     <span class="last-upd" id="lastUpd" title="台股盤中≈15分鐘延遲（TWSE官方），美股盤中≈15分鐘（Yahoo Finance），盤後近即時，匯率每小時更新">尚未更新 · ⓘ延遲≈15分</span>
     <button class="btn btn-primary" id="btnRef" onclick="refreshAll()"><span id="refIcon">↻</span> 更新</button>
@@ -275,7 +277,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
     </div>
     <div class="banner-metrics" id="bannerMetrics">
       <div class="bm-item"><div class="bm-lbl">今日損益</div><div class="bm-val" id="bmDay">--</div></div>
-      <div class="bm-item"><div class="bm-lbl">總損益</div><div class="bm-val" id="bmTotal">--</div></div>
+      <div class="bm-item"><div class="bm-lbl">今日損益%</div><div class="bm-val" id="bmTotal">--</div></div>
       <div class="bm-item"><div class="bm-lbl">已實現損益</div><div class="bm-val" id="bmRealized">--</div></div>
       <div class="bm-item"><div class="bm-lbl">計入組合</div><div class="bm-val" id="bmPortCount">--</div></div>
     </div>
@@ -296,7 +298,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
           <option value="total">全部</option>
         </select>
       </div>
-      <div class="chart-wrap ch240"><canvas id="pieC" role="img" aria-label="資產配置圓餅圖">資產配置</canvas></div>
+      <div class="chart-wrap ch240" style="cursor:zoom-in" onclick="enlargeChart('pie','資產配置')"><canvas id="pieC" role="img" aria-label="資產配置圓餅圖">資產配置</canvas></div>
       <div id="pieLeg" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;font-size:10px"></div>
     </div>
 
@@ -316,7 +318,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
           </div>
         </div>
       </div>
-      <div class="chart-wrap ch240"><canvas id="lineC" role="img" aria-label="淨值走勢折線圖">淨值走勢</canvas></div>
+      <div class="chart-wrap ch240" style="cursor:zoom-in" onclick="enlargeChart('line','淨值走勢')"><canvas id="lineC" role="img" aria-label="淨值走勢折線圖">淨值走勢</canvas></div>
     </div>
   </div>
 
@@ -346,7 +348,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
           <option value="365" selected>年初至今</option>
         </select>
       </div>
-      <div class="chart-wrap ch260"><canvas id="barC" role="img" aria-label="組合報酬比較">組合報酬比較</canvas></div>
+      <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('bar','各組合報酬比較')"><canvas id="barC" role="img" aria-label="組合報酬比較">組合報酬比較</canvas></div>
     </div>
   </div>
 
@@ -360,7 +362,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
           <option value="total">全部</option>
         </select>
       </div>
-      <div class="chart-wrap ch260"><canvas id="wfChart" role="img" aria-label="損益瀑布圖">損益瀑布</canvas></div>
+      <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('waterfall','損益瀑布圖')"><canvas id="wfChart" role="img" aria-label="損益瀑布圖">損益瀑布</canvas></div>
     </div>
     <!-- Bubble chart: risk vs return -->
     <div class="card">
@@ -368,7 +370,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
         <div class="card-title">🫧 風險報酬泡泡圖</div>
         <div style="font-size:10px;color:var(--text3)">氣泡大小 = 市值</div>
       </div>
-      <div class="chart-wrap ch260"><canvas id="bubbleChart" role="img" aria-label="風險報酬泡泡圖">風險報酬</canvas></div>
+      <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('bubble','風險報酬泡泡圖')"><canvas id="bubbleChart" role="img" aria-label="風險報酬泡泡圖">風險報酬</canvas></div>
     </div>
     <!-- Gauge: overall pnl -->
     <div class="card">
@@ -378,7 +380,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
           <option value="total">全部組合</option>
         </select>
       </div>
-      <div class="chart-wrap ch260"><canvas id="gaugeChart" role="img" aria-label="投資組合健康度">健康度</canvas></div>
+      <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('gauge','投資組合健康度')"><canvas id="gaugeChart" role="img" aria-label="投資組合健康度">健康度</canvas></div>
       <div id="gaugeStats" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;justify-content:center;font-size:11px"></div>
     </div>
   </div>
@@ -394,7 +396,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
           <option value="total">全部</option>
         </select>
       </div>
-      <div id="treemapWrap" class="treemap-wrap" style="position:relative;width:100%;height:280px;border-radius:8px;overflow:hidden"></div>
+      <div id="treemapWrap" class="treemap-wrap" style="position:relative;width:100%;height:280px;border-radius:8px;overflow:hidden;cursor:zoom-in" onclick="enlargeHtml('treemapWrap','資產市值權重熱力圖',renderTreemap)"></div>
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:8px">
         <span>方塊大小＝市值佔比　顏色＝今日漲跌</span>
         <span><span style="color:var(--red)">●</span>跌 <span style="color:var(--text2)">●</span>平 <span style="color:var(--green)">●</span>漲</span>
@@ -418,7 +420,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
         <option value="total">總資產</option>
       </select>
     </div>
-    <div id="calHeatmapWrap" style="overflow-x:auto"></div>
+    <div id="calHeatmapWrap" style="overflow-x:auto;cursor:zoom-in" onclick="enlargeHtml('calHeatmapWrap','投資獲利日曆熱力圖',renderCalendarHeatmap)"></div>
     <div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:10px;color:var(--text3);justify-content:flex-end">
       跌
       <span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:rgba(255,77,106,.6)"></span>
@@ -436,7 +438,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
         <div class="card-title">🌊 資金流向圖</div>
         <div style="font-size:10px;color:var(--text3)">總資產 → 組合 → 個股</div>
       </div>
-      <div id="sankeyChart" style="width:100%;height:280px;overflow:hidden"></div>
+      <div id="sankeyChart" style="width:100%;height:280px;overflow:hidden;cursor:zoom-in" onclick="enlargeHtml('sankeyChart','資金流向圖',renderSankey)"></div>
     </div>
     <!-- 累積報酬曲線 -->
     <div class="card">
@@ -449,7 +451,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
           <button class="ptab" onclick="setGrowthP('1Y',this)">1Y</button>
         </div>
       </div>
-      <div class="chart-wrap ch260"><canvas id="growthChart" role="img" aria-label="累積報酬曲線">累積報酬</canvas></div>
+      <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('growth','各組合累積報酬曲線')"><canvas id="growthChart" role="img" aria-label="累積報酬曲線">累積報酬</canvas></div>
     </div>
   </div>
 
@@ -469,8 +471,19 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
         </div>
       </div>
     </div>
-    <div class="chart-wrap ch260"><canvas id="ddChart" role="img" aria-label="最大回撤圖">最大回撤</canvas></div>
+    <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('drawdown','最大回撤圖')"><canvas id="ddChart" role="img" aria-label="最大回撤圖">最大回撤</canvas></div>
     <div id="ddStats" style="display:flex;flex-wrap:wrap;gap:20px;margin-top:12px;font-size:11px;padding:0 4px"></div>
+  </div>
+
+  <!-- MONTHLY RETURNS CHART -->
+  <div class="card mb20">
+    <div class="card-hd">
+      <div class="card-title">📆 月份報酬圖</div>
+      <select id="monthSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderMonthlyReturns()">
+        <option value="total">總資產</option>
+      </select>
+    </div>
+    <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('month','月份報酬圖')"><canvas id="monthChart" role="img" aria-label="月份報酬圖">月份報酬</canvas></div>
   </div>
 
   <!-- REBALANCE SECTION -->
@@ -618,6 +631,17 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
   </div>
 </div>
 
+<!-- ENLARGE CHART MODAL -->
+<div class="modal-bg" id="enlargeModal" onclick="if(event.target===this)closeModal('enlargeModal')">
+  <div class="modal" style="max-width:92vw;width:900px;padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="modal-title" id="enlargeTitle" style="margin-bottom:0"></div>
+      <button class="btn btn-sm btn-ghost" onclick="closeModal('enlargeModal')">✕ 關閉</button>
+    </div>
+    <div id="enlargeBody" style="width:100%;min-height:60vh;display:flex;align-items:center;justify-content:center"></div>
+  </div>
+</div>
+
 <!-- FIRE GOAL MODAL -->
 <div class="modal-bg" id="fireGoalModal">
   <div class="modal" style="max-width:380px">
@@ -647,6 +671,15 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
       <div class="frow"><label class="flbl">USD/TWD 匯率</label><input type="number" class="finput" id="sRate" placeholder="32" step="0.01"></div>
       <div class="frow"><label class="flbl">顯示幣別</label><select class="fselect" id="sCur"><option value="TWD">台幣 TWD</option><option value="USD">美元 USD</option></select></div>
     </div>
+    <hr style="border-color:var(--border);margin:14px 0">
+    <div class="frow">
+      <label class="flbl">📊 歷史快照管理（修正/刪除單日資料）</label>
+      <div style="display:flex;gap:8px">
+        <select class="fselect" id="sHistDate" style="flex:1"></select>
+        <button class="btn btn-sm btn-danger" onclick="deleteHistorySnapshot()">刪除該日</button>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px">每天按「更新」會自動記錄當日總資產快照。若某天數字異常，可在此刪除該筆，圖表會自動跳過。</div>
+    </div>
     <div class="frow"><button class="btn btn-danger btn-sm" onclick="if(confirm('確定清除全部資料？'))clearAll()">清除全部資料</button></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeModal('settingsModal')">取消</button>
@@ -656,6 +689,12 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 </div>
 
 <script>
+// 全域關閉 datalabels（避免影響其他圖表），pie 圖會單獨開啟
+if(window.Chart && window.ChartDataLabels){
+  Chart.register(ChartDataLabels);
+  Chart.defaults.set('plugins.datalabels', { display:false });
+}
+
 // ── DATA ──────────────────────────────────────────────────────
 var DB = {
   portfolios: [
@@ -668,6 +707,11 @@ var DB = {
   settings: {usdRate:32, displayCurrency:'TWD', firebaseUrl:''}
 };
 var prices = {};
+// 開啟時先載入上次快取的股價，避免顯示成本價（差距過大）
+try{
+  const cached = localStorage.getItem('inv_prices_cache');
+  if(cached) prices = JSON.parse(cached) || {};
+}catch(e){}
 var charts = {};
 var linePeriod = '1M';
 var _editTargetPortId = null;
@@ -949,6 +993,9 @@ async function refreshAll(){
       });
       saveDB();
     }
+
+    // 快取最新股價，下次開啟先顯示這份避免顯示舊成本
+    try{ localStorage.setItem('inv_prices_cache', JSON.stringify(prices)); }catch(e){}
 
     const fxStr = fxRate ? `USD/TWD ${fxRate.toFixed(2)}` : '';
     document.getElementById('lastUpd').textContent =
@@ -1751,8 +1798,103 @@ function renderCalendarHeatmap(){
   wrap.innerHTML = html;
 }
 
+
+// ── 非交易日偵測（週末提示）──────────────────────────────────
+function checkNonTradingDay(){
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun, 6=Sat
+  const badge = document.getElementById('nonTradingBadge');
+  if(!badge) return;
+  badge.style.display = (day===0 || day===6) ? 'inline-block' : 'none';
+}
+
+// ── 月份報酬圖 ────────────────────────────────────────────────
+function renderMonthlyReturns(){
+  dc('month');
+  const sel = document.getElementById('monthSel')?.value || 'total';
+  const hist = DB.history?.[sel] || {};
+  const dates = Object.keys(hist).sort();
+  if(dates.length < 2){
+    const ctx = document.getElementById('monthChart')?.getContext('2d');
+    if(ctx) charts['month']=new Chart(ctx,{type:'bar',data:{labels:['資料不足，需累積每日快照'],datasets:[{data:[0],backgroundColor:'#5b8ff9'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#484e72'}},y:{ticks:{color:'#484e72'}}}}});
+    return;
+  }
+  // 依年月分組，取每月最後一筆 vs 上月最後一筆
+  const monthly = {}; // 'YYYY-MM' -> {first, last}
+  dates.forEach(d=>{
+    const ym = d.slice(0,7);
+    if(!monthly[ym]) monthly[ym] = {first:hist[d], last:hist[d]};
+    monthly[ym].last = hist[d];
+  });
+  const months = Object.keys(monthly).sort();
+  const labels = [];
+  const data = [];
+  let prevLast = null;
+  months.forEach(ym=>{
+    const m = monthly[ym];
+    const base = prevLast!==null ? prevLast : m.first;
+    const ret = base>0 ? ((m.last-base)/base*100) : 0;
+    labels.push(ym);
+    data.push(parseFloat(ret.toFixed(2)));
+    prevLast = m.last;
+  });
+
+  const colors = data.map(v=>v>=0?'#00e5a0':'#ff4d6a');
+  const ctx = document.getElementById('monthChart')?.getContext('2d');
+  if(!ctx) return;
+  charts['month'] = new Chart(ctx,{
+    type:'bar',
+    data:{ labels, datasets:[{ data, backgroundColor:colors, borderRadius:5 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw>=0?'+':''}${c.raw}%`}}
+      },
+      scales:{
+        x:{ticks:{color:'#7e87b8',font:{size:10}}},
+        y:{ticks:{color:'#7e87b8',callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+
+// ── 圖表放大 ─────────────────────────────────────────────────
+// Chart.js 圖表：用 toBase64Image 顯示大圖（保留互動性差，但清晰放大）
+function enlargeChart(chartKey, title){
+  const chart = charts[chartKey];
+  const body = document.getElementById('enlargeBody');
+  document.getElementById('enlargeTitle').textContent = title || '';
+  if(!chart){ body.innerHTML='<div class="empty">圖表尚未載入</div>'; openModal('enlargeModal'); return; }
+  const img = chart.toBase64Image('image/png', 1);
+  body.innerHTML = `<img src="${img}" style="max-width:100%;max-height:75vh;object-fit:contain">`;
+  openModal('enlargeModal');
+}
+
+// HTML/SVG 圖表（treemap、sankey、calendar）：放大顯示（重新渲染以符合大尺寸）
+function enlargeHtml(elId, title, renderFn){
+  const body = document.getElementById('enlargeBody');
+  document.getElementById('enlargeTitle').textContent = title || '';
+  body.innerHTML = `<div id="${elId}_modal" style="width:100%;min-height:420px;position:relative;border-radius:8px;overflow:hidden"></div>`;
+  openModal('enlargeModal');
+  if(renderFn){
+    // 暫時把渲染目標指向 modal 內的容器
+    const orig = document.getElementById(elId);
+    const modalEl = document.getElementById(elId+'_modal');
+    const origId = elId, modalId = elId+'_modal';
+    if(orig) orig.id = origId+'_hidden';
+    modalEl.id = origId;
+    try{ renderFn(); }catch(e){ console.warn(e); }
+    // 還原 id，並重新渲染原本位置
+    modalEl.id = modalId;
+    if(orig){ orig.id = origId; renderFn(); }
+  }
+}
+
 // ── RENDER ALL ────────────────────────────────────────────────
 function renderAll(){
+  checkNonTradingDay();
   renderBanner();
   renderPortfolios();
   renderPie();renderLine();renderHeat();renderBar();
@@ -1760,6 +1902,7 @@ function renderAll(){
   renderSankey();renderGrowthChart();
   renderDrawdown();
   renderTreemap();renderFireWidget();renderCalendarHeatmap();
+  renderMonthlyReturns();
   renderRebalance();
   renderTrades();
   populateSelects();
@@ -1771,7 +1914,9 @@ function renderBanner(){
   document.getElementById('totalVal').textContent=fm(s.total);
   document.getElementById('totalSub').innerHTML=`成本 ${fm(s.cost)}　損益 <span style="color:${s.pnl>=0?'var(--green)':'var(--red)'}">${s.pnl>=0?'+':''}${fm(s.pnl)} (${fp(s.pnlPct)})</span>`;
   document.getElementById('bmDay').innerHTML=`<span style="color:${s.dayPnl>=0?'var(--green)':'var(--red)'}">${s.dayPnl>=0?'+':''}${fm(s.dayPnl)}</span>`;
-  document.getElementById('bmTotal').innerHTML=`<span style="color:${s.pnl>=0?'var(--green)':'var(--red)'}">${fp(s.pnlPct)}</span>`;
+  const yestTotal = s.total - s.dayPnl;
+  const dayPnlPct = yestTotal>0 ? (s.dayPnl/yestTotal*100) : 0;
+  document.getElementById('bmTotal').innerHTML=`<span style="color:${dayPnlPct>=0?'var(--green)':'var(--red)'}">${fp(dayPnlPct)}</span>`;
   document.getElementById('bmRealized').innerHTML=`<span style="color:${s.realizedTotal>=0?'var(--green)':'var(--red)'}">${fm(s.realizedTotal)}</span>`;
   document.getElementById('bmPortCount').textContent=`${DB.portfolios.filter(p=>p.included).length}/${DB.portfolios.length}`;
 }
@@ -2015,7 +2160,20 @@ function renderPie(){
   charts['pie']=new Chart(ctx,{
     type:'doughnut',
     data:{labels:items.map(it=>it.label),datasets:[{data:items.map(it=>it.val),backgroundColor:items.map(it=>it.color),borderColor:'#181c30',borderWidth:2,hoverOffset:5}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${fm(c.raw)} (${total>0?(c.raw/total*100).toFixed(1):'0'}%)`}}}}
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'58%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ${fm(c.raw)} (${total>0?(c.raw/total*100).toFixed(1):'0'}%)`}},
+        datalabels:{
+          color:'#fff',
+          font:{weight:'700',size:11},
+          formatter:(val)=> total>0 ? (val/total*100).toFixed(1)+'%' : '',
+          textShadowBlur:4, textShadowColor:'rgba(0,0,0,.6)',
+          display:(ctx)=> (ctx.dataset.data[ctx.dataIndex]/total*100) >= 3 // 太小的不顯示避免擠
+        }
+      }
+    }
   });
   document.getElementById('pieLeg').innerHTML=items.map(it=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:${it.color}"></span><span style="color:var(--text2)">${it.label} ${total>0?(it.val/total*100).toFixed(1):'0'}%</span></span>`).join('');
 }
@@ -2298,7 +2456,38 @@ function openSettings(){
   document.getElementById('sFbUrl').value=DB.settings.firebaseUrl||'';
   document.getElementById('sRate').value=DB.settings.usdRate||32;
   document.getElementById('sCur').value=DB.settings.displayCurrency||'TWD';
+  populateHistDateSelect();
   openModal('settingsModal');
+}
+
+// ── 歷史快照管理 ──────────────────────────────────────────────
+function populateHistDateSelect(){
+  const sel = document.getElementById('sHistDate');
+  if(!sel) return;
+  const dates = Object.keys(DB.history?.total || {}).sort().reverse();
+  if(!dates.length){
+    sel.innerHTML = '<option value="">尚無歷史快照</option>';
+    return;
+  }
+  sel.innerHTML = dates.map(d=>{
+    const val = DB.history.total[d];
+    return `<option value="${d}">${d} — 總資產 ${fm(val)}</option>`;
+  }).join('');
+}
+function deleteHistorySnapshot(){
+  const sel = document.getElementById('sHistDate');
+  const date = sel?.value;
+  if(!date){ showStatus('沒有可刪除的快照',2000); return; }
+  if(!confirm(`確定刪除 ${date} 這一天的所有快照資料？`)) return;
+  // 刪除 total 及所有組合的該日資料
+  if(DB.history?.total) delete DB.history.total[date];
+  DB.portfolios.forEach(p=>{
+    if(DB.history?.[p.id]) delete DB.history[p.id][date];
+  });
+  saveDB();
+  populateHistDateSelect();
+  renderAll();
+  showStatus(`✅ 已刪除 ${date} 的快照`,2500);
 }
 function saveSettings(){
   DB.settings.firebaseUrl=document.getElementById('sFbUrl').value.trim();
@@ -2327,11 +2516,11 @@ function populateSelects(){
   //   個別 = 任一組合（A/B/C/D/E...），不論是否計入總資產
   const vizOpts_total = '<option value="total">全部</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id}・${p.name}</option>`).join('');
   const vizOpts_asset = '<option value="total">總資產</option>'+DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id}・${p.name}</option>`).join('');
-  ['pieSel','lineSel','heatSel','txPortSel','wfTarget','gaugeSel','ddSel','treemapSel','calSel'].forEach(id=>{
+  ['pieSel','lineSel','heatSel','txPortSel','wfTarget','gaugeSel','ddSel','treemapSel','calSel','monthSel'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const prev=el.value;
     if(id==='txPortSel') el.innerHTML=portOpts;
-    else if(id==='lineSel'||id==='ddSel'||id==='calSel') el.innerHTML=vizOpts_asset;
+    else if(id==='lineSel'||id==='ddSel'||id==='calSel'||id==='monthSel') el.innerHTML=vizOpts_asset;
     else el.innerHTML=vizOpts_total;
     if(prev&&el.querySelector(`option[value="${prev}"]`))el.value=prev;
   });
