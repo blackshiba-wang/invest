@@ -12,6 +12,7 @@
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
   --text:#dde2f5;--text2:#7e87b8;--text3:#484e72;
   --green:#00e5a0;--red:#ff4d6a;--blue:#5b8ff9;--purple:#a370f7;
+  --gain:#ff4d6a;--loss:#00e5a0; /* 台股慣例：漲(賺)=紅, 跌(賠)=綠 */
   --amber:#ffb84d;--teal:#00d4c2;--pink:#f06292;
   --r:12px;--rsm:8px;
 }
@@ -67,6 +68,8 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.4px}
 .b-green{background:rgba(0,229,160,.12);color:var(--green)}
 .b-red{background:rgba(255,77,106,.12);color:var(--red)}
+.b-gain{background:rgba(255,77,106,.12);color:var(--gain)}
+.b-loss{background:rgba(0,229,160,.12);color:var(--loss)}
 .b-blue{background:rgba(91,143,249,.12);color:var(--blue)}
 .b-amber{background:rgba(255,184,77,.12);color:var(--amber)}
 .b-purple{background:rgba(163,112,247,.12);color:var(--purple)}
@@ -299,7 +302,6 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
         </select>
       </div>
       <div class="chart-wrap ch240" style="cursor:zoom-in" onclick="enlargeChart('pie','資產配置')"><canvas id="pieC" role="img" aria-label="資產配置圓餅圖">資產配置</canvas></div>
-      <div id="pieLeg" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;font-size:10px"></div>
     </div>
 
     <!-- Line -->
@@ -399,7 +401,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
       <div id="treemapWrap" class="treemap-wrap" style="position:relative;width:100%;height:280px;border-radius:8px;overflow:hidden;cursor:zoom-in" onclick="enlargeHtml('treemapWrap','資產市值權重熱力圖',renderTreemap)"></div>
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:8px">
         <span>方塊大小＝市值佔比　顏色＝今日漲跌</span>
-        <span><span style="color:var(--red)">●</span>跌 <span style="color:var(--text2)">●</span>平 <span style="color:var(--green)">●</span>漲</span>
+        <span><span style="color:var(--loss)">●</span>跌 <span style="color:var(--text2)">●</span>平 <span style="color:var(--gain)">●</span>漲</span>
       </div>
     </div>
     <!-- 財富自由進度 -->
@@ -1099,11 +1101,11 @@ const ALL_COLS = [
   {id:'totalCost', label:'總成本',    render:(h)=>`<td>${fm(h.totalCost)}</td>`},
   {id:'avgCost',   label:'均成本/股', render:(h)=>`<td>${h.cost.toFixed(2)}</td>`},
   {id:'price',     label:'現價',      render:(h)=>`<td>${prices[h.ticker]?prices[h.ticker].price.toFixed(2):'--'}</td>`},
-  {id:'dayPct',    label:'今日%',     render:(h)=>`<td style="color:${h.hv.changePct>=0?'var(--green)':'var(--red)'}">${prices[h.ticker]?fp(h.hv.changePct):'--'}</td>`},
-  {id:'dayGain',   label:'今日損益',  render:(h)=>`<td style="color:${(h.hv.dayPnl||0)>=0?'var(--green)':'var(--red)'}">${prices[h.ticker]?(h.hv.dayPnl>=0?'+':'')+fm(h.hv.dayPnl):'--'}</td>`},
+  {id:'dayPct',    label:'今日%',     render:(h)=>`<td style="color:${h.hv.changePct>=0?'var(--gain)':'var(--loss)'}">${prices[h.ticker]?fp(h.hv.changePct):'--'}</td>`},
+  {id:'dayGain',   label:'今日損益',  render:(h)=>`<td style="color:${(h.hv.dayPnl||0)>=0?'var(--gain)':'var(--loss)'}">${prices[h.ticker]?(h.hv.dayPnl>=0?'+':'')+fm(h.hv.dayPnl):'--'}</td>`},
   {id:'mktVal',    label:'市值',      render:(h)=>`<td>${fm(h.hv.mktVal)}</td>`},
-  {id:'pnl',       label:'損益金額',  render:(h)=>`<td style="color:${h.hv.pnl>=0?'var(--green)':'var(--red)'}">${(h.hv.pnl>=0?'+':'')+fm(h.hv.pnl)}</td>`},
-  {id:'pnlPct',    label:'損益%',     render:(h)=>`<td style="color:${h.hv.pnlPct>=0?'var(--green)':'var(--red)'}">${fp(h.hv.pnlPct)}</td>`},
+  {id:'pnl',       label:'損益金額',  render:(h)=>`<td style="color:${h.hv.pnl>=0?'var(--gain)':'var(--loss)'}">${(h.hv.pnl>=0?'+':'')+fm(h.hv.pnl)}</td>`},
+  {id:'pnlPct',    label:'損益%',     render:(h)=>`<td style="color:${h.hv.pnlPct>=0?'var(--gain)':'var(--loss)'}">${fp(h.hv.pnlPct)}</td>`},
   {id:'weight',    label:'佔比',      render:(h)=>`<td style="color:var(--text2)">${h.curPct.toFixed(1)}%</td>`},
   {id:'target',    label:'目標偏移',  render:(h,t)=>`<td>${h.tgt!==null?`<span class="dev-badge" style="background:${Math.abs(h.dev||0)<=2?'rgba(0,229,160,.15)':h.dev>2?'rgba(255,77,106,.15)':'rgba(255,184,77,.15)'};color:${Math.abs(h.dev||0)<=2?'var(--green)':h.dev>2?'var(--red)':'var(--amber)'};">${h.dev>=0?'+':''}${(h.dev||0).toFixed(1)}%</span>`:'--'}</td>`},
   {id:'ma5',       label:'5日均價',   render:(h)=>{const p=prices[h.ticker];return`<td style="color:var(--text2)">${p?.ma5?p.ma5.toFixed(2):'--'}</td>`;}},
@@ -1190,7 +1192,7 @@ function renderWaterfall(){
   })).sort((a,b)=>b.pnl-a.pnl);
   const labels = items.map(it=>it.ticker);
   const data = items.map(it=>it.pnl);
-  const colors = data.map(v=>v>=0?'rgba(0,229,160,0.8)':'rgba(255,77,106,0.8)');
+  const colors = data.map(v=>v>=0?'rgba(255,77,106,0.8)':'rgba(0,229,160,0.8)');
   const ctx = document.getElementById('wfChart')?.getContext('2d');
   if(!ctx) return;
   charts['waterfall'] = new Chart(ctx,{
@@ -1317,7 +1319,7 @@ function renderGauge(){
   if(statsEl) statsEl.innerHTML = [
     {l:'正獲利標的', v:`${positiveCount}/${hs.length}`, c:positiveScore>=60?'var(--green)':'var(--amber)'},
     {l:'分散檔數',   v:hs.length+'檔',                  c:'var(--text2)'},
-    {l:'總報酬',     v:fp(pnlPct),                      c:pnlPct>=0?'var(--green)':'var(--red)'},
+    {l:'總報酬',     v:fp(pnlPct),                      c:pnlPct>=0?'var(--gain)':'var(--loss)'},
     {l:'查看',       v:portLabel,                       c:'var(--text3)'},
   ].map(s=>`<div style="text-align:center"><div style="color:var(--text3);font-size:10px">${s.l}</div><div style="font-weight:700;color:${s.c};font-size:11px">${s.v}</div></div>`).join('');
 }
@@ -1470,7 +1472,7 @@ function renderDrawdown(){
   const allDates = Object.keys(hist).sort();
   if(allDates.length < 3){
     const ctx = document.getElementById('ddChart')?.getContext('2d');
-    if(ctx){ charts['drawdown']=new Chart(ctx,{type:'line',data:{labels:['資料不足，需累積更多每日快照'],datasets:[{data:[0],borderColor:'#ff4d6a',tension:.4,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#484e72'}},y:{ticks:{color:'#484e72'}}}}});}
+    if(ctx){ charts['drawdown']=new Chart(ctx,{type:'line',data:{labels:['資料不足，需累積更多每日快照'],datasets:[{data:[0],borderColor:'#00e5a0',tension:.4,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#484e72'}},y:{ticks:{color:'#484e72'}}}}});}
     const statsEl=document.getElementById('ddStats');
     if(statsEl) statsEl.innerHTML='<span style="color:var(--text3)">每天按一次更新，累積快照後圖表會自動完整</span>';
     return;
@@ -1522,8 +1524,8 @@ function renderDrawdown(){
       datasets: [{
         label: '回撤 %',
         data: drawdowns,
-        borderColor: '#ff4d6a',
-        backgroundColor: 'rgba(255,77,106,0.12)',
+        borderColor: '#00e5a0',
+        backgroundColor: 'rgba(0,229,160,0.12)',
         fill: true,
         tension: 0.3,
         pointRadius: 0,
@@ -1627,8 +1629,8 @@ function renderTreemap(){
 
   const boxes = layout(items, 0, 0, W, H);
   const colors_treemap = c => {
-    if(c>0.05) return `rgba(0,229,160,${Math.min(0.85, 0.25+Math.abs(c)/4)})`;
-    if(c<-0.05) return `rgba(255,77,106,${Math.min(0.85, 0.25+Math.abs(c)/4)})`;
+    if(c>0.05) return `rgba(255,77,106,${Math.min(0.85, 0.25+Math.abs(c)/4)})`;
+    if(c<-0.05) return `rgba(0,229,160,${Math.min(0.85, 0.25+Math.abs(c)/4)})`;
     return 'rgba(255,255,255,0.06)';
   };
 
@@ -1758,8 +1760,8 @@ function renderCalendarHeatmap(){
 
   const cellColor = c => {
     if(c===undefined) return 'rgba(255,255,255,0.03)';
-    if(c>0) return `rgba(0,229,160,${Math.min(0.85,0.15+Math.abs(c)*0.4)})`;
-    if(c<0) return `rgba(255,77,106,${Math.min(0.85,0.15+Math.abs(c)*0.4)})`;
+    if(c>0) return `rgba(255,77,106,${Math.min(0.85,0.15+Math.abs(c)*0.4)})`;
+    if(c<0) return `rgba(0,229,160,${Math.min(0.85,0.15+Math.abs(c)*0.4)})`;
     return 'rgba(255,255,255,0.06)';
   };
 
@@ -1789,10 +1791,10 @@ function renderCalendarHeatmap(){
   const worstDay = changes.length?Math.min(...changes):0;
 
   html += `<div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--text2);flex-wrap:wrap">
-    <span>📈 上漲 <strong style="color:var(--green)">${upDays}</strong> 天</span>
-    <span>📉 下跌 <strong style="color:var(--red)">${downDays}</strong> 天</span>
-    <span>🔥 最佳單日 <strong style="color:var(--green)">+${bestDay.toFixed(2)}%</strong></span>
-    <span>❄️ 最差單日 <strong style="color:var(--red)">${worstDay.toFixed(2)}%</strong></span>
+    <span>📈 上漲 <strong style="color:var(--gain)">${upDays}</strong> 天</span>
+    <span>📉 下跌 <strong style="color:var(--loss)">${downDays}</strong> 天</span>
+    <span>🔥 最佳單日 <strong style="color:var(--gain)">+${bestDay.toFixed(2)}%</strong></span>
+    <span>❄️ 最差單日 <strong style="color:var(--loss)">${worstDay.toFixed(2)}%</strong></span>
   </div>`;
 
   wrap.innerHTML = html;
@@ -1839,7 +1841,7 @@ function renderMonthlyReturns(){
     prevLast = m.last;
   });
 
-  const colors = data.map(v=>v>=0?'#00e5a0':'#ff4d6a');
+  const colors = data.map(v=>v>=0?'#ff4d6a':'#00e5a0');
   const ctx = document.getElementById('monthChart')?.getContext('2d');
   if(!ctx) return;
   charts['month'] = new Chart(ctx,{
@@ -1912,12 +1914,12 @@ function renderAll(){
 function renderBanner(){
   const s=calcTotalSnap();
   document.getElementById('totalVal').textContent=fm(s.total);
-  document.getElementById('totalSub').innerHTML=`成本 ${fm(s.cost)}　損益 <span style="color:${s.pnl>=0?'var(--green)':'var(--red)'}">${s.pnl>=0?'+':''}${fm(s.pnl)} (${fp(s.pnlPct)})</span>`;
-  document.getElementById('bmDay').innerHTML=`<span style="color:${s.dayPnl>=0?'var(--green)':'var(--red)'}">${s.dayPnl>=0?'+':''}${fm(s.dayPnl)}</span>`;
+  document.getElementById('totalSub').innerHTML=`成本 ${fm(s.cost)}　損益 <span style="color:${s.pnl>=0?'var(--gain)':'var(--loss)'}">${s.pnl>=0?'+':''}${fm(s.pnl)} (${fp(s.pnlPct)})</span>`;
+  document.getElementById('bmDay').innerHTML=`<span style="color:${s.dayPnl>=0?'var(--gain)':'var(--loss)'}">${s.dayPnl>=0?'+':''}${fm(s.dayPnl)}</span>`;
   const yestTotal = s.total - s.dayPnl;
   const dayPnlPct = yestTotal>0 ? (s.dayPnl/yestTotal*100) : 0;
-  document.getElementById('bmTotal').innerHTML=`<span style="color:${dayPnlPct>=0?'var(--green)':'var(--red)'}">${fp(dayPnlPct)}</span>`;
-  document.getElementById('bmRealized').innerHTML=`<span style="color:${s.realizedTotal>=0?'var(--green)':'var(--red)'}">${fm(s.realizedTotal)}</span>`;
+  document.getElementById('bmTotal').innerHTML=`<span style="color:${dayPnlPct>=0?'var(--gain)':'var(--loss)'}">${fp(dayPnlPct)}</span>`;
+  document.getElementById('bmRealized').innerHTML=`<span style="color:${s.realizedTotal>=0?'var(--gain)':'var(--loss)'}">${fm(s.realizedTotal)}</span>`;
   document.getElementById('bmPortCount').textContent=`${DB.portfolios.filter(p=>p.included).length}/${DB.portfolios.length}`;
 }
 
@@ -1952,16 +1954,16 @@ function buildPortCard(p){
           <span class="badge ${mBadge}">${p.market}</span>
           ${!p.included?'<span class="badge b-gray">不計入總資</span>':''}
         </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:3px">${hs.length} 檔 · 今日 <span style="color:${v.dayPnl>=0?'var(--green)':'var(--red)'}">${fm(v.dayPnl)}</span></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">${hs.length} 檔 · 今日 <span style="color:${v.dayPnl>=0?'var(--gain)':'var(--loss)'}">${v.dayPnl>=0?'+':''}${fm(v.dayPnl)} (${fp((v.total-v.dayPnl)>0?(v.dayPnl/(v.total-v.dayPnl)*100):0)})</span></div>
       </div>
       <div>
         <div class="p-mktval">${fm(v.total)}</div>
-        <div class="p-pnl" style="color:${v.pnl>=0?'var(--green)':'var(--red)'}">${fp(v.pnlPct)}&nbsp;${v.pnl>=0?'+':''}${fm(v.pnl)}</div>
+        <div class="p-pnl" style="color:${v.pnl>=0?'var(--gain)':'var(--loss)'}">${fp(v.pnlPct)}&nbsp;${v.pnl>=0?'+':''}${fm(v.pnl)}</div>
       </div>
     </div>
     <div class="p-body">
       <div class="ret-row">
-        ${rets.map(r=>{const rv=calcPeriodReturn(p.id,r.d);return`<div class="ret-chip"><div class="rl">${r.l}</div><div class="rv" style="color:${rv===null?'var(--text3)':rv>=0?'var(--green)':'var(--red)'}">${rv!==null?fp(rv):'--'}</div></div>`;}).join('')}
+        ${rets.map(r=>{const rv=calcPeriodReturn(p.id,r.d);return`<div class="ret-chip"><div class="rl">${r.l}</div><div class="rv" style="color:${rv===null?'var(--text3)':rv>=0?'var(--gain)':'var(--loss)'}">${rv!==null?fp(rv):'--'}</div></div>`;}).join('')}
       </div>
 
       ${hs.length?`
@@ -1985,7 +1987,6 @@ function buildPortCard(p){
         <thead>
           <tr id="hl-hd-${p.id}">
             ${renderHoldingHeaders(p.id, targets)}
-            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -2161,21 +2162,25 @@ function renderPie(){
     type:'doughnut',
     data:{labels:items.map(it=>it.label),datasets:[{data:items.map(it=>it.val),backgroundColor:items.map(it=>it.color),borderColor:'#181c30',borderWidth:2,hoverOffset:5}]},
     options:{
-      responsive:true, maintainAspectRatio:false, cutout:'58%',
+      responsive:true, maintainAspectRatio:false, cutout:'52%',
       plugins:{
         legend:{display:false},
         tooltip:{callbacks:{label:c=>` ${c.label}: ${fm(c.raw)} (${total>0?(c.raw/total*100).toFixed(1):'0'}%)`}},
         datalabels:{
           color:'#fff',
           font:{weight:'700',size:11},
-          formatter:(val)=> total>0 ? (val/total*100).toFixed(1)+'%' : '',
+          textAlign:'center',
+          formatter:(val,ctx)=>{
+            if(total<=0) return '';
+            const pct=(val/total*100);
+            if(pct < 4) return ''; // 太小不顯示避免擠
+            return ctx.chart.data.labels[ctx.dataIndex] + '\n' + pct.toFixed(1)+'%';
+          },
           textShadowBlur:4, textShadowColor:'rgba(0,0,0,.6)',
-          display:(ctx)=> (ctx.dataset.data[ctx.dataIndex]/total*100) >= 3 // 太小的不顯示避免擠
         }
       }
     }
   });
-  document.getElementById('pieLeg').innerHTML=items.map(it=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:${it.color}"></span><span style="color:var(--text2)">${it.label} ${total>0?(it.val/total*100).toFixed(1):'0'}%</span></span>`).join('');
 }
 
 function setLP(p,btn){
@@ -2218,8 +2223,8 @@ function renderHeat(){
     const hv=calcHV(h);
     const pct=hv.changePct||0;
     const absP=Math.min(Math.abs(pct)/5,1);
-    const bg=pct>0?`rgba(0,229,160,${0.1+absP*0.4})`:pct<0?`rgba(255,77,106,${0.1+absP*0.4})`:'rgba(255,255,255,0.04)';
-    const col=pct>0?'var(--green)':pct<0?'var(--red)':'var(--text2)';
+    const bg=pct>0?`rgba(255,77,106,${0.1+absP*0.4})`:pct<0?`rgba(0,229,160,${0.1+absP*0.4})`:'rgba(255,255,255,0.04)';
+    const col=pct>0?'var(--gain)':pct<0?'var(--loss)':'var(--text2)';
     return`<div class="hm-cell" style="background:${bg}" onclick="openTradeHistory('${h.portfolio}','${h.ticker}')">
       <div class="hm-ticker">${h.ticker}</div>
       <div class="hm-val" style="color:${col}">${pct>0?'+':''}${pct.toFixed(2)}%</div>
@@ -2233,7 +2238,7 @@ function renderBar(){
   const days=parseInt(document.getElementById('barPeriod').value)||365;
   const labels=DB.portfolios.map(p=>`組合${p.id}`);
   const data=DB.portfolios.map(p=>calcPeriodReturn(p.id,days)||0);
-  const colors=data.map(v=>v>=0?'#00e5a0':'#ff4d6a');
+  const colors=data.map(v=>v>=0?'#ff4d6a':'#00e5a0');
   const ctx=document.getElementById('barC').getContext('2d');
   charts['bar']=new Chart(ctx,{
     type:'bar',
@@ -2264,7 +2269,7 @@ function renderTrades(filterTicker){
       <td>${parseFloat(t.price).toFixed(4)}</td>
       <td style="color:var(--text3)">${t.fee||0}</td>
       <td>${fm(t.shares*t.price)}</td>
-      <td style="color:${(t.realizedPnl||0)>=0?'var(--green)':'var(--red)'}">${t.realizedPnl?((t.realizedPnl>=0?'+':'')+fm(t.realizedPnl)):'--'}</td>
+      <td style="color:${(t.realizedPnl||0)>=0?'var(--gain)':'var(--loss)'}">${t.realizedPnl?((t.realizedPnl>=0?'+':'')+fm(t.realizedPnl)):'--'}</td>
       <td style="color:var(--text3);font-size:11px">${t.note||''}</td>
       <td><button class="btn btn-xs btn-ghost" onclick="openEditTrade('${t.id}')">✎</button></td>
     </tr>`).join('')}
