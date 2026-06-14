@@ -1132,8 +1132,8 @@ function setPortCols(pid, cols){
 
 function renderHoldingHeaders(pid, targets){
   const cols = getPortCols(pid);
-  const hasTgt = Object.keys(targets).length > 0;
-  const colSet = hasTgt ? [...cols.filter(c=>c!=='target'), 'target'] : cols.filter(c=>c!=='target');
+  // "目標偏移" 是否顯示，完全依照⚙列的勾選狀態決定，不自動加入
+  const colSet = cols; // 完全依照⚙列勾選狀態
   const headers = colSet.map(cid=>{
     const col = ALL_COLS.find(c=>c.id===cid);
     return col ? `<th>${col.label}</th>` : '';
@@ -1143,8 +1143,7 @@ function renderHoldingHeaders(pid, targets){
 
 function renderHoldingCells(h, pid, targets){
   const cols = getPortCols(pid);
-  const hasTgt = Object.keys(targets).length > 0;
-  const colSet = hasTgt ? [...cols.filter(c=>c!=='target'), 'target'] : cols.filter(c=>c!=='target');
+  const colSet = cols;
   return colSet.map(cid=>{
     const col = ALL_COLS.find(c=>c.id===cid);
     return col ? col.render(h, targets) : '<td>--</td>';
