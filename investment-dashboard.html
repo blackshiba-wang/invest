@@ -1143,7 +1143,15 @@ const ALL_COLS = [
   {id:'pnl',       label:'損益金額',  render:(h)=>`<td style="color:${h.hv.pnl>=0?'var(--gain)':'var(--loss)'}">${(h.hv.pnl>=0?'+':'')+fm(h.hv.pnl)}</td>`},
   {id:'pnlPct',    label:'損益%',     render:(h)=>`<td style="color:${h.hv.pnlPct>=0?'var(--gain)':'var(--loss)'}">${fp(h.hv.pnlPct)}</td>`},
   {id:'weight',    label:'佔比',      render:(h)=>`<td style="color:var(--text2)">${h.curPct.toFixed(1)}%</td>`},
-  {id:'target',    label:'目標偏移',  render:(h,t)=>`<td>${h.tgt!==null?`<span class="dev-badge" style="background:${Math.abs(h.dev||0)<=2?'rgba(0,229,160,.15)':h.dev>2?'rgba(255,77,106,.15)':'rgba(255,184,77,.15)'};color:${Math.abs(h.dev||0)<=2?'var(--green)':h.dev>2?'var(--red)':'var(--amber)'};">${h.dev>=0?'+':''}${(h.dev||0).toFixed(1)}%</span>`:'--'}</td>`},
+  {id:'target',    label:'目標偏移',  render:(h,t)=>{
+    if(h.tgt===null) return '<td>--</td>';
+    const tol = h.tol ?? 2; // 容許區間，未設定預設±2%
+    const inBand = Math.abs(h.dev||0) <= tol;
+    const over = (h.dev||0) > tol;
+    const bg = inBand ? 'rgba(0,229,160,.15)' : over ? 'rgba(255,77,106,.15)' : 'rgba(255,184,77,.15)';
+    const col = inBand ? 'var(--green)' : over ? 'var(--red)' : 'var(--amber)';
+    return `<td><span class="dev-badge" style="background:${bg};color:${col}" title="容許區間 ±${tol}%">${h.dev>=0?'+':''}${(h.dev||0).toFixed(1)}%</span></td>`;
+  }},
   {id:'ma5',       label:'5日均價',   render:(h)=>{const p=prices[h.ticker];return`<td style="color:var(--text2)">${p?.ma5?p.ma5.toFixed(2):'--'}</td>`;}},
   {id:'ma10',      label:'10日均價',  render:(h)=>{const p=prices[h.ticker];return`<td style="color:var(--text2)">${p?.ma10?p.ma10.toFixed(2):'--'}</td>`;}},
   {id:'ma20',      label:'20日均價',  render:(h)=>{const p=prices[h.ticker];return`<td style="color:var(--text2)">${p?.ma20?p.ma20.toFixed(2):'--'}</td>`;}},
@@ -2140,6 +2148,7 @@ function calcRebal(pid){
   if(!p)return;
   const hs=getHoldings(pid);
   const targets=p.targets||{};
+  const tolerances=p.tolerances||{};
   const id='rb_'+pid;
   const newInvestEl=document.getElementById(id+'_new');
   const newInvestTWD=parseFloat(newInvestEl?.value||0)||0;
@@ -2169,7 +2178,8 @@ function calcRebal(pid){
     const diff=targetVal-hv.mktVal;     // TWD
     const isBuy=diff>=0;
     const dev=curPct-tgt;
-    const devColor=Math.abs(dev)<=2?'var(--green)':dev>2?'var(--red)':'var(--amber)';
+    const tol=tolerances[h.ticker]??2;
+    const devColor=Math.abs(dev)<=tol?'var(--green)':dev>tol?'var(--red)':'var(--amber)';
 
     // 預估成交價（原始幣別，用於下單）
     // 買入：限價 × 1.0015（略高，確保買到）
@@ -2197,7 +2207,7 @@ function calcRebal(pid){
       <td>${fm(hv.mktVal)}</td>
       <td>${curPct.toFixed(1)}%</td>
       <td>${tgt>0?tgt+'%':'<span style="color:var(--text3)">--</span>'}</td>
-      <td><span class="dev-badge" style="background:${Math.abs(dev)<=2?'rgba(0,229,160,.15)':dev>2?'rgba(255,77,106,.15)':'rgba(255,184,77,.15)'};color:${devColor}">${dev>0?'+':''}${dev.toFixed(1)}%</span></td>
+      <td><span class="dev-badge" style="background:${Math.abs(dev)<=tol?'rgba(0,229,160,.15)':dev>tol?'rgba(255,77,106,.15)':'rgba(255,184,77,.15)'};color:${devColor}" title="容許區間 ±${tol}%">${dev>0?'+':''}${dev.toFixed(1)}%</span></td>
       <td style="color:var(--text2);font-size:11px">${limitPrice>0?limitPrice.toFixed(isCurrency?4:2):'--'}<br><span style="color:var(--text3);font-size:9px">${priceUnit}${isCurrency?' (×'+fxRate.toFixed(1)+'=TWD)':''}</span></td>
       <td style="color:${isBuy?'var(--green)':'var(--red)'};font-size:11px">${estPrice>0?estPrice.toFixed(isCurrency?4:2):'--'}<br><span style="color:var(--text3);font-size:9px">${isBuy?'×1.0015':'×0.9985'} ${priceUnit}</span></td>
       <td style="color:${isBuy?'var(--green)':'var(--red)'};font-weight:600">${isBuy?'📈 買入':'📉 賣出'}</td>
