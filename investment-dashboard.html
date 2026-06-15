@@ -45,7 +45,12 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.ga{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.ga{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.health-item{padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)}
+.health-item-label{font-size:10px;color:var(--text3);margin-bottom:4px}
+.health-item-value{font-size:18px;font-weight:800;font-family:var(--mono,monospace)}
+.health-item-bar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px;overflow:hidden}
+.health-item-bar-fill{height:100%;border-radius:2px;transition:width .4s ease}
 .mb12{margin-bottom:12px}.mb20{margin-bottom:20px}.mt12{margin-top:12px}.mt20{margin-top:20px}
 .gap8{gap:8px}
 
@@ -143,6 +148,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 .alert{padding:10px 13px;border-radius:var(--rsm);font-size:12px;margin-bottom:14px}
 .a-info{background:rgba(91,143,249,.1);border:1px solid rgba(91,143,249,.2);color:#7fb3ff}
 .a-warn{background:rgba(255,184,77,.1);border:1px solid rgba(255,184,77,.2);color:var(--amber)}
+.a-ok{background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.2);color:var(--green)}
 
 /* HEATMAP */
 .heatmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;margin-top:6px}
@@ -164,6 +170,15 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 .load-overlay.hidden{display:none}
 .load-spinner{width:44px;height:44px;border:3px solid rgba(91,143,249,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
 .load-text{color:var(--text2);font-size:14px}
+
+/* VIEW TABS */
+.view-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto}
+.view-tab{padding:10px 18px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
+.view-tab:hover{color:var(--text)}
+.view-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.view-panel{display:none}
+.view-panel.active{display:block;animation:fadeInPanel .25s ease}
+@keyframes fadeInPanel{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
 /* RESPONSIVE */
 @media(max-width:900px){
@@ -271,6 +286,16 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
     <button class="btn btn-sm btn-ghost" style="margin-left:8px" onclick="closeSetupAlert()">快速開始</button>
   </div>
 
+  <!-- VIEW TABS -->
+  <div class="view-tabs">
+    <button class="view-tab active" data-view="overview" onclick="switchView('overview')">📊 總覽</button>
+    <button class="view-tab" data-view="charts" onclick="switchView('charts')">📈 圖表分析</button>
+    <button class="view-tab" data-view="rebalance" onclick="switchView('rebalance')">⚖️ 再平衡</button>
+  </div>
+
+  <!-- ═══ OVERVIEW PANEL ═══ -->
+  <div class="view-panel active" id="view-overview">
+
   <!-- TOTAL BANNER -->
   <div class="banner mb20" id="bannerEl">
     <div class="banner-left">
@@ -289,6 +314,28 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
   <!-- PORTFOLIO CARDS -->
   <div class="shd mb12"><div class="dot" style="background:var(--blue)"></div>投資組合</div>
   <div id="portGrid" class="g2 mb20"></div>
+
+  <!-- TRADE LOG -->
+  <div class="shd mb12"><div class="dot" style="background:var(--amber)"></div>交易記錄</div>
+  <div class="card mb20">
+    <div class="card-hd">
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="txPortSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderTrades()">
+          <option value="all">全部組合</option>
+        </select>
+        <select id="txTickerSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderTrades()">
+          <option value="all">全部標的</option>
+        </select>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="openAddTrade()">+ 新增交易</button>
+    </div>
+    <div id="txTable" style="overflow-x:auto"></div>
+  </div>
+
+  </div><!-- /view-overview -->
+
+  <!-- ═══ CHARTS PANEL ═══ -->
+  <div class="view-panel" id="view-charts">
 
   <!-- CHARTS ROW 1 -->
   <div class="shd mb12"><div class="dot" style="background:var(--purple)"></div>圖表分析</div>
@@ -374,16 +421,25 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
       </div>
       <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('bubble','風險報酬泡泡圖')"><canvas id="bubbleChart" role="img" aria-label="風險報酬泡泡圖">風險報酬</canvas></div>
     </div>
-    <!-- Gauge: overall pnl -->
-    <div class="card">
-      <div class="card-hd">
-        <div class="card-title">🎯 投資組合健康度</div>
-        <select id="gaugeSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderGauge()">
-          <option value="total">全部組合</option>
-        </select>
+  </div>
+
+  <!-- HEALTH SCORE -->
+  <div class="card mb20">
+    <div class="card-hd">
+      <div class="card-title">🎯 投資組合健康度</div>
+      <select id="gaugeSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderGauge()">
+        <option value="total">全部組合</option>
+      </select>
+    </div>
+    <div class="g2" style="align-items:center">
+      <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('gauge','投資組合健康度')"><canvas id="gaugeChart" role="img" aria-label="投資組合健康度雷達圖">健康度雷達圖</canvas></div>
+      <div>
+        <div style="text-align:center;margin-bottom:14px">
+          <div id="gaugeScore" style="font-size:48px;font-weight:900;line-height:1">--</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">綜合健康分數 / 100　<span id="gaugeLabel" style="font-weight:700"></span></div>
+        </div>
+        <div id="gaugeStats" class="ga"></div>
       </div>
-      <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('gauge','投資組合健康度')"><canvas id="gaugeChart" role="img" aria-label="投資組合健康度">健康度</canvas></div>
-      <div id="gaugeStats" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;justify-content:center;font-size:11px"></div>
     </div>
   </div>
 
@@ -432,29 +488,18 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
     </div>
   </div>
 
-  <!-- SANKEY + GROWTH CHARTS -->
-  <div class="g2 mb20">
-    <!-- Sankey 資金流向 -->
-    <div class="card">
-      <div class="card-hd">
-        <div class="card-title">🌊 資金流向圖</div>
-        <div style="font-size:10px;color:var(--text3)">總資產 → 組合 → 個股</div>
+  <!-- GROWTH CHART -->
+  <div class="card mb20">
+    <div class="card-hd">
+      <div class="card-title">📈 各組合累積報酬曲線</div>
+      <div class="ptabs" id="growthPtabs">
+        <button class="ptab active" onclick="setGrowthP('1M',this)">1M</button>
+        <button class="ptab" onclick="setGrowthP('3M',this)">3M</button>
+        <button class="ptab" onclick="setGrowthP('6M',this)">6M</button>
+        <button class="ptab" onclick="setGrowthP('1Y',this)">1Y</button>
       </div>
-      <div id="sankeyChart" style="width:100%;height:280px;overflow:hidden;cursor:zoom-in" onclick="enlargeHtml('sankeyChart','資金流向圖',renderSankey)"></div>
     </div>
-    <!-- 累積報酬曲線 -->
-    <div class="card">
-      <div class="card-hd">
-        <div class="card-title">📈 各組合累積報酬曲線</div>
-        <div class="ptabs" id="growthPtabs">
-          <button class="ptab active" onclick="setGrowthP('1M',this)">1M</button>
-          <button class="ptab" onclick="setGrowthP('3M',this)">3M</button>
-          <button class="ptab" onclick="setGrowthP('6M',this)">6M</button>
-          <button class="ptab" onclick="setGrowthP('1Y',this)">1Y</button>
-        </div>
-      </div>
-      <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('growth','各組合累積報酬曲線')"><canvas id="growthChart" role="img" aria-label="累積報酬曲線">累積報酬</canvas></div>
-    </div>
+    <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('growth','各組合累積報酬曲線')"><canvas id="growthChart" role="img" aria-label="累積報酬曲線">累積報酬</canvas></div>
   </div>
 
   <!-- DRAWDOWN CHART -->
@@ -488,26 +533,14 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
     <div class="chart-wrap ch260" style="cursor:zoom-in" onclick="enlargeChart('month','月份報酬圖')"><canvas id="monthChart" role="img" aria-label="月份報酬圖">月份報酬</canvas></div>
   </div>
 
+  </div><!-- /view-charts -->
+
+  <!-- ═══ REBALANCE PANEL ═══ -->
+  <div class="view-panel" id="view-rebalance">
   <!-- REBALANCE SECTION -->
   <div class="shd mb12"><div class="dot" style="background:var(--teal)"></div>再平衡試算</div>
   <div id="rebalSection" class="mb20"></div>
-
-  <!-- TRADE LOG -->
-  <div class="shd mb12"><div class="dot" style="background:var(--amber)"></div>交易記錄</div>
-  <div class="card mb20">
-    <div class="card-hd">
-      <div style="display:flex;gap:8px;align-items:center">
-        <select id="txPortSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderTrades()">
-          <option value="all">全部組合</option>
-        </select>
-        <select id="txTickerSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderTrades()">
-          <option value="all">全部標的</option>
-        </select>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="openAddTrade()">+ 新增交易</button>
-    </div>
-    <div id="txTable" style="overflow-x:auto"></div>
-  </div>
+  </div><!-- /view-rebalance -->
 
 </div><!-- /wrap -->
 
@@ -802,10 +835,13 @@ async function fbLoad(){
             const local = localPortMap[fbP.id]||{};
             return {
               ...fbP,
-              // targets：Firebase 有就用 Firebase，否則保留本機的
+              // targets/tolerances：Firebase 有就用 Firebase，否則保留本機的
               targets: (fbP.targets && Object.keys(fbP.targets).length>0)
                         ? fbP.targets
-                        : (local.targets||{})
+                        : (local.targets||{}),
+              tolerances: (fbP.tolerances && Object.keys(fbP.tolerances).length>0)
+                        ? fbP.tolerances
+                        : (local.tolerances||{})
             };
           });
         }
@@ -1251,137 +1287,140 @@ function renderGauge(){
   dc('gauge');
   const sel = document.getElementById('gaugeSel')?.value || 'total';
 
-  // 取得要計算的持倉和快照
-  let hs, pnlPct, portLabel;
+  // 取得要計算的持倉、快照、歷史
+  let hs, pnlPct, hist, portLabel, targets;
   if(sel === 'total'){
     hs = getIncludedHoldings();
     const snap = calcTotalSnap();
     pnlPct = snap.pnlPct;
+    hist = DB.history?.total || {};
     portLabel = '全部組合';
+    targets = {};
   } else {
     hs = getHoldings(sel);
     const v = calcPortSnap(sel);
     pnlPct = v.pnlPct;
+    hist = DB.history?.[sel] || {};
     const p = DB.portfolios.find(x=>x.id===sel);
     portLabel = p ? `組合${p.id}·${p.name}` : sel;
+    targets = p?.targets || {};
   }
 
-  // 健康分數計算（三維度）
+  // ── 六維度分數計算 ──────────────────────────────────────────
+  // 1. 分散度：持股檔數越多越分散（8檔以上滿分）
+  const diverseScore = Math.min(100, hs.length * 12);
+
+  // 2. 獲利比率：正獲利標的佔比
   const positiveCount = hs.filter(h=>calcHV(h).pnlPct>0).length;
-  const diverseScore  = Math.min(100, hs.length * 10);
-  const pnlScore      = Math.min(100, Math.max(0, 50 + pnlPct * 3));
-  const positiveScore = hs.length > 0 ? (positiveCount/hs.length)*100 : 50;
-  const healthScore   = Math.round(diverseScore*0.3 + pnlScore*0.4 + positiveScore*0.3);
-  const remaining     = Math.max(0, 100 - healthScore);
-  const color = healthScore >= 70 ? '#00e5a0' : healthScore >= 45 ? '#ffb84d' : '#ff4d6a';
+  const profitScore = hs.length > 0 ? (positiveCount/hs.length)*100 : 50;
+
+  // 3. 配置平衡度：與目標比例的平均偏離（無設定目標則中性70分）
+  const hasTargets = Object.keys(targets).length > 0;
+  let balanceScore = 70;
+  if(hasTargets && hs.length>0){
+    const totalMkt = hs.reduce((s,h)=>s+calcHV(h).mktVal,0);
+    const devs = hs.map(h=>{
+      const cur = totalMkt>0 ? calcHV(h).mktVal/totalMkt*100 : 0;
+      const tgt = targets[h.ticker]||0;
+      return Math.abs(cur-tgt);
+    });
+    const avgDev = devs.reduce((a,b)=>a+b,0)/devs.length;
+    balanceScore = Math.max(0, 100 - avgDev*8);
+  }
+
+  // 4. 風險控管：以歷史最大回撤計算（回撤越小分數越高，無資料則中性70分）
+  let riskScore = 70;
+  const histDates = Object.keys(hist).sort();
+  if(histDates.length >= 3){
+    const values = histDates.map(d=>hist[d]);
+    let peak = values[0];
+    let maxDD = 0;
+    values.forEach(v=>{
+      if(v>peak) peak=v;
+      const dd = peak>0 ? (v-peak)/peak*100 : 0;
+      if(dd<maxDD) maxDD=dd;
+    });
+    riskScore = Math.max(0, Math.min(100, 100 + maxDD*4)); // maxDD為負值
+  }
+
+  // 5. 報酬表現：總報酬率轉換為分數
+  const returnScore = Math.min(100, Math.max(0, 50 + pnlPct*3));
+
+  // 6. 趨勢動能：今日漲跌轉換為分數
+  let momentumScore = 50;
+  if(histDates.length >= 2){
+    const last = hist[histDates[histDates.length-1]];
+    const prev = hist[histDates[histDates.length-2]];
+    const dayPct = prev>0 ? (last-prev)/prev*100 : 0;
+    momentumScore = Math.min(100, Math.max(0, 50 + dayPct*10));
+  }
+
+  const dims = [
+    {l:'分散度',   v:diverseScore},
+    {l:'獲利比率', v:profitScore},
+    {l:'配置平衡', v:balanceScore},
+    {l:'風險控管', v:riskScore},
+    {l:'報酬表現', v:returnScore},
+    {l:'趨勢動能', v:momentumScore},
+  ];
+
+  // 綜合分數（六維度平均）
+  const healthScore = Math.round(dims.reduce((s,d)=>s+d.v,0)/dims.length);
+  const color = healthScore >= 70 ? 'var(--green)' : healthScore >= 45 ? 'var(--amber)' : 'var(--red)';
+  const colorHex = healthScore >= 70 ? '#00e5a0' : healthScore >= 45 ? '#ffb84d' : '#ff4d6a';
   const label = healthScore >= 70 ? '健康' : healthScore >= 45 ? '普通' : '需留意';
 
+  // ── 雷達圖 ──────────────────────────────────────────────────
   const ctx = document.getElementById('gaugeChart')?.getContext('2d');
-  if(!ctx) return;
-  charts['gauge'] = new Chart(ctx,{
-    type:'doughnut',
-    data:{
-      datasets:[{
-        data:[healthScore, remaining],
-        backgroundColor:[color,'rgba(255,255,255,0.04)'],
-        borderWidth:0, borderRadius:4
-      }]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      circumference:180, rotation:-90,
-      cutout:'72%',
-      plugins:{ legend:{display:false}, tooltip:{enabled:false} }
-    },
-    plugins:[{
-      id:'gaugeText',
-      afterDraw(chart){
-        const {ctx,chartArea:{top,left,width,height}}=chart;
-        ctx.save();
-        const cx=left+width/2, cy=top+height*0.90;
-        ctx.font='bold 38px -apple-system,sans-serif';
-        ctx.fillStyle=color;
-        ctx.textAlign='center';
-        ctx.fillText(healthScore, cx, cy);
-        ctx.font='12px -apple-system,sans-serif';
-        ctx.fillStyle='#7e87b8';
-        ctx.fillText('健康分數 /100', cx, cy+20);
-        ctx.font='bold 12px -apple-system,sans-serif';
-        ctx.fillStyle=color;
-        ctx.fillText(label, cx, cy+38);
-        ctx.restore();
+  if(ctx){
+    charts['gauge'] = new Chart(ctx,{
+      type:'radar',
+      data:{
+        labels: dims.map(d=>d.l),
+        datasets:[{
+          label:'健康度',
+          data: dims.map(d=>Math.round(d.v)),
+          backgroundColor: colorHex+'26',
+          borderColor: colorHex,
+          borderWidth:2,
+          pointBackgroundColor: colorHex,
+          pointRadius:3
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw}`}} },
+        scales:{
+          r:{
+            min:0, max:100,
+            ticks:{display:false, stepSize:25},
+            grid:{color:'rgba(255,255,255,0.06)'},
+            angleLines:{color:'rgba(255,255,255,0.08)'},
+            pointLabels:{color:'#a0a4b8',font:{size:11}}
+          }
+        }
       }
-    }]
-  });
-
-  const statsEl = document.getElementById('gaugeStats');
-  if(statsEl) statsEl.innerHTML = [
-    {l:'正獲利標的', v:`${positiveCount}/${hs.length}`, c:positiveScore>=60?'var(--green)':'var(--amber)'},
-    {l:'分散檔數',   v:hs.length+'檔',                  c:'var(--text2)'},
-    {l:'總報酬',     v:fp(pnlPct),                      c:pnlPct>=0?'var(--gain)':'var(--loss)'},
-    {l:'查看',       v:portLabel,                       c:'var(--text3)'},
-  ].map(s=>`<div style="text-align:center"><div style="color:var(--text3);font-size:10px">${s.l}</div><div style="font-weight:700;color:${s.c};font-size:11px">${s.v}</div></div>`).join('');
-}
-
-
-// ── 桑基圖（純 SVG，不依賴外部套件）──────────────────────────
-function renderSankey(){
-  const el = document.getElementById('sankeyChart');
-  if(!el) return;
-  const allHs = getIncludedHoldings();
-  if(!allHs.length){ el.innerHTML='<div class="empty">尚無持倉資料</div>'; return; }
-
-  const W=el.clientWidth||400, H=280;
-  const totalVal = calcTotalSnap().total;
-  if(totalVal<=0){ el.innerHTML='<div class="empty">請先更新股價</div>'; return; }
-
-  // 節點：總資產 → 組合 → 個股（前5大）
-  const COLORS_S=['#5b8ff9','#00e5a0','#a370f7','#ffb84d','#00d4c2','#ff4d6a'];
-  const ports = DB.portfolios.map((p,i)=>({
-    id:p.id, name:`組合${p.id}`, color:p.color||COLORS_S[i],
-    val: calcPortSnap(p.id).total
-  })).filter(p=>p.val>0);
-
-  // SVG 繪製
-  const col0x=W*0.05, col1x=W*0.38, col2x=W*0.72;
-  const colW=14;
-  let svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:-apple-system,sans-serif">`;
-
-  // 左：總資產方塊
-  svg+=`<rect x="${col0x}" y="${H*0.1}" width="${colW}" height="${H*0.8}" rx="4" fill="#5b8ff9" opacity=".9"/>`;
-  svg+=`<text x="${col0x+colW+6}" y="${H*0.52}" fill="#dde2f5" font-size="11" dominant-baseline="middle">總資產</text>`;
-  svg+=`<text x="${col0x+colW+6}" y="${H*0.52+14}" fill="#7e87b8" font-size="10">${fm(totalVal)}</text>`;
-
-  // 中：各組合
-  let portY=H*0.05;
-  ports.forEach((p,i)=>{
-    const h = (p.val/totalVal)*(H*0.9);
-    const cy=portY+h/2;
-    // 流向帶
-    const sx=col0x+colW, sy=H*0.5;
-    const tx=col1x, ty=cy;
-    svg+=`<path d="M${sx},${sy} C${(sx+tx)/2},${sy} ${(sx+tx)/2},${ty} ${tx},${ty}" stroke="${p.color}" stroke-width="${Math.max(2,h*0.6)}" fill="none" opacity=".35"/>`;
-    // 組合方塊
-    svg+=`<rect x="${col1x}" y="${portY}" width="${colW}" height="${h}" rx="3" fill="${p.color}" opacity=".9"/>`;
-    svg+=`<text x="${col1x+colW+6}" y="${cy-6}" fill="#dde2f5" font-size="11" dominant-baseline="middle">${p.name}</text>`;
-    svg+=`<text x="${col1x+colW+6}" y="${cy+8}" fill="#7e87b8" font-size="10">${(p.val/totalVal*100).toFixed(1)}%</text>`;
-
-    // 右：前4大個股
-    const hs2=getHoldings(p.id).map(h=>({...h,mv:calcHV(h).mktVal})).sort((a,b)=>b.mv-a.mv).slice(0,4);
-    let hsY=portY;
-    hs2.forEach((h,j)=>{
-      const hh=Math.max(4,(h.mv/totalVal)*(H*0.9));
-      const hcy=hsY+hh/2;
-      svg+=`<path d="M${col1x+colW},${cy} C${(col1x+colW+col2x)/2},${cy} ${(col1x+colW+col2x)/2},${hcy} ${col2x},${hcy}" stroke="${p.color}" stroke-width="${Math.max(1.5,hh*0.5)}" fill="none" opacity=".25"/>`;
-      svg+=`<rect x="${col2x}" y="${hsY}" width="${colW}" height="${hh}" rx="2" fill="${p.color}" opacity=".8"/>`;
-      if(hh>12) svg+=`<text x="${col2x+colW+5}" y="${hcy}" fill="#dde2f5" font-size="10" dominant-baseline="middle">${h.ticker}</text>`;
-      hsY+=hh+2;
     });
-    portY+=h+4;
-  });
-  svg+='</svg>';
-  el.innerHTML=svg;
+  }
+
+  // ── 綜合分數顯示 ─────────────────────────────────────────────
+  const scoreEl = document.getElementById('gaugeScore');
+  if(scoreEl){ scoreEl.textContent = healthScore; scoreEl.style.color = color; }
+  const labelEl = document.getElementById('gaugeLabel');
+  if(labelEl){ labelEl.textContent = label + '（' + portLabel + '）'; labelEl.style.color = color; }
+
+  // ── 六項指標卡片 ─────────────────────────────────────────────
+  const statsEl = document.getElementById('gaugeStats');
+  if(statsEl) statsEl.innerHTML = dims.map(d=>{
+    const c = d.v>=70?'var(--green)':d.v>=45?'var(--amber)':'var(--red)';
+    return `<div class="health-item">
+      <div class="health-item-label">${d.l}</div>
+      <div class="health-item-value" style="color:${c}">${Math.round(d.v)}</div>
+      <div class="health-item-bar"><div class="health-item-bar-fill" style="width:${Math.round(d.v)}%;background:${c}"></div></div>
+    </div>`;
+  }).join('');
 }
+
 
 // ── 累積報酬曲線 ───────────────────────────────────────────────
 let growthPeriod='1M';
@@ -1893,6 +1932,23 @@ function enlargeHtml(elId, title, renderFn){
   }
 }
 
+
+// ── VIEW TAB SWITCHING ────────────────────────────────────────
+function switchView(view){
+  document.querySelectorAll('.view-tab').forEach(t=>t.classList.toggle('active', t.dataset.view===view));
+  document.querySelectorAll('.view-panel').forEach(p=>p.classList.toggle('active', p.id==='view-'+view));
+  // 切換到隱藏分頁時，canvas 之前是 0 寬度，需要重新渲染圖表才會正確顯示
+  if(view==='charts'){
+    renderPie();renderLine();renderHeat();renderBar();
+    renderWaterfall();renderBubble();renderGauge();
+    renderTreemap();renderFireWidget();renderCalendarHeatmap();
+    renderGrowthChart();renderDrawdown();renderMonthlyReturns();
+  }
+  if(view==='rebalance'){
+    renderRebalance();
+  }
+}
+
 // ── RENDER ALL ────────────────────────────────────────────────
 function renderAll(){
   checkNonTradingDay();
@@ -1900,7 +1956,7 @@ function renderAll(){
   renderPortfolios();
   renderPie();renderLine();renderHeat();renderBar();
   renderWaterfall();renderBubble();renderGauge();
-  renderSankey();renderGrowthChart();
+  renderGrowthChart();
   renderDrawdown();
   renderTreemap();renderFireWidget();renderCalendarHeatmap();
   renderMonthlyReturns();
@@ -1936,13 +1992,19 @@ function buildPortCard(p){
   // target deviation check
   const targets=p.targets||{};
   const totalMkt=hs.reduce((s,h)=>s+calcHV(h).mktVal,0);
+  const tolerances=p.tolerances||{};
   const deviations=hs.map(h=>{
     const hv=calcHV(h);
     const curPct=totalMkt>0?hv.mktVal/totalMkt*100:0;
     const tgt=targets[h.ticker]||null;
     const dev=tgt!==null?curPct-tgt:null;
-    return{...h,curPct,tgt,dev,hv};
+    const tol=tolerances[h.ticker]??2; // 未設定預設±2%
+    const outOfBand=dev!==null && Math.abs(dev)>tol;
+    return{...h,curPct,tgt,dev,tol,outOfBand,hv};
   });
+  // 是否有任何標的設定了目標比例
+  const hasAnyTarget=Object.keys(targets).length>0;
+  const outCount=deviations.filter(d=>d.outOfBand).length;
 
   return`<div class="p-card">
     <div class="p-hd">
@@ -1952,6 +2014,10 @@ function buildPortCard(p){
           組合${p.id} · ${p.name}
           <span class="badge ${mBadge}">${p.market}</span>
           ${!p.included?'<span class="badge b-gray">不計入總資</span>':''}
+          ${hasAnyTarget ? (outCount>0
+            ? `<span class="badge" style="background:rgba(255,184,77,.15);color:var(--amber)" title="${outCount}檔超出容許區間，建議執行再平衡">🔔 ${outCount}檔待平衡</span>`
+            : `<span class="badge" style="background:rgba(0,229,160,.15);color:var(--green)" title="所有標的皆在容許區間內">✅ 配置正常</span>`
+          ) : ''}
         </div>
         <div style="font-size:10px;color:var(--text3);margin-top:3px">${hs.length} 檔 · 今日 <span style="color:${v.dayPnl>=0?'var(--gain)':'var(--loss)'}">${v.dayPnl>=0?'+':''}${fm(v.dayPnl)} (${fp((v.total-v.dayPnl)>0?(v.dayPnl/(v.total-v.dayPnl)*100):0)})</span></div>
       </div>
@@ -2025,9 +2091,24 @@ function renderRebalance(){
 function buildRbCard(p){
   const hs=getHoldings(p.id);
   const targets=p.targets||{};
+  const tolerances=p.tolerances||{};
   if(!hs.length)return'';
   const totalMkt=hs.reduce((s,h)=>s+calcHV(h).mktVal,0);
   const id='rb_'+p.id;
+
+  // 計算超出容許區間的標的數
+  let outCount=0;
+  if(Object.keys(targets).length>0 && totalMkt>0){
+    hs.forEach(h=>{
+      const hv=calcHV(h);
+      const curPct=hv.mktVal/totalMkt*100;
+      const tgt=targets[h.ticker];
+      if(tgt===undefined) return;
+      const tol=tolerances[h.ticker]??2;
+      if(Math.abs(curPct-tgt)>tol) outCount++;
+    });
+  }
+
   return`<div class="card mb12">
     <div class="card-hd">
       <div class="card-title" style="display:flex;align-items:center;gap:6px">
@@ -2041,6 +2122,10 @@ function buildRbCard(p){
       </div>
     </div>
     ${Object.keys(targets).length===0?`<div class="alert a-warn" style="font-size:11px">尚未設定目標比例。<button class="btn btn-xs btn-ghost" onclick="openTargetModal('${p.id}')">點此設定</button></div>`:`
+    ${outCount>0
+      ? `<div class="alert a-warn" style="font-size:11px;display:flex;align-items:center;gap:6px">⚠️ ${outCount} 檔超出容許區間，建議今天執行再平衡<button class="btn btn-xs btn-ghost" style="margin-left:auto" onclick="openTargetModal('${p.id}')">調整容許範圍</button></div>`
+      : `<div class="alert a-ok" style="font-size:11px">✅ 所有標的皆在容許區間內，本次可不執行再平衡（下方仍提供完整試算供參考）</div>`
+    }
     <div style="overflow-x:auto">
     <table class="rb-table" id="${id}_tbl">
       <thead><tr><th>標的</th><th>現值</th><th>現比例</th><th>目標%</th><th>偏移</th><th>限價</th><th>預估成交價</th><th>動作</th><th>買賣金額</th><th>應買/賣股數</th></tr></thead>
@@ -2365,6 +2450,7 @@ function openTargetModal(pid){
   const hs=getHoldings(pid);
   const targets=p.targets||{};
   const totalMkt=hs.reduce((s,h)=>s+calcHV(h).mktVal,0);
+  const tol=p.tolerances||{};
   document.getElementById('targetList').innerHTML=hs.map(h=>{
     const hv=calcHV(h);
     const curPct=totalMkt>0?(hv.mktVal/totalMkt*100).toFixed(1):0;
@@ -2373,8 +2459,11 @@ function openTargetModal(pid){
       <span style="color:var(--text2);font-size:11px;flex:1">現況 ${curPct}%</span>
       <label style="font-size:11px;color:var(--text3)">目標%：</label>
       <input type="number" class="finput" data-tgt-ticker="${h.ticker}" value="${targets[h.ticker]||''}" placeholder="0" min="0" max="100" step="0.1" style="width:70px;padding:5px 8px;font-size:12px" oninput="updateTargetSum()">
+      <label style="font-size:11px;color:var(--text3)">容許±%：</label>
+      <input type="number" class="finput" data-tol-ticker="${h.ticker}" value="${tol[h.ticker]??''}" placeholder="2" min="0" max="50" step="0.5" style="width:60px;padding:5px 8px;font-size:12px">
     </div>`;
-  }).join('')+`<div id="targetSumRow" style="display:flex;justify-content:flex-end;margin-top:8px;font-size:12px;color:var(--text2)">合計：<span id="targetSum" style="font-weight:700;color:var(--blue)">0</span>%（應等於 100）</div>`;
+  }).join('')+`<div id="targetSumRow" style="display:flex;justify-content:flex-end;margin-top:8px;font-size:12px;color:var(--text2)">合計：<span id="targetSum" style="font-weight:700;color:var(--blue)">0</span>%（應等於 100）</div>
+  <div style="font-size:10px;color:var(--text3);margin-top:6px">容許±%：當「現況」偏離「目標」超過此範圍，組合卡片會顯示🔔提醒。未填則預設±2%。</div>`;
   updateTargetSum();
   openModal('targetModal');
 }
@@ -2394,11 +2483,15 @@ function saveTargets(){
   if(!p)return;
   const hs=getHoldings(pid);
   if(!p.targets)p.targets={};
+  if(!p.tolerances)p.tolerances={};
   hs.forEach(h=>{
     // 用 data attribute 取值，避免 ticker 含點號造成 getElementById 失敗
     const el=document.querySelector(`[data-tgt-ticker="${h.ticker}"]`);
     const v=parseFloat(el?.value)||0;
     p.targets[h.ticker]=v;
+    const tolEl=document.querySelector(`[data-tol-ticker="${h.ticker}"]`);
+    const tolV=parseFloat(tolEl?.value);
+    p.tolerances[h.ticker]=isNaN(tolV)?2:tolV; // 預設±2%
   });
   // 強制深複製確保 Firebase 也存到
   DB.portfolios=JSON.parse(JSON.stringify(DB.portfolios));
