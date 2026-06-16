@@ -2045,11 +2045,12 @@ function buildPortCard(p){
         ${deviations.map(dv=>{
           if(dv.tgt===null)return'';
           const fill=Math.min(100,dv.curPct/dv.tgt*100);
-          const over=dv.dev>2;const under=dv.dev<-2;
+          const tol=dv.tol??2;
+          const over=dv.dev>tol;const under=dv.dev<-tol;
           return`<div class="prog-wrap">
             <div class="prog-lbl">
               <span style="color:var(--text2)">${dv.ticker} <span style="color:var(--text3);font-size:10px">${dv.curPct.toFixed(1)}% / 目標${dv.tgt}%</span></span>
-              <span class="dev-badge" style="background:${over?'rgba(255,77,106,.15)':under?'rgba(255,184,77,.15)':'rgba(0,229,160,.15)'};color:${over?'var(--red)':under?'var(--amber)':'var(--green)'};">${dv.dev>0?'+':''}${dv.dev.toFixed(1)}%</span>
+              <span class="dev-badge" style="background:${over?'rgba(255,77,106,.15)':under?'rgba(255,184,77,.15)':'rgba(0,229,160,.15)'};color:${over?'var(--red)':under?'var(--amber)':'var(--green)'};" title="容許區間 ±${tol}%">${dv.dev>0?'+':''}${dv.dev.toFixed(1)}%</span>
             </div>
             <div class="prog-bar"><div class="prog-fill" style="width:${fill}%;background:${over?'var(--red)':under?'var(--amber)':'var(--teal)'}"></div></div>
           </div>`;
