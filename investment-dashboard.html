@@ -2348,6 +2348,8 @@ function calcRebal(pid){
   });
 
   let sellPool = 0;
+  let totalNeed = 0; // 提升到外層，有新資金時不使用
+  let buyPool = 0;   // 提升到外層
 
   if(newInvestTWD > 0){
     // ══ 有新資金：全部重算到目標% ══════════════════════════════
@@ -2367,6 +2369,9 @@ function calcRebal(pid){
       }
       it.needAmtTWD = it.buyAmtTWD; // 用於顯示分配比
     });
+    // 有新資金模式：buyPool = 所有買入金額總和
+    buyPool = items.reduce((s,it)=>s+it.buyAmtTWD,0);
+    totalNeed = buyPool; // 讓分配比顯示正確
 
   } else {
     // ══ 無新資金：自我融資比例法 ═══════════════════════════════
@@ -2381,7 +2386,7 @@ function calcRebal(pid){
     });
 
     // 步驟3：計算需補金額（低於目標的標的）
-    let totalNeed = 0;
+    totalNeed = 0;
     items.forEach(it=>{
       if(it.sellAmtTWD > 0){
         it.needAmtTWD = 0;
@@ -2392,7 +2397,7 @@ function calcRebal(pid){
     });
 
     // 步驟4：按需補比例分配賣出金額
-    const buyPool = sellPool;
+    buyPool = sellPool;
     items.forEach(it=>{
       if(it.sellAmtTWD > 0){
         it.buyAmtTWD = 0;
