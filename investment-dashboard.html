@@ -2310,52 +2310,97 @@ function calcRebal(pid){
   const id='rb_'+pid;
   const newInvestEl=document.getElementById(id+'_new');
   const newInvestTWD=parseFloat(newInvestEl?.value||0)||0;
-  // 所有市值統一用 TWD 計算（calcHV 已經做匯率換算）
-  const totalMkt=hs.reduce((s,h)=>s+calcHV(h).mktVal,0); // 已是 TWD
-  const grandTotal=totalMkt+newInvestTWD; // TWD
-  const newInvest=newInvestTWD; // 保持變數名稱相容
+  const totalMkt=hs.reduce((s,h)=>s+calcHV(h).mktVal,0); // TWD
   const body=document.getElementById(id+'_body');
   const foot=document.getElementById(id+'_foot');
   if(!body)return;
 
-  let totalBuy=0, totalSell=0;
-  const rows=hs.map(h=>{
+  // ── 新規則：自我融資再平衡 ────────────────────────────────
+  // 步驟1：計算每個標的的現況%、偏移、是否超標
+  const items = hs.map(h=>{
     const hv=calcHV(h);
     const pr=prices[h.ticker];
-    // 判斷幣別
     const isCurrency = h.currency==='USD' || (pr?.currency==='USD');
-    const fxRate = getRate(isCurrency?'USD':'TWD'); // USD→TWD 匯率
-    // limitPrice：用原始幣別顯示（方便下單）
+    const fxRate = getRate(isCurrency?'USD':'TWD');
     const limitPriceOrig = pr ? pr.price : h.cost;
-    // limitPriceTWD：換算成台幣，用於金額計算
     const limitPriceTWD = limitPriceOrig * fxRate;
+    const curPct = totalMkt>0 ? hv.mktVal/totalMkt*100 : 0;
+    const tgt = targets[h.ticker]||0;
+    const tol = tolerances[h.ticker]??2;
+    const dev = curPct - tgt;
+    return { h, hv, pr, isCurrency, fxRate, limitPriceOrig, limitPriceTWD, curPct, tgt, tol, dev };
+  });
 
-    const curPct=totalMkt>0?hv.mktVal/totalMkt*100:0;
-    const tgt=targets[h.ticker]||0;
-    const targetVal=grandTotal*tgt/100; // TWD
-    const diff=targetVal-hv.mktVal;     // TWD
-    const isBuy=diff>=0;
-    const dev=curPct-tgt;
-    const tol=tolerances[h.ticker]??2;
-    const devColor=Math.abs(dev)<=tol?'var(--green)':dev>tol?'var(--red)':'var(--amber)';
+  // 步驟2：賣出 = 所有超出上緣的標的，賣回目標%
+  // 賣出金額 = (現況% - 目標%) × 總市值
+  let sellPool = 0; // 賣出所得（TWD）
+  items.forEach(it=>{
+    if(it.dev > it.tol){ // 超出上緣
+      it.sellAmtTWD = (it.dev/100) * totalMkt; // 要賣多少TWD
+      sellPool += it.sellAmtTWD;
+    } else {
+      it.sellAmtTWD = 0;
+    }
+  });
 
-    // 預估成交價（原始幣別，用於下單）
-    // 買入：限價 × 1.0015（略高，確保買到）
-    // 賣出：限價 × 0.9985（略低，確保賣出）
-    const estPriceOrig = isBuy ? limitPriceOrig*1.0015 : limitPriceOrig*0.9985;
+  // 步驟3：可用於買入的總金額 = 賣出所得 + 新增投入
+  const buyPool = sellPool + newInvestTWD;
+
+  // 步驟4：計算每個低於目標的標的的「需補金額」
+  // 需補金額 = (目標% - 現況%) × 總市值（用原始totalMkt為基準）
+  let totalNeed = 0;
+  items.forEach(it=>{
+    if(it.dev < -it.tol){ // 低於下緣
+      it.needAmtTWD = (-it.dev/100) * totalMkt;
+      totalNeed += it.needAmtTWD;
+    } else if(it.dev <= it.tol && it.dev >= -it.tol){ // 在區間內但低於目標
+      it.needAmtTWD = it.dev < 0 ? (-it.dev/100) * totalMkt : 0;
+      totalNeed += it.needAmtTWD;
+    } else {
+      it.needAmtTWD = 0;
+    }
+  });
+
+  // 步驟5：按比例分配 buyPool 給需補的標的
+  // 分配比例 = 該標的需補金額 ÷ 所有需補金額總和
+  items.forEach(it=>{
+    if(it.sellAmtTWD > 0){
+      it.buyAmtTWD = 0; // 賣出的標的不再買入
+    } else if(totalNeed > 0 && it.needAmtTWD > 0){
+      it.buyAmtTWD = buyPool * (it.needAmtTWD / totalNeed);
+    } else {
+      it.buyAmtTWD = 0;
+    }
+  });
+
+  // 步驟6：計算股數
+  let totalBuy=0, totalSell=0;
+  const rows = items.map(it=>{
+    const { h, hv, pr, isCurrency, fxRate, limitPriceOrig, curPct, tgt, tol, dev } = it;
+    const isSell = it.sellAmtTWD > 0;
+    const isBuy  = it.buyAmtTWD > 0;
+    const actionAmtTWD = isSell ? it.sellAmtTWD : it.buyAmtTWD;
+
+    const estPriceOrig = isSell ? limitPriceOrig*0.9985 : limitPriceOrig*1.0015;
     const estPriceTWD  = estPriceOrig * fxRate;
+    const shares = estPriceTWD>0 && actionAmtTWD>0 ? Math.floor(actionAmtTWD/estPriceTWD) : 0;
+    const actualAmtTWD = shares * estPriceTWD;
 
-    // 應買/賣股數 = 買賣金額(TWD) ÷ 預估成交價(TWD)
-    const shares = estPriceTWD>0 ? Math.floor(Math.abs(diff)/estPriceTWD) : 0;
-    const actualAmountTWD = shares * estPriceTWD;
-
-    if(isBuy) totalBuy+=actualAmountTWD;
-    else totalSell+=actualAmountTWD;
+    if(isSell) totalSell += actualAmtTWD;
+    if(isBuy)  totalBuy  += actualAmtTWD;
 
     const priceUnit = isCurrency ? 'USD' : 'TWD';
-    const limitPrice = limitPriceOrig; // 顯示用
-    const estPrice = estPriceOrig;     // 顯示用
-    const actualAmount = actualAmountTWD; // 顯示用（TWD）
+    const devColor = Math.abs(dev)<=tol?'var(--green)':dev>tol?'var(--red)':'var(--amber)';
+
+    // 動作標籤
+    let actionLabel, actionColor;
+    if(isSell){
+      actionLabel='📉 賣出'; actionColor='var(--red)';
+    } else if(isBuy){
+      actionLabel='📈 買入'; actionColor='var(--green)';
+    } else {
+      actionLabel='⏸ 不動';  actionColor='var(--text3)';
+    }
 
     return`<tr>
       <td>
@@ -2366,29 +2411,36 @@ function calcRebal(pid){
       <td>${curPct.toFixed(1)}%</td>
       <td>${tgt>0?tgt+'%':'<span style="color:var(--text3)">--</span>'}</td>
       <td><span class="dev-badge" style="background:${Math.abs(dev)<=tol?'rgba(0,229,160,.15)':dev>tol?'rgba(255,77,106,.15)':'rgba(255,184,77,.15)'};color:${devColor}" title="容許區間 ±${tol}%">${dev>0?'+':''}${dev.toFixed(1)}%</span></td>
-      <td style="color:var(--text2);font-size:11px">${limitPrice>0?limitPrice.toFixed(isCurrency?4:2):'--'}<br><span style="color:var(--text3);font-size:9px">${priceUnit}${isCurrency?' (×'+fxRate.toFixed(1)+'=TWD)':''}</span></td>
-      <td style="color:${isBuy?'var(--green)':'var(--red)'};font-size:11px">${estPrice>0?estPrice.toFixed(isCurrency?4:2):'--'}<br><span style="color:var(--text3);font-size:9px">${isBuy?'×1.0015':'×0.9985'} ${priceUnit}</span></td>
-      <td style="color:${isBuy?'var(--green)':'var(--red)'};font-weight:600">${isBuy?'📈 買入':'📉 賣出'}</td>
-      <td style="color:${isBuy?'var(--green)':'var(--red)'};font-weight:700">${isBuy?'+':''}${fm(diff)}</td>
-      <td style="font-weight:800;font-size:14px;color:${isBuy?'var(--green)':'var(--red)'}">
-        ${shares>0?`${isBuy?'+':'−'}${shares} 股`:'<span style="color:var(--text3)">不動</span>'}
-        ${shares>0?`<div style="font-size:9px;color:var(--text3)">≈${fm(actualAmount)}</div>`:''}
+      <td style="color:var(--text2);font-size:11px">${limitPriceOrig>0?limitPriceOrig.toFixed(isCurrency?4:2):'--'}<br><span style="color:var(--text3);font-size:9px">${priceUnit}${isCurrency?' (×'+fxRate.toFixed(1)+'=TWD)':''}</span></td>
+      <td style="color:${actionColor};font-size:11px">${estPriceOrig>0?estPriceOrig.toFixed(isCurrency?4:2):'--'}<br><span style="color:var(--text3);font-size:9px">${isSell?'×0.9985':'×1.0015'} ${priceUnit}</span></td>
+      <td style="color:${actionColor};font-weight:600">${actionLabel}</td>
+      <td style="color:${actionColor};font-weight:700">
+        ${isSell?'-':isBuy?'+':''}${actionAmtTWD>0?fm(actionAmtTWD):'--'}
+        ${isBuy&&totalNeed>0&&it.needAmtTWD>0?`<div style="font-size:9px;color:var(--text3)">分配比 ${(it.needAmtTWD/totalNeed*100).toFixed(1)}%</div>`:''}
+      </td>
+      <td style="font-weight:800;font-size:14px;color:${actionColor}">
+        ${shares>0?(isSell?'−':'+')+(shares)+' 股':'<span style="color:var(--text3)">--</span>'}
+        ${shares>0?`<div style="font-size:9px;color:var(--text3)">≈${fm(actualAmtTWD)}</div>`:''}
       </td>
     </tr>`;
   });
+
   body.innerHTML=rows.join('');
   foot.innerHTML=`<tr style="border-top:1px solid var(--border2)">
     <td colspan="4" style="color:var(--text2);font-size:11px;padding-top:10px">
-      總市值：${fm(totalMkt)}　新增投入：<strong style="color:var(--blue)">${fm(newInvest)}</strong>　→　再平衡後總額：${fm(grandTotal)}
+      總市值：${fm(totalMkt)}　
+      新增投入：<strong style="color:var(--blue)">${fm(newInvestTWD)}</strong>　
+      賣出所得：<strong style="color:var(--red)">${fm(sellPool)}</strong>　
+      →　可用買入資金：<strong style="color:var(--green)">${fm(buyPool)}</strong>
     </td>
     <td colspan="3" style="padding-top:10px;text-align:center">
-      <span style="color:var(--green);font-weight:700">買入 ${fm(totalBuy)}</span>
+      <span style="color:var(--gain);font-weight:700">實際買入 ${fm(totalBuy)}</span>
       <span style="color:var(--text3);margin:0 8px">/</span>
-      <span style="color:var(--red);font-weight:700">賣出 ${fm(totalSell)}</span>
+      <span style="color:var(--loss);font-weight:700">實際賣出 ${fm(totalSell)}</span>
     </td>
     <td colspan="3" style="text-align:right;padding-top:10px">
-      <div style="font-size:10px;color:var(--text3)">買入限價=現價×1.0015</div>
-      <div style="font-size:10px;color:var(--text3)">賣出限價=現價×0.9985</div>
+      <div style="font-size:10px;color:var(--text3)">買入限價=現價×1.0015　賣出限價=現價×0.9985</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px">買入金額按「需補比例」分配</div>
     </td>
   </tr>`;
 }
