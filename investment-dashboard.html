@@ -2321,8 +2321,8 @@ function calcRebal(pid){
   const foot=document.getElementById(id+'_foot');
   if(!body)return;
 
-  // ── 新規則：自我融資再平衡 ────────────────────────────────
-  // 步驟1：計算每個標的的現況%、偏移、是否超標
+  // ── 雙模式再平衡 ─────────────────────────────────────────
+  // 步驟1：計算基本數據
   const items = hs.map(h=>{
     const hv=calcHV(h);
     const pr=prices[h.ticker];
@@ -2337,47 +2337,62 @@ function calcRebal(pid){
     return { h, hv, pr, isCurrency, fxRate, limitPriceOrig, limitPriceTWD, curPct, tgt, tol, dev };
   });
 
-  // 步驟2：賣出 = 所有超出上緣的標的，賣回目標%
-  // 賣出金額 = (現況% - 目標%) × 總市值
-  let sellPool = 0; // 賣出所得（TWD）
-  items.forEach(it=>{
-    if(it.dev > it.tol){ // 超出上緣
-      it.sellAmtTWD = (it.dev/100) * totalMkt; // 要賣多少TWD
-      sellPool += it.sellAmtTWD;
-    } else {
-      it.sellAmtTWD = 0;
-    }
-  });
+  let sellPool = 0;
 
-  // 步驟3：可用於買入的總金額 = 賣出所得 + 新增投入
-  const buyPool = sellPool + newInvestTWD;
+  if(newInvestTWD > 0){
+    // ══ 有新資金：全部重算到目標% ══════════════════════════════
+    // 新總市值 = 現有市值 + 新增資金
+    const grandTotal = totalMkt + newInvestTWD;
+    items.forEach(it=>{
+      // 每個標的應有市值 = 新總市值 × 目標%
+      const targetVal = grandTotal * it.tgt / 100;
+      const diff = targetVal - it.hv.mktVal; // 正=買入，負=賣出
+      if(diff < 0){
+        it.sellAmtTWD = Math.abs(diff);
+        it.buyAmtTWD  = 0;
+        sellPool += it.sellAmtTWD;
+      } else {
+        it.sellAmtTWD = 0;
+        it.buyAmtTWD  = diff;
+      }
+      it.needAmtTWD = it.buyAmtTWD; // 用於顯示分配比
+    });
 
-  // 步驟4：計算每個低於目標的標的的「需補金額」
-  // 需補金額 = (目標% - 現況%) × 總市值（用原始totalMkt為基準）
-  let totalNeed = 0;
-  items.forEach(it=>{
-    if(it.dev < -it.tol){ // 低於下緣
-      it.needAmtTWD = (-it.dev/100) * totalMkt;
-      totalNeed += it.needAmtTWD;
-    } else if(it.dev <= it.tol && it.dev >= -it.tol){ // 在區間內但低於目標
-      it.needAmtTWD = it.dev < 0 ? (-it.dev/100) * totalMkt : 0;
-      totalNeed += it.needAmtTWD;
-    } else {
-      it.needAmtTWD = 0;
-    }
-  });
+  } else {
+    // ══ 無新資金：自我融資比例法 ═══════════════════════════════
+    // 步驟2：賣出超出上緣的標的（賣回目標%）
+    items.forEach(it=>{
+      if(it.dev > it.tol){
+        it.sellAmtTWD = (it.dev/100) * totalMkt;
+        sellPool += it.sellAmtTWD;
+      } else {
+        it.sellAmtTWD = 0;
+      }
+    });
 
-  // 步驟5：按比例分配 buyPool 給需補的標的
-  // 分配比例 = 該標的需補金額 ÷ 所有需補金額總和
-  items.forEach(it=>{
-    if(it.sellAmtTWD > 0){
-      it.buyAmtTWD = 0; // 賣出的標的不再買入
-    } else if(totalNeed > 0 && it.needAmtTWD > 0){
-      it.buyAmtTWD = buyPool * (it.needAmtTWD / totalNeed);
-    } else {
-      it.buyAmtTWD = 0;
-    }
-  });
+    // 步驟3：計算需補金額（低於目標的標的）
+    let totalNeed = 0;
+    items.forEach(it=>{
+      if(it.sellAmtTWD > 0){
+        it.needAmtTWD = 0;
+      } else {
+        it.needAmtTWD = it.dev < 0 ? (-it.dev/100) * totalMkt : 0;
+        totalNeed += it.needAmtTWD;
+      }
+    });
+
+    // 步驟4：按需補比例分配賣出金額
+    const buyPool = sellPool;
+    items.forEach(it=>{
+      if(it.sellAmtTWD > 0){
+        it.buyAmtTWD = 0;
+      } else if(totalNeed > 0 && it.needAmtTWD > 0){
+        it.buyAmtTWD = buyPool * (it.needAmtTWD / totalNeed);
+      } else {
+        it.buyAmtTWD = 0;
+      }
+    });
+  }
 
   // 步驟6：計算股數
   let totalBuy=0, totalSell=0;
@@ -2468,7 +2483,7 @@ function calcRebal(pid){
     </td>
     <td colspan="3" style="text-align:right;padding-top:10px">
       <div style="font-size:10px;color:var(--text3)">買入限價=現價×1.0015　賣出限價=現價×0.9985</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:2px">買入金額按「需補比例」分配</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px">${newInvestTWD>0?'有新資金：全部標的重算到目標%':'無新資金：自我融資，按需補比例分配'}</div>
     </td>
   </tr>`;
 }
