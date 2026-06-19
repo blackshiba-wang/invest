@@ -2253,6 +2253,12 @@ function renderRebalance(){
   const el=document.getElementById('rebalSection');
   // 顯示全部組合（包含新增的C/D/E），不限 included
   el.innerHTML=DB.portfolios.map(p=>buildRbCard(p)).filter(h=>h).join('');
+  // 渲染完 HTML 後，自動執行所有組合的初始計算
+  setTimeout(()=>{
+    DB.portfolios.forEach(p=>{
+      if(p.targets && Object.keys(p.targets).length) calcRebal(p.id);
+    });
+  }, 80);
 }
 function buildRbCard(p){
   const hs=getHoldings(p.id);
@@ -2283,7 +2289,10 @@ function buildRbCard(p){
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <span style="font-size:11px;color:var(--text2)">新增投入金額：</span>
-        <input type="number" class="finput" id="${id}_new" placeholder="0" step="1000" style="width:130px;padding:5px 8px;font-size:12px" oninput="calcRebal('${p.id}')">
+        <input type="number" class="finput" id="${id}_new" placeholder="0" step="1000" style="width:130px;padding:5px 8px;font-size:12px"
+          oninput="calcRebal('${p.id}')"
+          onchange="calcRebal('${p.id}')"
+          onkeydown="if(event.key==='Enter')calcRebal('${p.id}')">
         <span style="font-size:11px;color:var(--text3)">${DB.settings.displayCurrency||'TWD'}</span>
       </div>
     </div>
@@ -2306,6 +2315,7 @@ function buildRbCard(p){
     </table></div>
     `}
   </div>`;
+  return html;
 }
 function calcRebal(pid){
   const p=DB.portfolios.find(x=>x.id===pid);
