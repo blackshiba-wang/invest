@@ -2294,7 +2294,13 @@ function buildRbCard(p){
     }
     <div style="overflow-x:auto">
     <table class="rb-table" id="${id}_tbl">
-      <thead><tr><th>標的</th><th>現值</th><th>現比例</th><th>目標%</th><th>偏移</th><th>限價</th><th>預估成交價</th><th>動作</th><th>買賣金額</th><th>應買/賣股數</th></tr></thead>
+      <thead><tr>
+        <th>標的</th><th>現值</th>
+        <th>現比例<div style="font-weight:400;color:var(--text3);font-size:9px;text-transform:none;letter-spacing:0">執行後%</div></th>
+        <th>目標%</th>
+        <th>偏移<div style="font-weight:400;color:var(--text3);font-size:9px;text-transform:none;letter-spacing:0">執行後偏移</div></th>
+        <th>限價</th><th>預估成交價</th><th>動作</th><th>買賣金額</th><th>應買/賣股數</th>
+      </tr></thead>
       <tbody id="${id}_body"></tbody>
       <tfoot id="${id}_foot"></tfoot>
     </table></div>
@@ -2375,19 +2381,35 @@ function calcRebal(pid){
 
   // 步驟6：計算股數
   let totalBuy=0, totalSell=0;
-  const rows = items.map(it=>{
-    const { h, hv, pr, isCurrency, fxRate, limitPriceOrig, curPct, tgt, tol, dev } = it;
+
+  // 先做第一遍算出所有 actualAmtTWD，才能計算執行後總市值
+  const itemsCalc = items.map(it=>{
     const isSell = it.sellAmtTWD > 0;
     const isBuy  = it.buyAmtTWD > 0;
     const actionAmtTWD = isSell ? it.sellAmtTWD : it.buyAmtTWD;
-
-    const estPriceOrig = isSell ? limitPriceOrig*0.9985 : limitPriceOrig*1.0015;
-    const estPriceTWD  = estPriceOrig * fxRate;
+    const estPriceOrig = isSell ? it.limitPriceOrig*0.9985 : it.limitPriceOrig*1.0015;
+    const estPriceTWD  = estPriceOrig * it.fxRate;
     const shares = estPriceTWD>0 && actionAmtTWD>0 ? Math.floor(actionAmtTWD/estPriceTWD) : 0;
     const actualAmtTWD = shares * estPriceTWD;
+    // 執行後市值：買入加，賣出減
+    const postMktVal = it.hv.mktVal + (isBuy ? actualAmtTWD : isSell ? -actualAmtTWD : 0);
+    return { ...it, isSell, isBuy, actionAmtTWD, estPriceOrig, estPriceTWD, shares, actualAmtTWD, postMktVal };
+  });
+
+  // 執行後總市值（含新增投入）
+  const postTotalMkt = itemsCalc.reduce((s,it)=>s+it.postMktVal, 0) + newInvestTWD;
+
+  const rows = itemsCalc.map(it=>{
+    const { h, hv, pr, isCurrency, fxRate, limitPriceOrig, curPct, tgt, tol, dev,
+            isSell, isBuy, actionAmtTWD, estPriceOrig, shares, actualAmtTWD, postMktVal } = it;
 
     if(isSell) totalSell += actualAmtTWD;
     if(isBuy)  totalBuy  += actualAmtTWD;
+
+    // 執行後比例與偏移
+    const postPct  = postTotalMkt>0 ? (postMktVal/postTotalMkt*100) : 0;
+    const postDev  = postPct - tgt;
+    const postDevColor = Math.abs(postDev)<=tol?'var(--green)':postDev>tol?'var(--red)':'var(--amber)';
 
     const priceUnit = isCurrency ? 'USD' : 'TWD';
     const devColor = Math.abs(dev)<=tol?'var(--green)':dev>tol?'var(--red)':'var(--amber)';
@@ -2408,9 +2430,15 @@ function calcRebal(pid){
         <div style="font-size:9px;color:var(--text3)">${pr?.name||h.name||''}</div>
       </td>
       <td>${fm(hv.mktVal)}</td>
-      <td>${curPct.toFixed(1)}%</td>
+      <td>
+        ${curPct.toFixed(1)}%
+        ${(isBuy||isSell)?`<div style="font-size:10px;color:${postDevColor};font-weight:700;margin-top:2px">→ ${postPct.toFixed(1)}%</div>`:''}
+      </td>
       <td>${tgt>0?tgt+'%':'<span style="color:var(--text3)">--</span>'}</td>
-      <td><span class="dev-badge" style="background:${Math.abs(dev)<=tol?'rgba(0,229,160,.15)':dev>tol?'rgba(255,77,106,.15)':'rgba(255,184,77,.15)'};color:${devColor}" title="容許區間 ±${tol}%">${dev>0?'+':''}${dev.toFixed(1)}%</span></td>
+      <td>
+        <span class="dev-badge" style="background:${Math.abs(dev)<=tol?'rgba(0,229,160,.15)':dev>tol?'rgba(255,77,106,.15)':'rgba(255,184,77,.15)'};color:${devColor}" title="容許區間 ±${tol}%">${dev>0?'+':''}${dev.toFixed(1)}%</span>
+        ${(isBuy||isSell)?`<div style="font-size:10px;color:${postDevColor};font-weight:700;margin-top:3px">→ ${postDev>0?'+':''}${postDev.toFixed(1)}%</div>`:''}
+      </td>
       <td style="color:var(--text2);font-size:11px">${limitPriceOrig>0?limitPriceOrig.toFixed(isCurrency?4:2):'--'}<br><span style="color:var(--text3);font-size:9px">${priceUnit}${isCurrency?' (×'+fxRate.toFixed(1)+'=TWD)':''}</span></td>
       <td style="color:${actionColor};font-size:11px">${estPriceOrig>0?estPriceOrig.toFixed(isCurrency?4:2):'--'}<br><span style="color:var(--text3);font-size:9px">${isSell?'×0.9985':'×1.0015'} ${priceUnit}</span></td>
       <td style="color:${actionColor};font-weight:600">${actionLabel}</td>
