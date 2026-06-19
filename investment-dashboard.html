@@ -2400,8 +2400,8 @@ function calcRebal(pid){
     return { ...it, isSell, isBuy, actionAmtTWD, estPriceOrig, estPriceTWD, shares, actualAmtTWD, postMktVal };
   });
 
-  // 執行後總市值（含新增投入）
-  const postTotalMkt = itemsCalc.reduce((s,it)=>s+it.postMktVal, 0) + newInvestTWD;
+  // 執行後總市值（各標的執行後市值加總，新資金已含在 actualAmtTWD 裡，不重複加）
+  const postTotalMkt = itemsCalc.reduce((s,it)=>s+it.postMktVal, 0);
 
   const rows = itemsCalc.map(it=>{
     const { h, hv, pr, isCurrency, fxRate, limitPriceOrig, curPct, tgt, tol, dev,
