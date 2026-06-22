@@ -718,6 +718,9 @@ function buildSummaryTable(){
 let modalInst=null;
 function openModal(metric,ref){
   const years=YEARS_CHRONO.filter(y=>DATA[y]?.[metric]?.val!==null&&DATA[y]?.[metric]?.val!==undefined);
+  const vals=years.map(y=>DATA[y][metric].val);
+  const ptColors=years.map(y=>{const s=DATA[y][metric].status;return s==='bad'?'#e74c3c':s==='warn'?'#f39c12':'#27ae60';});
+  document.getElementById('modal-title').textContent=metric+' 歷年趨勢';
   document.getElementById('modal-ref').textContent='正常範圍：'+ref;
   document.getElementById('modal').classList.add('open');
   if(modalInst){modalInst.destroy();}
