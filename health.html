@@ -97,63 +97,63 @@ table.summary tr:hover td{background:#fafafa;}
    PRINT STYLES  — 醫師閱讀版
 ══════════════════════════════════════ */
 @media print {
-  @page{size:A4;margin:15mm 12mm;}
+  @page{size:A4;margin:14mm 11mm;}
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+  color-adjust:exact;
 
-  /* hide nav and interactive elements */
   .header,.year-nav,.print-btn,.footer,.modal-overlay{display:none!important;}
-
-  /* show only print page */
   .page{display:none!important;}
   #page-print{display:block!important;}
 
-  body{background:#fff;font-size:11pt;color:#000;}
+  body{background:#fff;font-size:10.5pt;color:#000;}
   .container{max-width:100%;padding:0;}
 
-  /* print header */
-  .print-header{display:flex!important;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a1a2e;padding-bottom:8px;margin-bottom:14px;}
-  .print-header h1{font-size:16pt;font-weight:700;color:#1a1a2e;}
-  .print-header .ph-meta{font-size:9pt;color:#555;line-height:1.7;}
+  .print-header{display:flex!important;justify-content:space-between;align-items:flex-start;border-bottom:2pt solid #1a1a2e;padding-bottom:7px;margin-bottom:12px;}
+  .print-header h1{font-size:15pt;font-weight:700;color:#1a1a2e;}
+  .print-header .ph-meta{font-size:8.5pt;color:#555;line-height:1.8;text-align:right;}
 
-  /* sections */
-  .p-sec{margin-bottom:14px;}
-  .p-sec-title{font-size:8pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;border-bottom:0.5pt solid #ccc;padding-bottom:3px;margin-bottom:8px;}
+  .p-sec{margin-bottom:12px;}
+  .p-sec-title{font-size:8pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#1a1a2e;border-bottom:0.5pt solid #1a1a2e;padding-bottom:3px;margin-bottom:8px;}
 
-  /* status cards for print */
-  .p-cards{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px;}
-  .p-card{border:0.5pt solid #ddd;border-radius:4px;padding:6px 8px;break-inside:avoid;}
-  .p-card.p-bad{border-left:3pt solid #e74c3c;}.p-card.p-warn{border-left:3pt solid #f39c12;}.p-card.p-ok{border-left:3pt solid #27ae60;}
-  .p-card-label{font-size:7.5pt;color:#888;margin-bottom:2px;}
-  .p-card-val{font-size:13pt;font-weight:700;line-height:1.1;}
-  .p-card-unit{font-size:7pt;color:#aaa;}
-  .p-card-ref{font-size:7pt;color:#aaa;margin-top:1px;}
-  .p-badge{font-size:7pt;font-weight:700;padding:1px 5px;border-radius:3px;display:inline-block;margin-top:2px;}
-  .p-badge.pb-bad{background:#fdecea;color:#c0392b;}.p-badge.pb-warn{background:#fef9e7;color:#d68910;}.p-badge.pb-ok{background:#eafaf1;color:#1e8449;}
+  /* key value cards */
+  .p-cards{display:grid!important;grid-template-columns:repeat(4,1fr);gap:5px;}
+  .p-card{border:0.5pt solid #ddd;border-radius:3px;padding:5px 7px;break-inside:avoid;}
+  .p-card.p-bad{border-left:3pt solid #e74c3c;background:#fff8f8!important;}
+  .p-card.p-warn{border-left:3pt solid #f39c12;background:#fffdf5!important;}
+  .p-card.p-ok{border-left:3pt solid #27ae60;background:#f8fff9!important;}
+  .p-card-label{font-size:7pt;color:#666;margin-bottom:1px;}
+  .p-card-val{font-size:12pt;font-weight:700;line-height:1.1;}
+  .p-card-unit{font-size:7pt;color:#888;}
+  .p-card-ref{font-size:7pt;color:#888;margin-top:1px;}
+  .p-badge{font-size:6.5pt;font-weight:700;padding:1px 4px;border-radius:2px;display:inline-block;margin-top:2px;}
+  .p-badge.pb-bad{background:#fdecea!important;color:#c0392b!important;}
+  .p-badge.pb-warn{background:#fef9e7!important;color:#d68910!important;}
+  .p-badge.pb-ok{background:#eafaf1!important;color:#1e8449!important;}
 
-  /* print table */
-  .p-table{width:100%;border-collapse:collapse;font-size:9pt;}
-  .p-table th{background:#f5f5f5;padding:5px 8px;font-size:8pt;font-weight:700;text-align:left;border:0.5pt solid #ddd;}
-  .p-table td{padding:5px 8px;border:0.5pt solid #eee;vertical-align:middle;}
-  .p-table tr:nth-child(even) td{background:#fafafa;}
-  .p-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle;}
-  .p-dot-ok{background:#27ae60;}.p-dot-warn{background:#f39c12;}.p-dot-bad{background:#e74c3c;}.p-dot-na{background:#ccc;}
+  /* summary table */
+  .p-table{width:100%;border-collapse:collapse;font-size:8.5pt;}
+  .p-table th{background:#1a1a2e!important;color:#fff!important;padding:4px 7px;font-size:7.5pt;font-weight:700;text-align:left;border:0.5pt solid #1a1a2e;}
+  .p-table td{padding:4px 7px;border:0.5pt solid #e0e0e0;vertical-align:middle;}
+  .p-table tr:nth-child(even) td{background:#f9f9f9!important;}
+  .p-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle;}
+  .p-dot-ok{background:#27ae60!important;}.p-dot-warn{background:#f39c12!important;}.p-dot-bad{background:#e74c3c!important;}.p-dot-na{background:#ccc!important;}
 
-  /* charts in print */
-  .p-charts{display:grid!important;grid-template-columns:repeat(2,1fr);gap:8px;}
-  .p-chart-box{border:0.5pt solid #ddd;border-radius:4px;padding:8px;break-inside:avoid;}
-  .p-chart-title{font-size:8pt;font-weight:700;color:#555;margin-bottom:5px;}
+  /* trend charts grid */
+  .p-charts{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;}
+  .p-chart-box{border:0.5pt solid #ddd;border-radius:3px;padding:6px;break-inside:avoid;}
+  .p-chart-title{font-size:7pt;font-weight:700;margin-bottom:4px;}
 
-  /* abdomen timeline for print */
-  .p-timeline{font-size:9pt;line-height:1.7;}
-  .p-tl-item{padding:4px 0;border-bottom:0.5pt solid #f0f0f0;display:flex;gap:8px;}
-  .p-tl-year{font-weight:700;min-width:40px;color:#555;}
+  /* abdomen 2-col */
+  .p-timeline{font-size:8.5pt;line-height:1.7;}
+  .p-tl-item{padding:3px 0;border-bottom:0.5pt solid #f0f0f0;display:flex;gap:7px;}
+  .p-tl-year{font-weight:700;min-width:36px;color:#555;flex-shrink:0;}
 
-  /* clinic table for print */
-  .p-clinic-table{width:100%;border-collapse:collapse;font-size:9pt;}
-  .p-clinic-table th{background:#1a1a2e;color:#fff;padding:5px 8px;font-size:8pt;font-weight:700;text-align:left;}
-  .p-clinic-table td{padding:5px 8px;border:0.5pt solid #ddd;vertical-align:top;}
-  .p-clinic-table tr:nth-child(even) td{background:#fafafa;}
+  /* clinic table */
+  .p-clinic-table{width:100%;border-collapse:collapse;font-size:8.5pt;}
+  .p-clinic-table th{background:#1a1a2e!important;color:#fff!important;padding:4px 8px;font-size:7.5pt;font-weight:700;text-align:left;}
+  .p-clinic-table td{padding:4px 8px;border:0.5pt solid #ddd;vertical-align:top;}
 
-  /* page breaks */
   .pb-before{page-break-before:always;}
   .no-break{break-inside:avoid;}
 }
@@ -203,7 +203,7 @@ table.summary tr:hover td{background:#fafafa;}
   <div class="print-header">
     <div>
       <h1>健康檢查摘要報告</h1>
-      <div style="font-size:10pt;color:#555;margin-top:4px;">王正皇・男・1975/02/21（51歲）・國中教師</div>
+      <div style="font-size:10pt;color:#555;margin-top:4px;">王正皇・男・1975/02/21（51歲）</div>
     </div>
     <div class="ph-meta">
       最新健檢：2026/05/08（敏盛綜合醫院精準醫學健診中心）<br>
@@ -231,30 +231,28 @@ table.summary tr:hover td{background:#fafafa;}
     </div>
   </div>
 
-  <!-- 二、歷年數值對比表 -->
+  <!-- 二、歷年數值對比表 + 趨勢圖 -->
   <div class="p-sec pb-before">
     <div class="p-sec-title">二、歷年數值對比（2013–2026）</div>
     <table class="p-table" id="print-summary-table"></table>
-  </div>
-
-  <!-- 三、趨勢圖 -->
-  <div class="p-sec pb-before">
-    <div class="p-sec-title">三、重要指標趨勢圖</div>
-    <div class="p-charts">
-      <div class="p-chart-box no-break"><div class="p-chart-title">LDL 壞膽固醇（目標 &lt;100 mg/dL）</div><canvas id="pc-ldl" height="140"></canvas></div>
-      <div class="p-chart-box no-break"><div class="p-chart-title">總膽固醇（目標 &lt;200 mg/dL）</div><canvas id="pc-chol" height="140"></canvas></div>
-      <div class="p-chart-box no-break"><div class="p-chart-title">三酸甘油脂 TG（目標 &lt;150）</div><canvas id="pc-tg" height="140"></canvas></div>
-      <div class="p-chart-box no-break"><div class="p-chart-title">HDL 好膽固醇（目標 &gt;40）</div><canvas id="pc-hdl" height="140"></canvas></div>
-      <div class="p-chart-box no-break"><div class="p-chart-title">HbA1c 糖化血色素（目標 &lt;5.7%）</div><canvas id="pc-hba1c" height="140"></canvas></div>
-      <div class="p-chart-box no-break"><div class="p-chart-title">空腹血糖（目標 &lt;100 mg/dL）</div><canvas id="pc-glucose" height="140"></canvas></div>
-      <div class="p-chart-box no-break"><div class="p-chart-title">尿酸（目標 &lt;7.0 mg/dL）</div><canvas id="pc-ua" height="140"></canvas></div>
-      <div class="p-chart-box no-break"><div class="p-chart-title">eGFR 腎功能（下限 60）</div><canvas id="pc-egfr" height="140"></canvas></div>
+    <div style="margin-top:14px;">
+      <div style="font-size:8pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:8px;">重要指標歷年趨勢圖</div>
+      <div class="p-charts">
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#c0392b;">● LDL 壞膽固醇（目標 &lt;100 mg/dL）</div><canvas id="pc-ldl" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● 總膽固醇（目標 &lt;200 mg/dL）</div><canvas id="pc-chol" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● 三酸甘油脂 TG（目標 &lt;150）</div><canvas id="pc-tg" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● HDL 好膽固醇（目標 &gt;40）</div><canvas id="pc-hdl" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● HbA1c 糖化血色素（目標 &lt;5.7%）</div><canvas id="pc-hba1c" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● 空腹血糖（目標 &lt;100 mg/dL）</div><canvas id="pc-glucose" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● 尿酸（目標 &lt;7.0 mg/dL）</div><canvas id="pc-ua" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● eGFR 腎功能（下限 60）</div><canvas id="pc-egfr" height="130"></canvas></div>
+      </div>
     </div>
   </div>
 
-  <!-- 四、心臟與血管 -->
+  <!-- 三、心臟與血管 -->
   <div class="p-sec pb-before">
-    <div class="p-sec-title">四、心臟與血管（2026/05/08）</div>
+    <div class="p-sec-title">三、心臟與血管（2026/05/08）</div>
     <table class="p-table">
       <thead><tr><th>檢查項目</th><th>結果</th><th>判讀</th><th>建議</th></tr></thead>
       <tbody>
@@ -272,54 +270,42 @@ table.summary tr:hover td{background:#fafafa;}
     </table>
   </div>
 
-  <!-- 五、腹部超音波歷年 -->
-  <div class="p-sec">
-    <div class="p-sec-title">五、腹部超音波歷年追蹤</div>
-    <div class="p-timeline">
-      <div class="p-tl-item"><div class="p-tl-year">2013</div><div>肝囊腫 2.1cm（S7），膽腎正常，無脂肪肝</div></div>
-      <div class="p-tl-item"><div class="p-tl-year">2014</div><div>輕度脂肪肝（首次），肝囊腫 2.1cm，膽腎正常</div></div>
-      <div class="p-tl-item"><div class="p-tl-year">2015</div><div>輕度脂肪肝，肝囊腫 2.0cm（略縮小），膽腎正常</div></div>
-      <div class="p-tl-item"><div class="p-tl-year">2016</div><div>輕度脂肪肝，疑似肝血管瘤 0.63cm（S7），肝囊腫 S7</div></div>
-      <div class="p-tl-item"><div class="p-tl-year">2018</div><div>輕度脂肪肝，肝囊腫右葉 2.3cm，<strong>左腎囊腫首次出現 0.7cm</strong></div></div>
-      <div class="p-tl-item"><div class="p-tl-year">2023</div><div>輕度脂肪肝，肝囊腫 <strong>2.75cm</strong>（歷年最大），腎囊腫 1.17cm</div></div>
-      <div class="p-tl-item" style="color:#c0392b;"><div class="p-tl-year">2026</div><div><strong>輕～中度脂肪肝（惡化）</strong>，右肝囊腫 2.6cm（S7）+ 左肝囊腫 0.79cm（S2），<strong>左腎囊腫增至 1.46cm</strong>（增大趨勢）</div></div>
-    </div>
-    <div style="margin-top:10px;" class="p-chart-box no-break">
-      <div class="p-chart-title">肝囊腫 / 腎囊腫尺寸追蹤（cm）</div>
-      <canvas id="pc-cyst" height="130"></canvas>
+  <!-- 四、腹部超音波歷年 -->
+  <div class="p-sec pb-before">
+    <div class="p-sec-title">四、腹部超音波歷年追蹤</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;">
+      <div>
+        <div class="p-timeline">
+          <div class="p-tl-item"><div class="p-tl-year">2013</div><div>肝囊腫 2.1cm（S7），膽腎正常，無脂肪肝</div></div>
+          <div class="p-tl-item"><div class="p-tl-year">2014</div><div>輕度脂肪肝（首次），肝囊腫 2.1cm，膽腎正常</div></div>
+          <div class="p-tl-item"><div class="p-tl-year">2015</div><div>輕度脂肪肝，肝囊腫 2.0cm（略縮小），膽腎正常</div></div>
+          <div class="p-tl-item"><div class="p-tl-year">2016</div><div>輕度脂肪肝，疑似肝血管瘤 0.63cm（S7），肝囊腫 S7</div></div>
+          <div class="p-tl-item"><div class="p-tl-year">2018</div><div>輕度脂肪肝，肝囊腫右葉 2.3cm，<strong>左腎囊腫首次出現 0.7cm</strong></div></div>
+          <div class="p-tl-item"><div class="p-tl-year">2023</div><div>輕度脂肪肝，肝囊腫 <strong>2.75cm</strong>（歷年最大），腎囊腫 1.17cm</div></div>
+          <div class="p-tl-item" style="color:#c0392b;font-weight:600;"><div class="p-tl-year">2026</div><div>輕～中度脂肪肝（惡化），右肝囊腫 2.6cm + 左肝囊腫 0.79cm，左腎囊腫增至 1.46cm</div></div>
+        </div>
+      </div>
+      <div class="p-chart-box no-break">
+        <div class="p-chart-title">肝囊腫 / 腎囊腫尺寸追蹤（cm）</div>
+        <canvas id="pc-cyst" height="160"></canvas>
+      </div>
     </div>
   </div>
 
-  <!-- 六、回診建議 -->
+  <!-- 五、回診建議 -->
   <div class="p-sec pb-before">
-    <div class="p-sec-title">六、回診科別與健康問題對照</div>
+    <div class="p-sec-title">五、回診科別與健康問題對照</div>
     <table class="p-clinic-table">
       <thead><tr><th>科別</th><th>優先時機</th><th>健康問題</th></tr></thead>
       <tbody>
-        <tr><td><strong>心臟內科</strong></td><td>3個月內</td><td>左心室舒張功能不佳・收縮壓130・動脈硬化中度風險・CAC 7分・LDL 152 討論用藥・左胸間歇性疼痛告知</td></tr>
-        <tr><td><strong>胸腔科</strong></td><td>3個月內（優先）</td><td>右上肺固態結節 0.35cm・右小肺裂肋膜結節最大 0.4cm（追蹤CT確認有無增大）</td></tr>
-        <tr><td><strong>神經內科</strong></td><td>6個月內</td><td>左側頸總動脈分枝輕度粥狀動脈硬化</td></tr>
-        <tr><td><strong>肝膽胃腸科</strong></td><td>6個月內</td><td>輕～中度脂肪肝・右肝囊腫 2.6cm・左肝囊腫 0.79cm・CT另見數個肝囊腫</td></tr>
-        <tr><td><strong>腎臟科</strong></td><td>6個月內</td><td>左腎囊腫 1.46cm（增大趨勢：0.7→1.17→1.46cm）・尿酸 7.8</td></tr>
-        <tr><td><strong>家醫／新陳代謝科</strong></td><td>6個月後驗血</td><td>LDL 152（目標&lt;100）・HbA1c 5.9%（糖尿病前期）・總膽固醇 205</td></tr>
-        <tr><td><strong>骨科／復健科</strong></td><td>有症狀就診</td><td>右膝退化 KL Grade 1・胸椎側彎・L5-S1 脊椎問題</td></tr>
-        <tr><td><strong>眼科</strong></td><td>定期追蹤</td><td>2026眼底正常，HbA1c糖尿病前期需留意視網膜變化</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- 七、生活習慣現況 -->
-  <div class="p-sec">
-    <div class="p-sec-title">七、生活習慣與目前執行中的介入措施</div>
-    <table class="p-table">
-      <thead><tr><th>類別</th><th>現況</th></tr></thead>
-      <tbody>
-        <tr><td>運動</td><td>每週跑步 15–20km（Zone 2），每週 2 次肌力訓練，晚餐後散步 15 分鐘</td></tr>
-        <tr><td>飲食調整</td><td>每餐白飯減半換地瓜/糙米，每日蛋黃 ≤1 顆，戒油炸，鈉 &lt;2000mg，多喝水 ≥2000ml</td></tr>
-        <tr><td>間歇性斷食</td><td>168 斷食（12:00–20:00 進食窗口）執行中</td></tr>
-        <tr><td>體重目標</td><td>75.5kg → 68kg（第一階段），腰圍 97cm → &lt;90cm</td></tr>
-        <tr><td>保健品</td><td>魚油 EPA+DHA 1020mg/日・洋車前子殼 10g/日（分兩次）・綠茶 EGCG（有機兒茶素 246mg/包，每日1包）</td></tr>
-        <tr><td>下次追蹤</td><td>2026/09/08 心臟內科回診，同步驗 LDL、HbA1c</td></tr>
+        <tr style="background:#fff5f5;"><td><strong>心臟內科</strong></td><td style="color:#c0392b;font-weight:700;">3個月內</td><td>左心室舒張功能不佳・收縮壓130・動脈硬化中度風險・CAC 7分・LDL 152 討論用藥・左胸間歇性疼痛告知</td></tr>
+        <tr style="background:#fff5f5;"><td><strong>胸腔科</strong></td><td style="color:#c0392b;font-weight:700;">3個月內（優先）</td><td>右上肺固態結節 0.35cm・右小肺裂肋膜結節最大 0.4cm（追蹤CT確認有無增大）</td></tr>
+        <tr style="background:#fffdf0;"><td><strong>神經內科</strong></td><td style="color:#d68910;font-weight:700;">6個月內</td><td>左側頸總動脈分枝輕度粥狀動脈硬化</td></tr>
+        <tr style="background:#fffdf0;"><td><strong>肝膽胃腸科</strong></td><td style="color:#d68910;font-weight:700;">6個月內</td><td>輕～中度脂肪肝・右肝囊腫 2.6cm・左肝囊腫 0.79cm・CT另見數個肝囊腫</td></tr>
+        <tr style="background:#fffdf0;"><td><strong>腎臟科</strong></td><td style="color:#d68910;font-weight:700;">6個月內</td><td>左腎囊腫 1.46cm（增大趨勢：0.7→1.17→1.46cm）・尿酸 7.8</td></tr>
+        <tr style="background:#fffdf0;"><td><strong>家醫／新陳代謝科</strong></td><td style="color:#d68910;font-weight:700;">6個月後驗血</td><td>LDL 152（目標&lt;100）・HbA1c 5.9%（糖尿病前期）・總膽固醇 205</td></tr>
+        <tr><td><strong>骨科／復健科</strong></td><td style="color:#888;">有症狀就診</td><td>右膝退化 KL Grade 1・胸椎側彎・L5-S1 脊椎問題</td></tr>
+        <tr><td><strong>眼科</strong></td><td style="color:#888;">定期追蹤</td><td>2026眼底正常，HbA1c糖尿病前期需留意視網膜變化</td></tr>
       </tbody>
     </table>
   </div>
