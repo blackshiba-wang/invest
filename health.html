@@ -698,13 +698,21 @@ function buildSummaryTable(){
       if(!d||d.val===null||d.val===undefined)return '<td><span style="color:#ccc;font-size:12px;">—</span></td>';
       return `<td><div class="dot dot-${d.status}" style="display:inline-block;vertical-align:middle;margin-right:4px;"></div><span class="val-num">${d.val}</span></td>`;
     }).join('');
+    const safeM = m.replace(/'/g,"&#39;").replace(/"/g,"&quot;");
+    const safeRef = ref.replace(/'/g,"&#39;").replace(/"/g,"&quot;");
     return `<tr>
-      <td><span class="metric-name" style="cursor:pointer;color:#1a1a2e;text-decoration:underline;text-underline-offset:3px;" onclick="openModal('${m}','${ref}')">${m}</span><span style="font-size:10px;color:#bbb;display:block;">${ref}</span></td>
+      <td><span class="metric-name modal-trigger" data-metric="${safeM}" data-ref="${safeRef}" style="cursor:pointer;color:#1a1a2e;text-decoration:underline;text-underline-offset:3px;">${m}</span><span style="font-size:10px;color:#bbb;display:block;">${ref}</span></td>
       <td style="font-size:11px;color:#bbb;">${ref}</td>
       ${cells}
       <td>${trendArrow(m)}</td>
     </tr>`;
   }).join('');
+  // attach click events after rendering
+  document.querySelectorAll('.modal-trigger').forEach(el=>{
+    el.addEventListener('click',function(){
+      openModal(this.dataset.metric, this.dataset.ref);
+    });
+  });
 }
 
 let modalInst=null;
