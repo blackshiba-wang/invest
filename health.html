@@ -7,87 +7,175 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;font-size:15px;}
-.header{background:#1a1a2e;color:#fff;padding:1.5rem 2rem;}
-.header h1{font-size:1.5rem;font-weight:500;letter-spacing:0.08em;}
-.header p{color:#aaa;font-size:0.9rem;margin-top:4px;}
-.year-nav{background:#fff;border-bottom:1px solid #e5e5e5;padding:0 1.5rem;display:flex;align-items:center;gap:0;overflow-x:auto;}
-.year-tab{padding:1rem 1.2rem;font-size:13px;font-weight:500;cursor:pointer;color:#888;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',sans-serif;background:#f0f0eb;color:#1a1a1a;font-size:15px;}
+
+/* ─── NAV ─── */
+.header{background:#1a1a2e;color:#fff;padding:1.2rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
+.header h1{font-size:1.35rem;font-weight:500;letter-spacing:0.08em;}
+.header p{color:#aaa;font-size:0.82rem;margin-top:3px;}
+.print-btn{background:#fff;color:#1a1a2e;border:none;padding:0.5rem 1.1rem;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.print-btn:hover{background:#e8e8e8;}
+.year-nav{background:#fff;border-bottom:1px solid #e0e0e0;padding:0 1.5rem;display:flex;align-items:center;overflow-x:auto;}
+.year-tab{padding:0.85rem 1.1rem;font-size:13px;font-weight:500;cursor:pointer;color:#999;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;}
 .year-tab:hover{color:#333;}
 .year-tab.active{color:#1a1a2e;border-bottom-color:#1a1a2e;}
 .year-tab.sep{margin-right:0.5rem;border-right:1px solid #eee;padding-right:1.2rem;}
 .container{max-width:1200px;margin:0 auto;padding:1.5rem;}
-.sec-title{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#999;margin:2rem 0 1rem;padding-bottom:6px;border-bottom:1px solid #e5e5e5;}
-.summary-wrap{background:#fff;border-radius:12px;overflow:auto;}
-table.summary{width:100%;border-collapse:collapse;min-width:900px;}
-table.summary th{background:#f8f8f8;padding:10px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#888;white-space:nowrap;}
-table.summary td{padding:10px 12px;border-bottom:1px solid #f5f5f5;white-space:nowrap;}
-table.summary tr:last-child td{border-bottom:none;}
-table.summary tr:hover td{background:#fafafa;}
-.metric-name{font-weight:500;font-size:14px;}
-.cell-val{display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
-.cell-val:hover .val-num{text-decoration:underline;}
-.val-num{font-size:13px;font-weight:500;}
-.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.dot-ok{background:#27ae60;}.dot-warn{background:#f39c12;}.dot-bad{background:#e74c3c;}.dot-na{background:#ddd;}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;}
+.sec-title{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#aaa;margin:2rem 0 0.9rem;padding-bottom:5px;border-bottom:1px solid #e0e0e0;}
+
+/* ─── CARDS ─── */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px;}
 .card{background:#fff;border-radius:10px;padding:1rem 1.1rem;border-left:4px solid #ddd;}
 .card.bad{border-left-color:#e74c3c;}.card.warn{border-left-color:#f39c12;}.card.ok{border-left-color:#27ae60;}
-.card-label{font-size:11px;color:#999;margin-bottom:4px;}
-.card-val{font-size:1.6rem;font-weight:600;}
-.card-unit{font-size:11px;color:#bbb;margin-left:2px;}
-.card-target{font-size:11px;margin-top:3px;}
+.card-label{font-size:10px;color:#aaa;margin-bottom:4px;}
+.card-val{font-size:1.55rem;font-weight:600;line-height:1.1;}
+.card-unit{font-size:10px;color:#bbb;margin-left:2px;}
+.card-target{font-size:10px;margin-top:4px;}
 .card.bad .card-target{color:#c0392b;}.card.warn .card-target{color:#d68910;}.card.ok .card-target{color:#1e8449;}
-.badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;margin-top:4px;}
+.badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;margin-top:4px;letter-spacing:0.03em;}
 .badge-bad{background:#fdecea;color:#c0392b;}.badge-warn{background:#fef9e7;color:#d68910;}.badge-ok{background:#eafaf1;color:#1e8449;}
-.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.2rem;}
-.chart-box{background:#fff;border-radius:10px;padding:1.3rem;}
-.chart-box h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#888;margin-bottom:1rem;}
-.action-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1rem;}
-.action-box{background:#fff;border-radius:10px;padding:1.2rem 1.4rem;}
-.action-box h3{font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:0.7rem;}
+
+/* ─── SUMMARY TABLE ─── */
+.summary-wrap{background:#fff;border-radius:12px;overflow:auto;}
+table.summary{width:100%;border-collapse:collapse;min-width:860px;}
+table.summary th{background:#f5f5f5;padding:10px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#aaa;white-space:nowrap;}
+table.summary td{padding:10px 12px;border-bottom:1px solid #f5f5f5;white-space:nowrap;font-size:13px;}
+table.summary tr:last-child td{border-bottom:none;}
+table.summary tr:hover td{background:#fafafa;}
+.metric-name{font-weight:600;font-size:13px;}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:5px;}
+.dot-ok{background:#27ae60;}.dot-warn{background:#f39c12;}.dot-bad{background:#e74c3c;}.dot-na{background:#ddd;}
+.val-num{font-size:13px;font-weight:500;}
+.trend-up{color:#e74c3c;font-size:12px;font-weight:700;}
+.trend-down{color:#27ae60;font-size:12px;font-weight:700;}
+.trend-same{color:#ccc;font-size:12px;}
+
+/* ─── CHARTS ─── */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:1.1rem;}
+.chart-box{background:#fff;border-radius:10px;padding:1.2rem 1.3rem;}
+.chart-box h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#aaa;margin-bottom:1rem;}
+
+/* ─── ACTIONS / CLINIC ─── */
+.action-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;}
+.action-box{background:#fff;border-radius:10px;padding:1.1rem 1.3rem;}
+.action-box h3{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.7rem;}
 .action-box.urgent h3{color:#c0392b;}.action-box.medium h3{color:#d68910;}.action-box.later h3{color:#2471a3;}
-.action-item{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #f8f8f8;font-size:13px;line-height:1.5;}
+.action-item{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid #f8f8f8;font-size:13px;line-height:1.5;}
 .action-item:last-child{border-bottom:none;}
 .adot{width:6px;height:6px;border-radius:50%;margin-top:6px;flex-shrink:0;}
 .urgent .adot{background:#e74c3c;}.medium .adot{background:#f39c12;}.later .adot{background:#2980b9;}
+.clinic-card{background:#fff;border-radius:12px;overflow:hidden;}
+.clinic-head{padding:0.9rem 1.3rem;}
+.clinic-body{padding:0.9rem 1.3rem;}
 .supp-table{background:#fff;border-radius:10px;overflow:auto;}
-.supp-table table{width:100%;border-collapse:collapse;min-width:500px;}
-.supp-table th{background:#f8f8f8;padding:9px 13px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#888;}
-.supp-table td{padding:9px 13px;border-bottom:1px solid #f8f8f8;font-size:13px;}
+.supp-table table{width:100%;border-collapse:collapse;min-width:480px;}
+.supp-table th{background:#f5f5f5;padding:9px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#aaa;text-align:left;}
+.supp-table td{padding:9px 12px;border-bottom:1px solid #f8f8f8;font-size:13px;}
 .supp-table tr:last-child td{border-bottom:none;}
 .time-badge{display:inline-block;font-size:9px;padding:2px 7px;border-radius:99px;background:#eef2ff;color:#3949ab;font-weight:600;}
-/* Timeline for abdomen */
-.timeline{position:relative;padding-left:1.8rem;}
-.timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:#e5e5e5;}
-.tl-item{position:relative;margin-bottom:1.2rem;}
-.tl-item:last-child{margin-bottom:0;}
-.tl-dot{position:absolute;left:-1.5rem;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid #fff;}
+.yr-note{font-size:11px;color:#999;background:#f8f8f8;border-radius:8px;padding:8px 12px;margin-bottom:1rem;line-height:1.6;}
+.tl-item{margin-bottom:1.1rem;padding-left:1.6rem;border-left:2px solid #e0e0e0;position:relative;}
+.tl-dot{position:absolute;left:-5px;top:3px;width:8px;height:8px;border-radius:50%;}
 .tl-ok{background:#27ae60;}.tl-warn{background:#f39c12;}.tl-bad{background:#e74c3c;}
-.tl-year{font-size:11px;font-weight:700;color:#888;margin-bottom:3px;}
-.tl-text{font-size:13px;line-height:1.6;color:#333;}
-.tl-note{font-size:11px;color:#aaa;margin-top:3px;}
-/* Modal */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;}
+.tl-year{font-size:11px;font-weight:700;color:#aaa;margin-bottom:2px;}
+.tl-text{font-size:13px;line-height:1.6;}
+
+/* ─── MODAL ─── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
-.modal{background:#fff;border-radius:14px;padding:1.8rem;width:90%;max-width:580px;position:relative;}
-.modal-close{position:absolute;top:1rem;right:1.2rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;}
-.modal h2{font-size:16px;font-weight:600;margin-bottom:0.3rem;}
-.modal p{font-size:12px;color:#888;margin-bottom:1.2rem;}
-.modal-chart-wrap{position:relative;height:260px;}
+.modal{background:#fff;border-radius:14px;padding:1.8rem;width:90%;max-width:560px;position:relative;}
+.modal-close{position:absolute;top:1rem;right:1.2rem;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#aaa;}
+.modal h2{font-size:15px;font-weight:600;margin-bottom:3px;}
+.modal p{font-size:11px;color:#aaa;margin-bottom:1.1rem;}
+.modal-chart-wrap{position:relative;height:250px;}
+
+/* ─── PAGE VISIBILITY ─── */
 .page{display:none;}.page.active{display:block;}
-.trend-up{color:#e74c3c;font-size:12px;font-weight:600;}
-.trend-down{color:#27ae60;font-size:12px;font-weight:600;}
-.trend-same{color:#bbb;font-size:12px;}
-.yr-note{font-size:11px;color:#888;background:#f8f8f8;border-radius:8px;padding:8px 12px;margin-bottom:1rem;line-height:1.6;}
-.footer{text-align:center;padding:2rem;color:#bbb;font-size:12px;}
+.footer{text-align:center;padding:2rem;color:#ccc;font-size:11px;}
+
+/* ══════════════════════════════════════
+   PRINT STYLES  — 醫師閱讀版
+══════════════════════════════════════ */
+@media print {
+  @page{size:A4;margin:15mm 12mm;}
+
+  /* hide nav and interactive elements */
+  .header,.year-nav,.print-btn,.footer,.modal-overlay{display:none!important;}
+
+  /* show only print page */
+  .page{display:none!important;}
+  #page-print{display:block!important;}
+
+  body{background:#fff;font-size:11pt;color:#000;}
+  .container{max-width:100%;padding:0;}
+
+  /* print header */
+  .print-header{display:flex!important;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a1a2e;padding-bottom:8px;margin-bottom:14px;}
+  .print-header h1{font-size:16pt;font-weight:700;color:#1a1a2e;}
+  .print-header .ph-meta{font-size:9pt;color:#555;line-height:1.7;}
+
+  /* sections */
+  .p-sec{margin-bottom:14px;}
+  .p-sec-title{font-size:8pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;border-bottom:0.5pt solid #ccc;padding-bottom:3px;margin-bottom:8px;}
+
+  /* status cards for print */
+  .p-cards{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .p-card{border:0.5pt solid #ddd;border-radius:4px;padding:6px 8px;break-inside:avoid;}
+  .p-card.p-bad{border-left:3pt solid #e74c3c;}.p-card.p-warn{border-left:3pt solid #f39c12;}.p-card.p-ok{border-left:3pt solid #27ae60;}
+  .p-card-label{font-size:7.5pt;color:#888;margin-bottom:2px;}
+  .p-card-val{font-size:13pt;font-weight:700;line-height:1.1;}
+  .p-card-unit{font-size:7pt;color:#aaa;}
+  .p-card-ref{font-size:7pt;color:#aaa;margin-top:1px;}
+  .p-badge{font-size:7pt;font-weight:700;padding:1px 5px;border-radius:3px;display:inline-block;margin-top:2px;}
+  .p-badge.pb-bad{background:#fdecea;color:#c0392b;}.p-badge.pb-warn{background:#fef9e7;color:#d68910;}.p-badge.pb-ok{background:#eafaf1;color:#1e8449;}
+
+  /* print table */
+  .p-table{width:100%;border-collapse:collapse;font-size:9pt;}
+  .p-table th{background:#f5f5f5;padding:5px 8px;font-size:8pt;font-weight:700;text-align:left;border:0.5pt solid #ddd;}
+  .p-table td{padding:5px 8px;border:0.5pt solid #eee;vertical-align:middle;}
+  .p-table tr:nth-child(even) td{background:#fafafa;}
+  .p-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+  .p-dot-ok{background:#27ae60;}.p-dot-warn{background:#f39c12;}.p-dot-bad{background:#e74c3c;}.p-dot-na{background:#ccc;}
+
+  /* charts in print */
+  .p-charts{display:grid!important;grid-template-columns:repeat(2,1fr);gap:8px;}
+  .p-chart-box{border:0.5pt solid #ddd;border-radius:4px;padding:8px;break-inside:avoid;}
+  .p-chart-title{font-size:8pt;font-weight:700;color:#555;margin-bottom:5px;}
+
+  /* abdomen timeline for print */
+  .p-timeline{font-size:9pt;line-height:1.7;}
+  .p-tl-item{padding:4px 0;border-bottom:0.5pt solid #f0f0f0;display:flex;gap:8px;}
+  .p-tl-year{font-weight:700;min-width:40px;color:#555;}
+
+  /* clinic table for print */
+  .p-clinic-table{width:100%;border-collapse:collapse;font-size:9pt;}
+  .p-clinic-table th{background:#1a1a2e;color:#fff;padding:5px 8px;font-size:8pt;font-weight:700;text-align:left;}
+  .p-clinic-table td{padding:5px 8px;border:0.5pt solid #ddd;vertical-align:top;}
+  .p-clinic-table tr:nth-child(even) td{background:#fafafa;}
+
+  /* page breaks */
+  .pb-before{page-break-before:always;}
+  .no-break{break-inside:avoid;}
+}
+
+/* hide print page in screen */
+@media screen {
+  #page-print{display:none!important;}
+  .print-header{display:none;}
+  .p-cards,.p-charts,.p-timeline,.p-clinic-table{display:none;}
+}
 </style>
 </head>
 <body>
+
 <div class="header">
-  <h1>健 康 檢 查 總 覽</h1>
-  <p>王正皇・個人健康追蹤系統</p>
+  <div>
+    <h1>健 康 檢 查 總 覽</h1>
+    <p>王正皇・個人健康追蹤系統</p>
+  </div>
+  <button class="print-btn" onclick="window.print()">🖨️ 列印 / 醫師版</button>
 </div>
+
 <div class="year-nav">
   <div class="year-tab sep active" onclick="showPage('summary',this)">📊 歷年總表</div>
   <div class="year-tab sep" onclick="showPage('trend',this)">📈 重要指標趨勢</div>
@@ -105,10 +193,150 @@ table.summary tr:hover td{background:#fafafa;}
   <div class="year-tab" onclick="showPage('y2013',this)">2013</div>
 </div>
 
-<!-- ===== 歷年總表 ===== -->
+<!-- ══════════════════════════════════
+     PRINT PAGE — 醫師閱讀版（只在列印時顯示）
+══════════════════════════════════ -->
+<div id="page-print">
+<div class="container">
+
+  <!-- 列印頁首 -->
+  <div class="print-header">
+    <div>
+      <h1>健康檢查摘要報告</h1>
+      <div style="font-size:10pt;color:#555;margin-top:4px;">王正皇・男・1975/02/21（51歲）・國中教師</div>
+    </div>
+    <div class="ph-meta">
+      最新健檢：2026/05/08（敏盛綜合醫院精準醫學健診中心）<br>
+      資料涵蓋：2013–2026年（共9次健檢）<br>
+      列印日期：<span id="print-date"></span>
+    </div>
+  </div>
+
+  <!-- 一、2026年關鍵數值 -->
+  <div class="p-sec">
+    <div class="p-sec-title">一、2026年關鍵數值（最新）</div>
+    <div class="p-cards">
+      <div class="p-card p-bad"><div class="p-card-label">LDL 壞膽固醇</div><div class="p-card-val">152<span class="p-card-unit"> mg/dL</span></div><div class="p-card-ref">目標 &lt;100</div><span class="p-badge pb-bad">⚠ 超標 52</span></div>
+      <div class="p-card p-warn"><div class="p-card-label">總膽固醇</div><div class="p-card-val">205<span class="p-card-unit"> mg/dL</span></div><div class="p-card-ref">目標 &lt;200</div><span class="p-badge pb-warn">略超標</span></div>
+      <div class="p-card p-ok"><div class="p-card-label">HDL 好膽固醇</div><div class="p-card-val">51<span class="p-card-unit"> mg/dL</span></div><div class="p-card-ref">正常 &gt;40</div><span class="p-badge pb-ok">正常</span></div>
+      <div class="p-card p-ok"><div class="p-card-label">三酸甘油脂 TG</div><div class="p-card-val">47<span class="p-card-unit"> mg/dL</span></div><div class="p-card-ref">正常 &lt;150</div><span class="p-badge pb-ok">優良</span></div>
+      <div class="p-card p-warn"><div class="p-card-label">HbA1c</div><div class="p-card-val">5.9<span class="p-card-unit"> %</span></div><div class="p-card-ref">目標 &lt;5.7%</div><span class="p-badge pb-warn">糖尿病前期</span></div>
+      <div class="p-card p-ok"><div class="p-card-label">空腹血糖</div><div class="p-card-val">98<span class="p-card-unit"> mg/dL</span></div><div class="p-card-ref">70~100</div><span class="p-badge pb-ok">正常</span></div>
+      <div class="p-card p-warn"><div class="p-card-label">尿酸</div><div class="p-card-val">7.8<span class="p-card-unit"> mg/dL</span></div><div class="p-card-ref">目標 &lt;7.0</div><span class="p-badge pb-warn">偏高</span></div>
+      <div class="p-card p-ok"><div class="p-card-label">eGFR 腎功能</div><div class="p-card-val">103.75</div><div class="p-card-ref">正常 &gt;60</div><span class="p-badge pb-ok">優良</span></div>
+      <div class="p-card p-warn"><div class="p-card-label">收縮壓</div><div class="p-card-val">130<span class="p-card-unit"> mmHg</span></div><div class="p-card-ref">目標 &lt;120</div><span class="p-badge pb-warn">上限</span></div>
+      <div class="p-card p-warn"><div class="p-card-label">體重 / BMI</div><div class="p-card-val">75.5<span class="p-card-unit"> kg</span></div><div class="p-card-ref">BMI 26.3 / 腰圍 97cm</div><span class="p-badge pb-warn">過重</span></div>
+      <div class="p-card p-warn"><div class="p-card-label">CAC 冠狀動脈鈣化</div><div class="p-card-val">7<span class="p-card-unit"> 分</span></div><div class="p-card-ref">同齡前 32%</div><span class="p-badge pb-warn">極輕度</span></div>
+      <div class="p-card p-ok"><div class="p-card-label">心臟 EF</div><div class="p-card-val">73.3<span class="p-card-unit"> %</span></div><div class="p-card-ref">正常 &gt;55%</div><span class="p-badge pb-ok">優良</span></div>
+    </div>
+  </div>
+
+  <!-- 二、歷年數值對比表 -->
+  <div class="p-sec pb-before">
+    <div class="p-sec-title">二、歷年數值對比（2013–2026）</div>
+    <table class="p-table" id="print-summary-table"></table>
+  </div>
+
+  <!-- 三、趨勢圖 -->
+  <div class="p-sec pb-before">
+    <div class="p-sec-title">三、重要指標趨勢圖</div>
+    <div class="p-charts">
+      <div class="p-chart-box no-break"><div class="p-chart-title">LDL 壞膽固醇（目標 &lt;100 mg/dL）</div><canvas id="pc-ldl" height="140"></canvas></div>
+      <div class="p-chart-box no-break"><div class="p-chart-title">總膽固醇（目標 &lt;200 mg/dL）</div><canvas id="pc-chol" height="140"></canvas></div>
+      <div class="p-chart-box no-break"><div class="p-chart-title">三酸甘油脂 TG（目標 &lt;150）</div><canvas id="pc-tg" height="140"></canvas></div>
+      <div class="p-chart-box no-break"><div class="p-chart-title">HDL 好膽固醇（目標 &gt;40）</div><canvas id="pc-hdl" height="140"></canvas></div>
+      <div class="p-chart-box no-break"><div class="p-chart-title">HbA1c 糖化血色素（目標 &lt;5.7%）</div><canvas id="pc-hba1c" height="140"></canvas></div>
+      <div class="p-chart-box no-break"><div class="p-chart-title">空腹血糖（目標 &lt;100 mg/dL）</div><canvas id="pc-glucose" height="140"></canvas></div>
+      <div class="p-chart-box no-break"><div class="p-chart-title">尿酸（目標 &lt;7.0 mg/dL）</div><canvas id="pc-ua" height="140"></canvas></div>
+      <div class="p-chart-box no-break"><div class="p-chart-title">eGFR 腎功能（下限 60）</div><canvas id="pc-egfr" height="140"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 四、心臟與血管 -->
+  <div class="p-sec pb-before">
+    <div class="p-sec-title">四、心臟與血管（2026/05/08）</div>
+    <table class="p-table">
+      <thead><tr><th>檢查項目</th><th>結果</th><th>判讀</th><th>建議</th></tr></thead>
+      <tbody>
+        <tr><td>心臟輸出率 EF</td><td><strong>73.3%</strong></td><td><span class="p-dot p-dot-ok"></span>優良</td><td>正常，繼續維持</td></tr>
+        <tr><td>左心室舒張功能</td><td><strong>不佳</strong></td><td><span class="p-dot p-dot-warn"></span>需追蹤</td><td>減重為首要改善方法</td></tr>
+        <tr><td>靜態心電圖</td><td>正常竇性節律</td><td><span class="p-dot p-dot-ok"></span>正常</td><td>—</td></tr>
+        <tr><td>運動心電圖</td><td>正常，無缺血</td><td><span class="p-dot p-dot-ok"></span>正常</td><td>可繼續跑步訓練</td></tr>
+        <tr><td>CAC 冠狀動脈鈣化</td><td><strong>7分</strong>（同齡前32%）</td><td><span class="p-dot p-dot-warn"></span>極輕度</td><td>積極控制 LDL</td></tr>
+        <tr><td>血管年齡</td><td><strong>53歲</strong>（實際51歲）</td><td><span class="p-dot p-dot-warn"></span>略老化</td><td>6個月追蹤</td></tr>
+        <tr><td>10年動脈疾病風險</td><td><strong>中度</strong></td><td><span class="p-dot p-dot-warn"></span>中度</td><td>LDL/血壓雙控</td></tr>
+        <tr><td>左頸動脈斑塊</td><td>輕度粥狀硬化</td><td><span class="p-dot p-dot-warn"></span>輕度</td><td>神經內科追蹤</td></tr>
+        <tr><td>二尖瓣/三尖瓣</td><td>極輕度閉鎖不全</td><td><span class="p-dot p-dot-ok"></span>常見</td><td>無需處理，追蹤即可</td></tr>
+        <tr><td>左胸間歇性疼痛</td><td>乳頭下方，1秒/下，與脈搏不同步</td><td><span class="p-dot p-dot-warn"></span>待確認</td><td>建議心臟科評估</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 五、腹部超音波歷年 -->
+  <div class="p-sec">
+    <div class="p-sec-title">五、腹部超音波歷年追蹤</div>
+    <div class="p-timeline">
+      <div class="p-tl-item"><div class="p-tl-year">2013</div><div>肝囊腫 2.1cm（S7），膽腎正常，無脂肪肝</div></div>
+      <div class="p-tl-item"><div class="p-tl-year">2014</div><div>輕度脂肪肝（首次），肝囊腫 2.1cm，膽腎正常</div></div>
+      <div class="p-tl-item"><div class="p-tl-year">2015</div><div>輕度脂肪肝，肝囊腫 2.0cm（略縮小），膽腎正常</div></div>
+      <div class="p-tl-item"><div class="p-tl-year">2016</div><div>輕度脂肪肝，疑似肝血管瘤 0.63cm（S7），肝囊腫 S7</div></div>
+      <div class="p-tl-item"><div class="p-tl-year">2018</div><div>輕度脂肪肝，肝囊腫右葉 2.3cm，<strong>左腎囊腫首次出現 0.7cm</strong></div></div>
+      <div class="p-tl-item"><div class="p-tl-year">2023</div><div>輕度脂肪肝，肝囊腫 <strong>2.75cm</strong>（歷年最大），腎囊腫 1.17cm</div></div>
+      <div class="p-tl-item" style="color:#c0392b;"><div class="p-tl-year">2026</div><div><strong>輕～中度脂肪肝（惡化）</strong>，右肝囊腫 2.6cm（S7）+ 左肝囊腫 0.79cm（S2），<strong>左腎囊腫增至 1.46cm</strong>（增大趨勢）</div></div>
+    </div>
+    <div style="margin-top:10px;" class="p-chart-box no-break">
+      <div class="p-chart-title">肝囊腫 / 腎囊腫尺寸追蹤（cm）</div>
+      <canvas id="pc-cyst" height="130"></canvas>
+    </div>
+  </div>
+
+  <!-- 六、回診建議 -->
+  <div class="p-sec pb-before">
+    <div class="p-sec-title">六、回診科別與健康問題對照</div>
+    <table class="p-clinic-table">
+      <thead><tr><th>科別</th><th>優先時機</th><th>健康問題</th></tr></thead>
+      <tbody>
+        <tr><td><strong>心臟內科</strong></td><td>3個月內</td><td>左心室舒張功能不佳・收縮壓130・動脈硬化中度風險・CAC 7分・LDL 152 討論用藥・左胸間歇性疼痛告知</td></tr>
+        <tr><td><strong>胸腔科</strong></td><td>3個月內（優先）</td><td>右上肺固態結節 0.35cm・右小肺裂肋膜結節最大 0.4cm（追蹤CT確認有無增大）</td></tr>
+        <tr><td><strong>神經內科</strong></td><td>6個月內</td><td>左側頸總動脈分枝輕度粥狀動脈硬化</td></tr>
+        <tr><td><strong>肝膽胃腸科</strong></td><td>6個月內</td><td>輕～中度脂肪肝・右肝囊腫 2.6cm・左肝囊腫 0.79cm・CT另見數個肝囊腫</td></tr>
+        <tr><td><strong>腎臟科</strong></td><td>6個月內</td><td>左腎囊腫 1.46cm（增大趨勢：0.7→1.17→1.46cm）・尿酸 7.8</td></tr>
+        <tr><td><strong>家醫／新陳代謝科</strong></td><td>6個月後驗血</td><td>LDL 152（目標&lt;100）・HbA1c 5.9%（糖尿病前期）・總膽固醇 205</td></tr>
+        <tr><td><strong>骨科／復健科</strong></td><td>有症狀就診</td><td>右膝退化 KL Grade 1・胸椎側彎・L5-S1 脊椎問題</td></tr>
+        <tr><td><strong>眼科</strong></td><td>定期追蹤</td><td>2026眼底正常，HbA1c糖尿病前期需留意視網膜變化</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 七、生活習慣現況 -->
+  <div class="p-sec">
+    <div class="p-sec-title">七、生活習慣與目前執行中的介入措施</div>
+    <table class="p-table">
+      <thead><tr><th>類別</th><th>現況</th></tr></thead>
+      <tbody>
+        <tr><td>運動</td><td>每週跑步 15–20km（Zone 2），每週 2 次肌力訓練，晚餐後散步 15 分鐘</td></tr>
+        <tr><td>飲食調整</td><td>每餐白飯減半換地瓜/糙米，每日蛋黃 ≤1 顆，戒油炸，鈉 &lt;2000mg，多喝水 ≥2000ml</td></tr>
+        <tr><td>間歇性斷食</td><td>168 斷食（12:00–20:00 進食窗口）執行中</td></tr>
+        <tr><td>體重目標</td><td>75.5kg → 68kg（第一階段），腰圍 97cm → &lt;90cm</td></tr>
+        <tr><td>保健品</td><td>魚油 EPA+DHA 1020mg/日・洋車前子殼 10g/日（分兩次）・綠茶 EGCG（有機兒茶素 246mg/包，每日1包）</td></tr>
+        <tr><td>下次追蹤</td><td>2026/09/08 心臟內科回診，同步驗 LDL、HbA1c</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:16px;font-size:8pt;color:#aaa;text-align:center;border-top:0.5pt solid #ddd;padding-top:8px;">
+    本報告資料僅供醫師參考，由個人健康追蹤系統彙整。如有疑問請以原始健檢報告為準。
+  </div>
+
+</div>
+</div>
+
+<!-- ══════════ SCREEN PAGES ══════════ -->
+
+<!-- 歷年總表 -->
 <div id="page-summary" class="page active">
 <div class="container">
-  <div class="sec-title">歷年數值對比（點擊「項目名稱」查看歷年趨勢折線圖）</div>
+  <div class="sec-title">歷年數值對比（點擊項目名稱查看趨勢折線圖）</div>
   <div class="summary-wrap">
     <table class="summary">
       <thead>
@@ -125,300 +353,216 @@ table.summary tr:hover td{background:#fafafa;}
 </div>
 </div>
 
-<!-- ===== 重要指標趨勢 ===== -->
+<!-- 重要指標趨勢 -->
 <div id="page-trend" class="page">
 <div class="container">
   <div class="sec-title">血脂趨勢</div>
   <div class="charts-grid">
-    <div class="chart-box"><h3>LDL 壞膽固醇（目標 &lt;100）</h3><div style="position:relative;height:240px;"><canvas id="t-ldl"></canvas></div></div>
-    <div class="chart-box"><h3>總膽固醇（目標 &lt;200）</h3><div style="position:relative;height:240px;"><canvas id="t-chol"></canvas></div></div>
-    <div class="chart-box"><h3>三酸甘油脂 TG（目標 &lt;150）</h3><div style="position:relative;height:240px;"><canvas id="t-tg"></canvas></div></div>
-    <div class="chart-box"><h3>HDL 好膽固醇（目標 &gt;40）</h3><div style="position:relative;height:240px;"><canvas id="t-hdl"></canvas></div></div>
+    <div class="chart-box"><h3>LDL 壞膽固醇（目標 &lt;100）</h3><div style="position:relative;height:230px;"><canvas id="t-ldl"></canvas></div></div>
+    <div class="chart-box"><h3>總膽固醇（目標 &lt;200）</h3><div style="position:relative;height:230px;"><canvas id="t-chol"></canvas></div></div>
+    <div class="chart-box"><h3>三酸甘油脂 TG（目標 &lt;150）</h3><div style="position:relative;height:230px;"><canvas id="t-tg"></canvas></div></div>
+    <div class="chart-box"><h3>HDL 好膽固醇（目標 &gt;40）</h3><div style="position:relative;height:230px;"><canvas id="t-hdl"></canvas></div></div>
   </div>
   <div class="sec-title">代謝與腎功能趨勢</div>
   <div class="charts-grid">
-    <div class="chart-box"><h3>空腹血糖（目標 70~100）</h3><div style="position:relative;height:240px;"><canvas id="t-glucose"></canvas></div></div>
-    <div class="chart-box"><h3>尿酸（目標 &lt;7.0）</h3><div style="position:relative;height:240px;"><canvas id="t-ua"></canvas></div></div>
-    <div class="chart-box"><h3>eGFR 腎功能（下限 &gt;60）</h3><div style="position:relative;height:240px;"><canvas id="t-egfr"></canvas></div></div>
-    <div class="chart-box"><h3>HbA1c 糖化血色素（目標 &lt;5.7%）</h3><div style="position:relative;height:240px;"><canvas id="t-hba1c"></canvas></div></div>
+    <div class="chart-box"><h3>空腹血糖（目標 70~100）</h3><div style="position:relative;height:230px;"><canvas id="t-glucose"></canvas></div></div>
+    <div class="chart-box"><h3>尿酸（目標 &lt;7.0）</h3><div style="position:relative;height:230px;"><canvas id="t-ua"></canvas></div></div>
+    <div class="chart-box"><h3>eGFR 腎功能（下限 &gt;60）</h3><div style="position:relative;height:230px;"><canvas id="t-egfr"></canvas></div></div>
+    <div class="chart-box"><h3>HbA1c 糖化血色素（目標 &lt;5.7%）</h3><div style="position:relative;height:230px;"><canvas id="t-hba1c"></canvas></div></div>
   </div>
-  <div class="sec-title">肝功能趨勢</div>
+  <div class="sec-title">肝功能與血壓趨勢</div>
   <div class="charts-grid">
-    <div class="chart-box"><h3>SGPT/ALT（目標 &lt;40）</h3><div style="position:relative;height:240px;"><canvas id="t-sgpt"></canvas></div></div>
-    <div class="chart-box"><h3>收縮壓（目標 &lt;120）</h3><div style="position:relative;height:240px;"><canvas id="t-sbp"></canvas></div></div>
+    <div class="chart-box"><h3>SGPT/ALT（目標 &lt;40）</h3><div style="position:relative;height:230px;"><canvas id="t-sgpt"></canvas></div></div>
+    <div class="chart-box"><h3>收縮壓（目標 &lt;120）</h3><div style="position:relative;height:230px;"><canvas id="t-sbp"></canvas></div></div>
   </div>
 </div>
 </div>
 
-<!-- ===== 腹部超音波追蹤 ===== -->
+<!-- 腹部超音波追蹤 -->
 <div id="page-abdomen" class="page">
 <div class="container">
-  <div class="sec-title">腹部超音波歷年追蹤（重點：肝囊腫、脂肪肝）</div>
+  <div class="sec-title">腹部超音波歷年追蹤（肝囊腫、腎囊腫、脂肪肝）</div>
   <div class="charts-grid">
-    <div class="chart-box" style="grid-column:1/-1;">
-      <h3>肝囊腫最大尺寸追蹤（公分）</h3>
-      <div style="position:relative;height:260px;"><canvas id="t-cyst"></canvas></div>
-    </div>
+    <div class="chart-box" style="grid-column:1/-1;"><h3>肝囊腫 / 腎囊腫尺寸追蹤（cm）</h3><div style="position:relative;height:250px;"><canvas id="t-cyst"></canvas></div></div>
   </div>
-  <div class="sec-title" style="margin-top:1.5rem;">歷年腹部超音波詳細紀錄</div>
-  <div style="background:#fff;border-radius:12px;padding:1.5rem 2rem;">
-    <div class="timeline">
-      <div class="tl-item">
-        <div class="tl-dot tl-warn"></div>
-        <div class="tl-year">2013（板橋國泰・102/11/06）</div>
-        <div class="tl-text">🟡 肝臟囊腫 X2.1cm，請定期複檢；膽、腎均正常</div>
-        <div class="tl-note">最大囊腫 2.1cm｜脂肪肝：未提及</div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-dot tl-warn"></div>
-        <div class="tl-year">2014（板橋國泰・103/09/24）</div>
-        <div class="tl-text">🟡 輕度脂肪肝、肝臟囊腫 X2.1cm，請定期複檢；膽、腎均正常</div>
-        <div class="tl-note">最大囊腫 2.1cm｜脂肪肝：輕度（新增）</div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-dot tl-warn"></div>
-        <div class="tl-year">2015（板橋國泰・104/09/23）</div>
-        <div class="tl-text">🟡 輕度脂肪肝、肝臟囊腫 X2.0cm，請追蹤複檢；膽、左右腎均正常</div>
-        <div class="tl-note">最大囊腫 2.0cm（略縮小）｜脂肪肝：輕度</div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-dot tl-warn"></div>
-        <div class="tl-year">2016（聖保祿醫院・105/10/20）</div>
-        <div class="tl-text">🟡 輕度脂肪肝、疑似肝臟血管瘤（0.63公分）在S7、肝囊腫在S7</div>
-        <div class="tl-note">囊腫位置確認 S7｜新發現疑似血管瘤 0.63cm｜脂肪肝：輕度</div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-dot tl-warn"></div>
-        <div class="tl-year">2018（聖保祿醫院・107/12/26）</div>
-        <div class="tl-text">🟡 左腎囊腫（0.7公分）、肝臟囊腫右葉 2.3公分、輕度脂肪肝</div>
-        <div class="tl-note">最大囊腫 2.3cm｜左腎囊腫首次出現 0.7cm｜脂肪肝：輕度</div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-dot tl-bad"></div>
-        <div class="tl-year">2023（天晟醫院・112/05/05）</div>
-        <div class="tl-text">🔴 輕度脂肪肝；肝囊腫 <strong>2.75cm</strong>（右葉）；腎囊腫 1.17cm</div>
-        <div class="tl-note">最大囊腫 2.75cm（歷年最大）｜腎囊腫增至 1.17cm｜脂肪肝：輕度</div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-dot tl-bad"></div>
-        <div class="tl-year">2026（敏盛醫院精準醫學・2026/05/08）</div>
-        <div class="tl-text">🔴 輕～中度脂肪肝；右肝囊腫 2.6cm（S7）、左肝囊腫 0.79cm（S2）；左腎囊腫 1.46cm</div>
-        <div class="tl-note">最大囊腫 2.6cm（增大）｜左腎囊腫增大至 1.46cm｜脂肪肝：輕～中度（惡化）</div>
-      </div>
-    </div>
+  <div class="sec-title" style="margin-top:1.5rem;">歷年詳細紀錄</div>
+  <div style="background:#fff;border-radius:12px;padding:1.4rem 1.8rem;">
+    <div class="tl-item"><div class="tl-dot tl-warn"></div><div class="tl-year">2013（板橋國泰）</div><div class="tl-text">🟡 肝囊腫 2.1cm・膽腎正常・無脂肪肝</div></div>
+    <div class="tl-item"><div class="tl-dot tl-warn"></div><div class="tl-year">2014（板橋國泰）</div><div class="tl-text">🟡 輕度脂肪肝（首次）・肝囊腫 2.1cm</div></div>
+    <div class="tl-item"><div class="tl-dot tl-warn"></div><div class="tl-year">2015（板橋國泰）</div><div class="tl-text">🟡 輕度脂肪肝・肝囊腫 2.0cm（略縮小）</div></div>
+    <div class="tl-item"><div class="tl-dot tl-warn"></div><div class="tl-year">2016（聖保祿）</div><div class="tl-text">🟡 輕度脂肪肝・疑似肝血管瘤 0.63cm（S7）</div></div>
+    <div class="tl-item"><div class="tl-dot tl-warn"></div><div class="tl-year">2018（聖保祿）</div><div class="tl-text">🟡 輕度脂肪肝・肝囊腫右葉 2.3cm・<strong style="color:#e74c3c;">左腎囊腫首次 0.7cm</strong></div></div>
+    <div class="tl-item"><div class="tl-dot tl-bad"></div><div class="tl-year">2023（天晟醫院）</div><div class="tl-text">🔴 輕度脂肪肝・肝囊腫 <strong>2.75cm</strong>（歷年最大）・腎囊腫 1.17cm</div></div>
+    <div class="tl-item"><div class="tl-dot tl-bad"></div><div class="tl-year">2026（敏盛精準醫學）</div><div class="tl-text">🔴 <strong>輕～中度脂肪肝（惡化）</strong>・右肝囊腫 2.6cm・左肝囊腫 0.79cm・<strong>左腎囊腫 1.46cm（持續增大）</strong></div></div>
   </div>
-
   <div class="sec-title">重點解讀</div>
   <div class="action-grid">
-    <div class="action-box warn" style="border-left:4px solid #f39c12;">
+    <div class="action-box medium" style="border-left:4px solid #f39c12;">
       <h3 style="color:#d68910;">肝囊腫追蹤重點</h3>
-      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>2013年起就有，S7位置固定，十年來維持 2.0~2.6cm 之間</div></div>
-      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>2026年增至 2.6cm，有緩慢增大趨勢，需持續每半年追蹤</div></div>
-      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>肝囊腫本身通常是良性，但需監測大小變化</div></div>
-      <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div>若出現右上腹痛、黃疸、發燒，需立即就診</div></div>
+      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>2013年起持續存在，S7 位置固定，十年維持 2.0–2.75cm</div></div>
+      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>整體有緩慢增大趨勢，需每半年超音波追蹤</div></div>
+      <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div>若出現右上腹痛、黃疸、發燒，立即就診</div></div>
     </div>
-    <div class="action-box warn" style="border-left:4px solid #e74c3c;">
+    <div class="action-box urgent" style="border-left:4px solid #e74c3c;">
       <h3 style="color:#c0392b;">脂肪肝惡化警示</h3>
-      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>2014年起出現輕度脂肪肝，維持多年</div></div>
-      <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div>2026年升級為輕～中度，代表脂肪堆積加重</div></div>
-      <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div>核心對策：減重（腰圍97→&lt;90）是改善脂肪肝最有效方法</div></div>
-      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>每年肝膽胃腸科追蹤超音波，每年驗肝功能</div></div>
+      <div class="action-item"><div class="adot"></div><div>2014年輕度 → 2026年輕～中度，代表脂肪堆積加重</div></div>
+      <div class="action-item"><div class="adot"></div><div><strong>減重是最有效的改善方法</strong>：腰圍 97cm → &lt;90cm 為目標</div></div>
+      <div class="action-item"><div class="adot"></div><div>每年肝膽胃腸科追蹤超音波及肝功能</div></div>
     </div>
     <div class="action-box later" style="border-left:4px solid #2980b9;">
       <h3 style="color:#2471a3;">左腎囊腫追蹤</h3>
-      <div class="action-item"><div class="adot" style="background:#2980b9;"></div><div>2018年首次發現 0.7cm</div></div>
-      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>2026年增大至 1.46cm，有增長趨勢</div></div>
-      <div class="action-item"><div class="adot" style="background:#2980b9;"></div><div>建議每半年腎臟科追蹤超音波</div></div>
+      <div class="action-item"><div class="adot"></div><div>2018年 0.7cm → 2023年 1.17cm → 2026年 1.46cm</div></div>
+      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>增速較快，建議每半年腎臟科追蹤超音波</div></div>
     </div>
   </div>
 </div>
 </div>
 
-<!-- ===== 心臟健康 ===== -->
+<!-- 心臟健康 -->
 <div id="page-heart" class="page">
 <div class="container">
-
-  <div class="sec-title">心臟健康總覽（2026/05/08 最新檢查）</div>
+  <div class="sec-title">心臟健康總覽（2026/05/08 最新）</div>
   <div class="cards">
     <div class="card ok"><div class="card-label">心臟輸出率 EF</div><div class="card-val">73.3<span class="card-unit">%</span></div><div class="card-target">正常 &gt;55%</div><span class="badge badge-ok">優良</span></div>
     <div class="card warn"><div class="card-label">左心室舒張功能</div><div class="card-val" style="font-size:1.1rem;">不佳</div><div class="card-target">需減重改善</div><span class="badge badge-warn">需追蹤</span></div>
     <div class="card ok"><div class="card-label">靜態心電圖</div><div class="card-val" style="font-size:1.1rem;">正常</div><div class="card-target">正常竇性節律</div><span class="badge badge-ok">正常</span></div>
     <div class="card ok"><div class="card-label">運動心電圖</div><div class="card-val" style="font-size:1.1rem;">正常</div><div class="card-target">無心肌缺血</div><span class="badge badge-ok">正常</span></div>
-    <div class="card warn"><div class="card-label">CAC 冠狀動脈鈣化</div><div class="card-val">7<span class="card-unit">分</span></div><div class="card-target">同齡前 32%</div><span class="badge badge-warn">極輕度</span></div>
+    <div class="card warn"><div class="card-label">CAC 冠脈鈣化</div><div class="card-val">7<span class="card-unit">分</span></div><div class="card-target">同齡前 32%</div><span class="badge badge-warn">極輕度</span></div>
     <div class="card warn"><div class="card-label">血管年齡</div><div class="card-val">53<span class="card-unit">歲</span></div><div class="card-target">實際 51 歲</div><span class="badge badge-warn">略老化</span></div>
-    <div class="card warn"><div class="card-label">10年動脈疾病風險</div><div class="card-val" style="font-size:1.1rem;">中度</div><div class="card-target">需積極控制</div><span class="badge badge-warn">中度風險</span></div>
-    <div class="card warn"><div class="card-label">右側動脈硬化</div><div class="card-val" style="font-size:1.1rem;">輕度增加</div><div class="card-target">早期發現</div><span class="badge badge-warn">輕度</span></div>
+    <div class="card warn"><div class="card-label">10年動脈疾病風險</div><div class="card-val" style="font-size:1.1rem;">中度</div><div class="card-target">需積極控制</div><span class="badge badge-warn">中度</span></div>
     <div class="card warn"><div class="card-label">左頸動脈斑塊</div><div class="card-val" style="font-size:1.1rem;">輕度</div><div class="card-target">粥狀硬化</div><span class="badge badge-warn">輕度</span></div>
-    <div class="card ok"><div class="card-label">二尖瓣</div><div class="card-val" style="font-size:1.1rem;">極輕度</div><div class="card-target">閉鎖不全</div><span class="badge badge-ok">常見，無需處理</span></div>
-    <div class="card ok"><div class="card-label">三尖瓣 / 肺動脈瓣</div><div class="card-val" style="font-size:1.1rem;">極輕度</div><div class="card-target">閉鎖不全</div><span class="badge badge-ok">常見，無需處理</span></div>
+    <div class="card ok"><div class="card-label">二尖瓣／三尖瓣</div><div class="card-val" style="font-size:1.1rem;">極輕度</div><div class="card-target">閉鎖不全</div><span class="badge badge-ok">常見，無需處理</span></div>
     <div class="card warn"><div class="card-label">左胸間歇性疼痛</div><div class="card-val" style="font-size:1.1rem;">待確認</div><div class="card-target">與脈搏不同步</div><span class="badge badge-warn">需告知醫師</span></div>
   </div>
-
-  <div class="sec-title">心血管風險因子（2026年）</div>
+  <div class="sec-title">心臟風險圖表</div>
   <div class="charts-grid">
-    <div class="chart-box">
-      <h3>心臟風險雷達圖</h3>
-      <div style="position:relative;height:280px;"><canvas id="h-radar"></canvas></div>
-    </div>
-    <div class="chart-box">
-      <h3>CAC 鈣化積分對照</h3>
-      <div style="position:relative;height:280px;"><canvas id="h-cac"></canvas></div>
-      <p style="font-size:11px;color:#888;text-align:center;margin-top:8px;">公子 7 分（極輕度）＝同齡男性後 68%，已開始有斑塊形成</p>
-    </div>
+    <div class="chart-box"><h3>心臟風險雷達圖</h3><div style="position:relative;height:280px;"><canvas id="h-radar"></canvas></div></div>
+    <div class="chart-box"><h3>CAC 鈣化積分對照</h3><div style="position:relative;height:280px;"><canvas id="h-cac"></canvas></div><p style="font-size:11px;color:#aaa;text-align:center;margin-top:8px;">公子 7 分（極輕度），同齡中屬早期發現</p></div>
   </div>
-
-  <div class="sec-title">動脈硬化歷年趨勢（baPWV 脈波速度）</div>
-  <div class="charts-grid">
-    <div class="chart-box">
-      <h3>baPWV 右側（cm/s）— 數值越低越好</h3>
-      <div style="position:relative;height:220px;"><canvas id="h-bapwv-r"></canvas></div>
-    </div>
-    <div class="chart-box">
-      <h3>baPWV 左側（cm/s）— 數值越低越好</h3>
-      <div style="position:relative;height:220px;"><canvas id="h-bapwv-l"></canvas></div>
-    </div>
-  </div>
-
   <div class="sec-title">心臟健康解讀</div>
   <div class="action-grid">
-    <div class="action-box ok" style="border-left:4px solid #27ae60;">
+    <div class="action-box" style="border-left:4px solid #27ae60;">
       <h3 style="color:#1e8449;">✅ 好消息</h3>
-      <div class="action-item"><div class="adot" style="background:#27ae60;"></div><div>EF 73.3%：心臟收縮力非常好，遠超正常標準</div></div>
-      <div class="action-item"><div class="adot" style="background:#27ae60;"></div><div>運動心電圖正常：跑步對心臟是安全的，可繼續維持訓練</div></div>
-      <div class="action-item"><div class="adot" style="background:#27ae60;"></div><div>瓣膜問題極輕微：三個瓣膜都只是極輕度，終生多數不需處理</div></div>
-      <div class="action-item"><div class="adot" style="background:#27ae60;"></div><div>CAC 7分：極低風險區間，同齡中屬於較好的</div></div>
+      <div class="action-item"><div class="adot" style="background:#27ae60;"></div><div>EF 73.3%：心臟收縮力非常好</div></div>
+      <div class="action-item"><div class="adot" style="background:#27ae60;"></div><div>運動心電圖正常：跑步安全，可繼續</div></div>
+      <div class="action-item"><div class="adot" style="background:#27ae60;"></div><div>瓣膜問題極輕微：終生多數不需處理</div></div>
+      <div class="action-item"><div class="adot" style="background:#27ae60;"></div><div>CAC 7分：極低風險，早期發現</div></div>
     </div>
     <div class="action-box warn" style="border-left:4px solid #f39c12;">
       <h3 style="color:#d68910;">⚠️ 需要管理</h3>
-      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>舒張功能不佳：根源是體重過重＋血壓偏高，減重是最直接解法</div></div>
-      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>動脈硬化中度風險：LDL 152 是推手，降 LDL 就是在保護血管</div></div>
-      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>左頸動脈輕度斑塊：早期，但需神經內科確認追蹤頻率</div></div>
-      <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div>左胸間歇性疼痛（乳頭下方，1秒一下，與脈搏不同步）：下次門診務必告知醫師</div></div>
+      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>舒張功能不佳：減重是最直接解法</div></div>
+      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>動脈硬化中度風險：LDL 152 是推手</div></div>
+      <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>左頸動脈輕度斑塊：需神經內科確認</div></div>
+      <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div>左胸疼痛：下次門診務必告知醫師</div></div>
     </div>
-    <div class="action-box urgent" style="border-left:4px solid #e74c3c;">
-      <h3 style="color:#c0392b;">🚨 立即就醫警示</h3>
+    <div class="action-box urgent">
+      <h3>🚨 立即急診警示</h3>
       <div class="action-item"><div class="adot"></div><div>胸痛持續超過 5 分鐘</div></div>
       <div class="action-item"><div class="adot"></div><div>疼痛延伸至左肩、下巴、左手臂</div></div>
-      <div class="action-item"><div class="adot"></div><div>同時出現冒冷汗、噁心、頭暈</div></div>
-      <div class="action-item"><div class="adot"></div><div>靜止時胸痛突然發作且不緩解</div></div>
-      <div style="font-size:11px;color:#c0392b;margin-top:8px;font-weight:600;">以上任一情況 → 直接急診，不要等</div>
+      <div class="action-item"><div class="adot"></div><div>冒冷汗、噁心、頭暈同時發生</div></div>
+      <div class="action-item"><div class="adot"></div><div>靜止時突發且不緩解的胸痛</div></div>
     </div>
   </div>
-
 </div>
 </div>
 
-<!-- ===== 回診計畫 ===== -->
+<!-- 回診計畫 -->
 <div id="page-clinic" class="page">
 <div class="container">
   <div class="sec-title">依科別整理的回診計畫（依據 2026 健檢結果）</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.1rem;">
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.2rem;">
-
-    <!-- 心臟內科 -->
-    <div style="background:#fff;border-radius:12px;overflow:hidden;">
-      <div style="background:#fdecea;padding:1rem 1.4rem;border-left:5px solid #e74c3c;">
-        <div style="font-size:12px;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:0.05em;">心臟內科</div>
-        <div style="font-size:11px;color:#e74c3c;margin-top:3px;">⏰ 3個月內</div>
+    <div class="clinic-card">
+      <div class="clinic-head" style="background:#fdecea;border-left:5px solid #e74c3c;">
+        <div style="font-size:12px;font-weight:700;color:#c0392b;text-transform:uppercase;">心臟內科</div>
+        <div style="font-size:11px;color:#e74c3c;margin-top:2px;">⏰ 3個月內</div>
       </div>
-      <div style="padding:1rem 1.4rem;">
+      <div class="clinic-body">
         <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div><strong>左心室舒張功能不佳</strong>：追蹤是否因減重改善</div></div>
-        <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div><strong>收縮壓 130</strong>：確認是否需要藥物介入</div></div>
-        <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div><strong>右側動脈血管硬化輕度增加</strong>：評估追蹤頻率</div></div>
-        <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div><strong>冠狀動脈鈣化 CAC 7分</strong>：確認下次追蹤時間</div></div>
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>左胸間歇性疼痛</strong>：主動告知醫師，說明與脈搏不同步</div></div>
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>LDL 152</strong>：討論是否需要 Statin 藥物</div></div>
+        <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div><strong>收縮壓 130</strong>：確認是否需藥物介入</div></div>
+        <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div><strong>動脈硬化中度風險 + CAC 7分</strong>：評估追蹤頻率</div></div>
+        <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div><strong>LDL 152</strong>：討論是否需要 Statin</div></div>
+        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>左胸間歇性疼痛</strong>（乳頭下方，1秒/下，與脈搏不同步）：主動告知</div></div>
       </div>
     </div>
 
-    <!-- 胸腔科 -->
-    <div style="background:#fff;border-radius:12px;overflow:hidden;">
-      <div style="background:#fdecea;padding:1rem 1.4rem;border-left:5px solid #e74c3c;">
-        <div style="font-size:12px;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:0.05em;">胸腔科</div>
-        <div style="font-size:11px;color:#e74c3c;margin-top:3px;">⏰ 3個月內（最優先）</div>
+    <div class="clinic-card">
+      <div class="clinic-head" style="background:#fdecea;border-left:5px solid #e74c3c;">
+        <div style="font-size:12px;font-weight:700;color:#c0392b;text-transform:uppercase;">胸腔科</div>
+        <div style="font-size:11px;color:#e74c3c;margin-top:2px;">⏰ 3個月內（最優先）</div>
       </div>
-      <div style="padding:1rem 1.4rem;">
-        <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div><strong>右上肺固態結節 0.35cm</strong>：追蹤 CT，確認大小無增長</div></div>
-        <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div><strong>右小肺裂 2個固態肋膜結節（最大 0.4cm）</strong>：同步追蹤</div></div>
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>輕微胸椎側彎</strong>：若有腰痠背痛可轉骨科/復健科</div></div>
-      </div>
-    </div>
-
-    <!-- 神經內科 -->
-    <div style="background:#fff;border-radius:12px;overflow:hidden;">
-      <div style="background:#fef9e7;padding:1rem 1.4rem;border-left:5px solid #f39c12;">
-        <div style="font-size:12px;font-weight:700;color:#d68910;text-transform:uppercase;letter-spacing:0.05em;">神經內科</div>
-        <div style="font-size:11px;color:#d68910;margin-top:3px;">⏰ 6個月內</div>
-      </div>
-      <div style="padding:1rem 1.4rem;">
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>左側頸總動脈分枝輕度粥狀動脈硬化</strong>：評估追蹤頻率，確認是否需藥物</div></div>
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>注意症狀：突發性頭暈、單側肢體無力、短暫視力模糊（TIA前兆）→ 出現立即急診</div></div>
+      <div class="clinic-body">
+        <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div><strong>右上肺固態結節 0.35cm</strong>：追蹤 CT 確認無增大</div></div>
+        <div class="action-item"><div class="adot" style="background:#e74c3c;"></div><div><strong>右小肺裂 2 個肋膜結節（最大 0.4cm）</strong>：同步追蹤</div></div>
+        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>輕微胸椎側彎</strong>：有不適轉骨科/復健科</div></div>
       </div>
     </div>
 
-    <!-- 肝膽胃腸科 -->
-    <div style="background:#fff;border-radius:12px;overflow:hidden;">
-      <div style="background:#fef9e7;padding:1rem 1.4rem;border-left:5px solid #f39c12;">
-        <div style="font-size:12px;font-weight:700;color:#d68910;text-transform:uppercase;letter-spacing:0.05em;">肝膽胃腸科</div>
-        <div style="font-size:11px;color:#d68910;margin-top:3px;">⏰ 6個月內</div>
+    <div class="clinic-card">
+      <div class="clinic-head" style="background:#fef9e7;border-left:5px solid #f39c12;">
+        <div style="font-size:12px;font-weight:700;color:#d68910;text-transform:uppercase;">神經內科</div>
+        <div style="font-size:11px;color:#d68910;margin-top:2px;">⏰ 6個月內</div>
       </div>
-      <div style="padding:1rem 1.4rem;">
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>輕～中度脂肪肝</strong>：追蹤超音波，減重是最直接改善方法</div></div>
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>右肝囊腫 2.6cm（S7）</strong>：確認大小，歷年有增大趨勢</div></div>
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>左肝囊腫 0.79cm（S2）</strong>：追蹤</div></div>
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>CT 另見數個肝臟囊腫</strong>：一併追蹤</div></div>
+      <div class="clinic-body">
+        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>左側頸總動脈分枝輕度粥狀動脈硬化</strong>：評估追蹤頻率</div></div>
+        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>注意：突發頭暈、單側肢體無力、短暫視力模糊 → 立即急診</div></div>
       </div>
     </div>
 
-    <!-- 腎臟科 -->
-    <div style="background:#fff;border-radius:12px;overflow:hidden;">
-      <div style="background:#fef9e7;padding:1rem 1.4rem;border-left:5px solid #f39c12;">
-        <div style="font-size:12px;font-weight:700;color:#d68910;text-transform:uppercase;letter-spacing:0.05em;">腎臟科</div>
-        <div style="font-size:11px;color:#d68910;margin-top:3px;">⏰ 6個月內</div>
+    <div class="clinic-card">
+      <div class="clinic-head" style="background:#fef9e7;border-left:5px solid #f39c12;">
+        <div style="font-size:12px;font-weight:700;color:#d68910;text-transform:uppercase;">肝膽胃腸科</div>
+        <div style="font-size:11px;color:#d68910;margin-top:2px;">⏰ 6個月內</div>
       </div>
-      <div style="padding:1rem 1.4rem;">
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>左腎囊腫 1.46cm</strong>：2018年 0.7cm → 2023年 1.17cm → 2026年 1.46cm，持續增大中</div></div>
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>尿酸 7.8</strong>：確認是否需要藥物，目前靠飲食＋多喝水管理</div></div>
+      <div class="clinic-body">
+        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>輕～中度脂肪肝</strong>：追蹤超音波，減重是核心對策</div></div>
+        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>右肝囊腫 2.6cm + 左肝囊腫 0.79cm</strong>：確認大小</div></div>
+        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div>建議同時安排 C13 呼氣試驗（幽門桿菌篩檢）</div></div>
       </div>
     </div>
 
-    <!-- 家醫科 / 新陳代謝科 -->
-    <div style="background:#fff;border-radius:12px;overflow:hidden;">
-      <div style="background:#fef9e7;padding:1rem 1.4rem;border-left:5px solid #f39c12;">
-        <div style="font-size:12px;font-weight:700;color:#d68910;text-transform:uppercase;letter-spacing:0.05em;">家醫科 / 新陳代謝科</div>
-        <div style="font-size:11px;color:#d68910;margin-top:3px;">⏰ 6個月後驗血</div>
+    <div class="clinic-card">
+      <div class="clinic-head" style="background:#fef9e7;border-left:5px solid #f39c12;">
+        <div style="font-size:12px;font-weight:700;color:#d68910;text-transform:uppercase;">腎臟科</div>
+        <div style="font-size:11px;color:#d68910;margin-top:2px;">⏰ 6個月內</div>
       </div>
-      <div style="padding:1rem 1.4rem;">
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>LDL 152</strong>：目標降至 &lt;100，6個月後驗血確認飲食＋保健品成效</div></div>
-        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>HbA1c 5.9%（糖尿病前期）</strong>：目標 &lt;5.7%，追蹤改善幅度</div></div>
+      <div class="clinic-body">
+        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>左腎囊腫 1.46cm</strong>（2018: 0.7 → 2023: 1.17 → 2026: 1.46cm）</div></div>
+        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>尿酸 7.8</strong>：確認是否需藥物，目前靠飲食+水分管理</div></div>
+      </div>
+    </div>
+
+    <div class="clinic-card">
+      <div class="clinic-head" style="background:#fef9e7;border-left:5px solid #f39c12;">
+        <div style="font-size:12px;font-weight:700;color:#d68910;text-transform:uppercase;">家醫科 / 新陳代謝科</div>
+        <div style="font-size:11px;color:#d68910;margin-top:2px;">⏰ 6個月後驗血</div>
+      </div>
+      <div class="clinic-body">
+        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>LDL 152</strong>：目標 &lt;100，驗血確認飲食介入成效</div></div>
+        <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>HbA1c 5.9%</strong>（糖尿病前期）：目標 &lt;5.7%</div></div>
         <div class="action-item"><div class="adot" style="background:#f39c12;"></div><div><strong>總膽固醇 205</strong>：伴隨 LDL 一起改善</div></div>
-        <div class="action-item"><div class="adot" style="background:#2980b9;"></div><div><strong>尿酸 7.8</strong>：同步追蹤</div></div>
       </div>
     </div>
 
-    <!-- 骨科 / 復健科 -->
-    <div style="background:#fff;border-radius:12px;overflow:hidden;">
-      <div style="background:#e8f4fd;padding:1rem 1.4rem;border-left:5px solid #2980b9;">
-        <div style="font-size:12px;font-weight:700;color:#2471a3;text-transform:uppercase;letter-spacing:0.05em;">骨科 / 復健科</div>
-        <div style="font-size:11px;color:#2471a3;margin-top:3px;">⏰ 有症狀再就診</div>
+    <div class="clinic-card">
+      <div class="clinic-head" style="background:#e8f4fd;border-left:5px solid #2980b9;">
+        <div style="font-size:12px;font-weight:700;color:#2471a3;text-transform:uppercase;">骨科 / 復健科</div>
+        <div style="font-size:11px;color:#2471a3;margin-top:2px;">⏰ 有症狀就診</div>
       </div>
-      <div style="padding:1rem 1.4rem;">
-        <div class="action-item"><div class="adot" style="background:#2980b9;"></div><div><strong>右膝退化 KL Grade 1</strong>：維持肌力訓練、控制體重，每 3~6 個月自我評估</div></div>
-        <div class="action-item"><div class="adot" style="background:#2980b9;"></div><div><strong>胸椎側彎</strong>：若出現腰痠背痛、呼吸困難，轉診復健科</div></div>
-        <div class="action-item"><div class="adot" style="background:#2980b9;"></div><div><strong>L5-S1 脊椎問題</strong>：跑步量增加時留意，有不適立即就診</div></div>
+      <div class="clinic-body">
+        <div class="action-item"><div class="adot" style="background:#2980b9;"></div><div><strong>右膝退化 KL Grade 1</strong>：肌力訓練、控制體重</div></div>
+        <div class="action-item"><div class="adot" style="background:#2980b9;"></div><div><strong>胸椎側彎 + L5-S1</strong>：跑步量增加時留意</div></div>
       </div>
     </div>
 
-    <!-- 眼科 -->
-    <div style="background:#fff;border-radius:12px;overflow:hidden;">
-      <div style="background:#e8f4fd;padding:1rem 1.4rem;border-left:5px solid #2980b9;">
-        <div style="font-size:12px;font-weight:700;color:#2471a3;text-transform:uppercase;letter-spacing:0.05em;">眼科</div>
-        <div style="font-size:11px;color:#2471a3;margin-top:3px;">⏰ 定期追蹤</div>
+    <div class="clinic-card">
+      <div class="clinic-head" style="background:#e8f4fd;border-left:5px solid #2980b9;">
+        <div style="font-size:12px;font-weight:700;color:#2471a3;text-transform:uppercase;">眼科</div>
+        <div style="font-size:11px;color:#2471a3;margin-top:2px;">⏰ 定期追蹤</div>
       </div>
-      <div style="padding:1rem 1.4rem;">
-        <div class="action-item"><div class="adot" style="background:#27ae60;"></div><div><strong>2026年眼底攝影正常</strong>：雙眼無明顯異常</div></div>
-        <div class="action-item"><div class="adot" style="background:#27ae60;"></div><div><strong>眼壓正常</strong>：右 13.4、左 14.1（均 &lt;21）</div></div>
-        <div class="action-item"><div class="adot" style="background:#2980b9;"></div><div>每年健檢時一併檢查，HbA1c 糖尿病前期需特別留意視網膜</div></div>
+      <div class="clinic-body">
+        <div class="action-item"><div class="adot" style="background:#27ae60;"></div><div>2026 眼底攝影正常，眼壓正常</div></div>
+        <div class="action-item"><div class="adot" style="background:#2980b9;"></div><div>HbA1c 糖尿病前期，需留意視網膜變化</div></div>
       </div>
     </div>
 
@@ -426,180 +570,7 @@ table.summary tr:hover td{background:#fafafa;}
 </div>
 </div>
 
-<!-- ===== 各年份詳細頁 ===== -->
-
-<!-- 2013 -->
-<div id="page-y2013" class="page"><div class="container">
-  <div class="yr-note">板橋國泰醫院・102/11/06・民國102年（2013年）</div>
-  <div class="sec-title">2013年 關鍵數值</div>
-  <div class="cards">
-    <div class="card ok"><div class="card-label">總膽固醇</div><div class="card-val">176<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;200</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">LDL</div><div class="card-val">102<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;130（當時標準）</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">HDL</div><div class="card-val">58<span class="card-unit">mg/dL</span></div><div class="card-target">&gt;40</div><span class="badge badge-ok">優良</span></div>
-    <div class="card ok"><div class="card-label">三酸甘油脂</div><div class="card-val">58<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;150</div><span class="badge badge-ok">優良</span></div>
-    <div class="card ok"><div class="card-label">空腹血糖</div><div class="card-val">74<span class="card-unit">mg/dL</span></div><div class="card-target">70~110</div><span class="badge badge-ok">優良</span></div>
-    <div class="card ok"><div class="card-label">SGPT</div><div class="card-val">18<span class="card-unit">U/L</span></div><div class="card-target">&lt;42</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">尿酸</div><div class="card-val">5.5<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;7.0</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">收縮壓</div><div class="card-val">123<span class="card-unit">mmHg</span></div><div class="card-target">&lt;130</div><span class="badge badge-ok">正常</span></div>
-  </div>
-  <div class="sec-title">腹部超音波</div>
-  <div style="background:#fff;border-radius:10px;padding:1.2rem 1.4rem;font-size:13px;line-height:2;">
-    🟡 肝臟囊腫 X2.1cm，請定期複檢<br>🟢 膽、腎均正常<br>🔵 脂肪肝：未提及
-  </div>
-</div></div>
-
-<!-- 2014 -->
-<div id="page-y2014" class="page"><div class="container">
-  <div class="yr-note">板橋國泰醫院・103/09/24・民國103年（2014年）</div>
-  <div class="sec-title">2014年 關鍵數值</div>
-  <div class="cards">
-    <div class="card ok"><div class="card-label">總膽固醇</div><div class="card-val">194<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;200</div><span class="badge badge-ok">正常</span></div>
-    <div class="card warn"><div class="card-label">LDL</div><div class="card-val">112<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;100</div><span class="badge badge-warn">偏高</span></div>
-    <div class="card ok"><div class="card-label">HDL</div><div class="card-val">59<span class="card-unit">mg/dL</span></div><div class="card-target">&gt;40</div><span class="badge badge-ok">優良</span></div>
-    <div class="card ok"><div class="card-label">三酸甘油脂</div><div class="card-val">40<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;150</div><span class="badge badge-ok">優良</span></div>
-    <div class="card ok"><div class="card-label">空腹血糖</div><div class="card-val">78<span class="card-unit">mg/dL</span></div><div class="card-target">70~110</div><span class="badge badge-ok">優良</span></div>
-    <div class="card ok"><div class="card-label">SGPT</div><div class="card-val">24<span class="card-unit">U/L</span></div><div class="card-target">&lt;42</div><span class="badge badge-ok">正常</span></div>
-    <div class="card warn"><div class="card-label">尿酸</div><div class="card-val">7.7<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;7.0</div><span class="badge badge-warn">上限</span></div>
-    <div class="card warn"><div class="card-label">收縮壓</div><div class="card-val">136<span class="card-unit">mmHg</span></div><div class="card-target">&lt;130</div><span class="badge badge-warn">偏高</span></div>
-  </div>
-  <div class="sec-title">腹部超音波</div>
-  <div style="background:#fff;border-radius:10px;padding:1.2rem 1.4rem;font-size:13px;line-height:2;">
-    🟡 輕度脂肪肝（首次出現）<br>🟡 肝臟囊腫 X2.1cm，請定期複檢<br>🟢 膽、腎均正常
-  </div>
-</div></div>
-
-<!-- 2015 -->
-<div id="page-y2015" class="page"><div class="container">
-  <div class="yr-note">板橋國泰醫院・104/09/23・民國104年（2015年）</div>
-  <div class="sec-title">2015年 關鍵數值</div>
-  <div class="cards">
-    <div class="card ok"><div class="card-label">收縮壓</div><div class="card-val">135<span class="card-unit">mmHg</span></div><div class="card-target">&lt;130</div><span class="badge badge-warn">略高</span></div>
-    <div class="card ok"><div class="card-label">骨質密度 T-Score</div><div class="card-val">-0.4</div><div class="card-target">正常 &gt;-1</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">空腹血糖</div><div class="card-val">—</div><div class="card-target">70~110</div><span class="badge badge-ok">未記錄</span></div>
-  </div>
-  <div class="sec-title">腹部超音波</div>
-  <div style="background:#fff;border-radius:10px;padding:1.2rem 1.4rem;font-size:13px;line-height:2;">
-    🟡 輕度脂肪肝<br>🟡 肝臟囊腫 X2.0cm（略縮小），請追蹤複檢<br>🟢 膽、左右腎均正常
-  </div>
-  <div class="yr-note" style="margin-top:1rem;">此次報告僅有第一頁（血液常規），血脂等數值未拍到，待補充。</div>
-</div></div>
-
-<!-- 2016 -->
-<div id="page-y2016" class="page"><div class="container">
-  <div class="yr-note">聖保祿醫院健康管理中心・105/10/20・民國105年（2016年）</div>
-  <div class="sec-title">2016年 儀器與影像檢查</div>
-  <div class="cards">
-    <div class="card ok"><div class="card-label">靜引心電圖</div><div class="card-val" style="font-size:1.1rem;">無異狀</div><div class="card-target">正常</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">骨質密度 T-Score</div><div class="card-val">0.4</div><div class="card-target">正常 &gt;-1</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">胸部X光</div><div class="card-val" style="font-size:1.1rem;">無異狀</div><div class="card-target">正常</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">ABI右（血管阻塞）</div><div class="card-val">1.01</div><div class="card-target">0.9~1.3</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">ABI左</div><div class="card-val">1.10</div><div class="card-target">0.9~1.3</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">脈波速度右</div><div class="card-val">1305<span class="card-unit">cm/s</span></div><div class="card-target">&lt;1400</div><span class="badge badge-ok">正常</span></div>
-  </div>
-  <div class="sec-title">腹部超音波</div>
-  <div style="background:#fff;border-radius:10px;padding:1.2rem 1.4rem;font-size:13px;line-height:2;">
-    🟡 輕度脂肪肝<br>🟡 疑似肝臟血管瘤（0.63公分）在S7<br>🟡 肝囊腫在S7<br>🔵 遠端膽管因空氣阻擋，無法檢查
-  </div>
-  <div class="yr-note" style="margin-top:1rem;">此份為儀器與影像頁，血液數值未包含在本次上傳，待補充。</div>
-</div></div>
-
-<!-- 2023 -->
-<div id="page-y2023" class="page"><div class="container">
-  <div class="yr-note">天成醫療社團法人天晟醫院・112/05/05・民國112年（2023年）</div>
-  <div class="sec-title">2023年 關鍵數值</div>
-  <div class="cards">
-    <div class="card bad"><div class="card-label">LDL 壞膽固醇</div><div class="card-val">142<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;130</div><span class="badge badge-bad">偏高</span></div>
-    <div class="card ok"><div class="card-label">總膽固醇</div><div class="card-val">200<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;200</div><span class="badge badge-warn">上限</span></div>
-    <div class="card ok"><div class="card-label">HDL 好膽固醇</div><div class="card-val">49<span class="card-unit">mg/dL</span></div><div class="card-target">&gt;40</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">三酸甘油脂 TG</div><div class="card-val">46<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;150</div><span class="badge badge-ok">優良</span></div>
-    <div class="card warn"><div class="card-label">HbA1c</div><div class="card-val">5.9<span class="card-unit">%</span></div><div class="card-target">&lt;5.7%</div><span class="badge badge-warn">糖尿病前期</span></div>
-    <div class="card ok"><div class="card-label">空腹血糖</div><div class="card-val">86<span class="card-unit">mg/dL</span></div><div class="card-target">70~100</div><span class="badge badge-ok">優良</span></div>
-    <div class="card warn"><div class="card-label">尿酸</div><div class="card-val">7.6<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;7.0</div><span class="badge badge-warn">偏高</span></div>
-    <div class="card ok"><div class="card-label">eGFR 腎功能</div><div class="card-val">84.77</div><div class="card-target">&gt;60</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">SGOT</div><div class="card-val">24<span class="card-unit">U/L</span></div><div class="card-target">男&lt;40</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">SGPT</div><div class="card-val">22<span class="card-unit">U/L</span></div><div class="card-target">&lt;42</div><span class="badge badge-ok">正常</span></div>
-    <div class="card warn"><div class="card-label">體重</div><div class="card-val">77.7<span class="card-unit">kg</span></div><div class="card-target">目標&lt;69</div><span class="badge badge-warn">過重</span></div>
-    <div class="card warn"><div class="card-label">腰圍</div><div class="card-val">97<span class="card-unit">cm</span></div><div class="card-target">&lt;90cm</div><span class="badge badge-warn">偏高</span></div>
-    <div class="card warn"><div class="card-label">收縮壓</div><div class="card-val">139<span class="card-unit">mmHg</span></div><div class="card-target">&lt;130</div><span class="badge badge-warn">偏高</span></div>
-    <div class="card ok"><div class="card-label">體脂率</div><div class="card-val">26.5<span class="card-unit">%</span></div><div class="card-target">男11~23%</div><span class="badge badge-warn">略高</span></div>
-  </div>
-  <div class="sec-title">腹部超音波</div>
-  <div style="background:#fff;border-radius:10px;padding:1.2rem 1.4rem;font-size:13px;line-height:2.2;">
-    🔴 輕度脂肪肝<br>
-    🟡 肝囊腫 <strong>2.75cm</strong>（右葉）<span style="color:#e74c3c;font-weight:600;">← 歷年最大值</span><br>
-    🟡 腎囊腫 <strong>1.17cm</strong><br>
-    🔵 無其他腹部異常
-  </div>
-  <div class="sec-title">動脈硬化與心血管</div>
-  <div class="cards">
-    <div class="card ok"><div class="card-label">ABI右（血管阻塞）</div><div class="card-val">1.00</div><div class="card-target">0.9~1.4</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">ABI左</div><div class="card-val">1.09</div><div class="card-target">0.9~1.4</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">baPWV右</div><div class="card-val">1373<span class="card-unit">cm/s</span></div><div class="card-target">同齡正常範圍</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">baPWV左</div><div class="card-val">1221<span class="card-unit">cm/s</span></div><div class="card-target">同齡正常範圍</div><span class="badge badge-ok">正常</span></div>
-  </div>
-  <div class="sec-title">胸部X光</div>
-  <div style="background:#fff;border-radius:10px;padding:1.2rem 1.4rem;font-size:13px;line-height:2;">
-    🟡 脊柱側彎（Scoliosis of thoracic spine）<br>
-    🟢 心臟不大<br>
-    🟢 肺部無明顯異常<br>
-    🔵 縱膈後方病灶因限制無法確認
-  </div>
-</div></div>
-
-<!-- 2018 -->
-<div id="page-y2018" class="page"><div class="container">
-  <div class="yr-note">聖保祿醫院健康管理中心・107/12/26・民國107年（2018年）</div>
-  <div class="sec-title">2018年 異常項目摘要</div>
-  <div class="cards">
-    <div class="card bad"><div class="card-label">骨質密度 T-Score</div><div class="card-val">-1.07</div><div class="card-target">正常 &gt;-1.0</div><span class="badge badge-bad">骨質流失</span></div>
-    <div class="card warn"><div class="card-label">SGOT/AST</div><div class="card-val" style="font-size:1.1rem;">偏高</div><div class="card-target">男 &lt;40</div><span class="badge badge-warn">偏高</span></div>
-    <div class="card warn"><div class="card-label">SGPT/ALT</div><div class="card-val" style="font-size:1.1rem;">偏高</div><div class="card-target">&lt;40</div><span class="badge badge-warn">偏高</span></div>
-    <div class="card warn"><div class="card-label">Amylase 澱粉酶</div><div class="card-val" style="font-size:1.1rem;">偏高</div><div class="card-target">28~100</div><span class="badge badge-warn">偏高</span></div>
-    <div class="card warn"><div class="card-label">CK 肌酸磷化酶</div><div class="card-val" style="font-size:1.1rem;">偏高</div><div class="card-target">男39~308</div><span class="badge badge-warn">偏高（運動後）</span></div>
-    <div class="card ok"><div class="card-label">心電圖</div><div class="card-val" style="font-size:1.1rem;">正常</div><div class="card-target">正常竇性節律</div><span class="badge badge-ok">正常</span></div>
-  </div>
-  <div class="sec-title">腹部超音波</div>
-  <div style="background:#fff;border-radius:10px;padding:1.2rem 1.4rem;font-size:13px;line-height:2;">
-    🟡 輕度脂肪肝<br>🟡 肝臟囊腫（右葉 2.3公分）<br>🟡 左腎囊腫（0.7公分）<span style="color:#e74c3c;font-weight:600;">← 首次發現</span>
-  </div>
-  <div class="yr-note" style="margin-top:1rem;">CK偏高經說明為體檢前大量運動所致，屬正常反應。骨質流失自2018年起需特別留意（2026年已恢復正常T-Score -0.8）。</div>
-</div></div>
-
-<!-- 2024 -->
-<div id="page-y2024" class="page"><div class="container">
-  <div class="yr-note">金鶯診所（台灣優品醫事檢驗所）・113/11/12（2024年）</div>
-  <div class="sec-title">2024年 關鍵數值</div>
-  <div class="cards">
-    <div class="card warn"><div class="card-label">LDL</div><div class="card-val">134<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;100</div><span class="badge badge-warn">偏高</span></div>
-    <div class="card ok"><div class="card-label">總膽固醇</div><div class="card-val">197<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;200</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">三酸甘油脂</div><div class="card-val">123<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;150</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">空腹血糖</div><div class="card-val">100<span class="card-unit">mg/dL</span></div><div class="card-target">70~100</div><span class="badge badge-ok">上限</span></div>
-    <div class="card ok"><div class="card-label">eGFR</div><div class="card-val">87.43</div><div class="card-target">&gt;60</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">尿酸</div><div class="card-val">6.76<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;7.7</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">SGOT</div><div class="card-val">22<span class="card-unit">U/L</span></div><div class="card-target">男&lt;40</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">SGPT</div><div class="card-val">18<span class="card-unit">U/L</span></div><div class="card-target">&lt;33</div><span class="badge badge-ok">正常</span></div>
-    <div class="card bad"><div class="card-label">Amylase 澱粉酶</div><div class="card-val">179<span class="card-unit">U/L</span></div><div class="card-target">28~100</div><span class="badge badge-bad">偏高</span></div>
-  </div>
-</div></div>
-
-<!-- 2025 -->
-<div id="page-y2025" class="page"><div class="container">
-  <div class="yr-note">金鶯診所（台灣優品醫事檢驗所）・114/12/10（2025年）</div>
-  <div class="sec-title">2025年 關鍵數值</div>
-  <div class="cards">
-    <div class="card warn"><div class="card-label">LDL</div><div class="card-val">135<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;100</div><span class="badge badge-warn">偏高</span></div>
-    <div class="card warn"><div class="card-label">總膽固醇</div><div class="card-val">205<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;200</div><span class="badge badge-warn">略超標</span></div>
-    <div class="card ok"><div class="card-label">HDL</div><div class="card-val">55<span class="card-unit">mg/dL</span></div><div class="card-target">&gt;40</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">三酸甘油脂</div><div class="card-val">68<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;150</div><span class="badge badge-ok">優良</span></div>
-    <div class="card ok"><div class="card-label">空腹血糖</div><div class="card-val">87<span class="card-unit">mg/dL</span></div><div class="card-target">70~100</div><span class="badge badge-ok">優良</span></div>
-    <div class="card ok"><div class="card-label">eGFR</div><div class="card-val">104.40</div><div class="card-target">&gt;60</div><span class="badge badge-ok">優良</span></div>
-    <div class="card ok"><div class="card-label">尿酸</div><div class="card-val">5.86<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;7.7</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">SGOT</div><div class="card-val">27<span class="card-unit">U/L</span></div><div class="card-target">男&lt;40</div><span class="badge badge-ok">正常</span></div>
-    <div class="card ok"><div class="card-label">SGPT</div><div class="card-val">18<span class="card-unit">U/L</span></div><div class="card-target">&lt;33</div><span class="badge badge-ok">正常</span></div>
-  </div>
-</div></div>
-
-<!-- 2026 -->
+<!-- 各年份頁 (2026) -->
 <div id="page-y2026" class="page"><div class="container">
   <div class="yr-note">敏盛綜合醫院精準醫學健診中心・2026/05/08</div>
   <div class="sec-title">2026年 關鍵數值</div>
@@ -617,38 +588,157 @@ table.summary tr:hover td{background:#fafafa;}
     <div class="card ok"><div class="card-label">心臟EF</div><div class="card-val">73.3<span class="card-unit">%</span></div><div class="card-target">&gt;55%</div><span class="badge badge-ok">優良</span></div>
     <div class="card ok"><div class="card-label">骨質密度 T-Score</div><div class="card-val">-0.8</div><div class="card-target">&gt;-1.0</div><span class="badge badge-ok">正常</span></div>
   </div>
-  <div class="sec-title">行動計畫</div>
-  <div class="action-grid">
-    <div class="action-box urgent"><h3>立即執行</h3>
-      <div class="action-item"><div class="adot"></div><div>每天蛋黃 ≤1 顆；烹調油換苦茶油；戒油炸</div></div>
-      <div class="action-item"><div class="adot"></div><div>白飯每餐 ≤半碗，換地瓜/燕麥/糙米</div></div>
-      <div class="action-item"><div class="adot"></div><div>每日鈉 &lt;2000mg，每日喝水 ≥2000ml</div></div>
-      <div class="action-item"><div class="adot"></div><div>Zone 2 跑步 3~4次/週 + 肌力訓練 2次/週</div></div>
-    </div>
-    <div class="action-box medium"><h3>3個月內門診</h3>
-      <div class="action-item"><div class="adot"></div><div>胸腔科：右肺結節追蹤CT</div></div>
-      <div class="action-item"><div class="adot"></div><div>心臟內科：血壓+舒張功能</div></div>
-      <div class="action-item"><div class="adot"></div><div>告知醫師左胸間歇性疼痛</div></div>
-    </div>
-    <div class="action-box later"><h3>6個月內門診</h3>
-      <div class="action-item"><div class="adot"></div><div>肝膽胃腸科：脂肪肝+肝囊腫</div></div>
-      <div class="action-item"><div class="adot"></div><div>腎臟科：左腎囊腫</div></div>
-      <div class="action-item"><div class="adot"></div><div>抽血驗LDL+HbA1c確認改善幅度</div></div>
-    </div>
-  </div>
-  <div class="sec-title">每日保健品時間表</div>
+  <div class="sec-title">保健品時間表</div>
   <div class="supp-table"><table>
     <thead><tr><th>時機</th><th>品項</th><th>劑量</th><th>目的</th></tr></thead>
     <tbody>
       <tr><td><span class="time-badge">午餐前20分</span></td><td>洋車前子殼</td><td>5g+水250ml</td><td>降LDL、飽足感</td></tr>
       <tr><td><span class="time-badge">午餐第一口</span></td><td>植物固醇 NOW Foods</td><td>2粒（1000mg）</td><td>阻斷膽固醇吸收</td></tr>
-      <tr><td><span class="time-badge">午餐隨餐</span></td><td>D3 2000IU + K2 100mcg</td><td>1粒</td><td>血壓調節、血管保護</td></tr>
-      <tr><td><span class="time-badge">晚餐前20~30分</span></td><td>洋車前子殼</td><td>5g+水250ml</td><td>同上</td></tr>
+      <tr><td><span class="time-badge">午餐隨餐</span></td><td>D3 2000IU + K2 100mcg</td><td>1粒</td><td>血壓、血管保護</td></tr>
+      <tr><td><span class="time-badge">午餐中午</span></td><td>大醫生技魚油</td><td>2粒（EPA+DHA 1020mg）</td><td>降TG、護血管</td></tr>
+      <tr><td><span class="time-badge">下午2~4點</span></td><td>曼寧有機兒茶素綠茶（冷泡）</td><td>1包（兒茶素246mg）</td><td>抗氧化、護血管</td></tr>
+      <tr><td><span class="time-badge">晚餐前30分</span></td><td>洋車前子殼</td><td>5g+水250ml</td><td>飽足感、降LDL</td></tr>
       <tr><td><span class="time-badge">晚餐第一口</span></td><td>植物固醇 NOW Foods</td><td>2粒（1000mg）</td><td>每日共4粒=2000mg</td></tr>
-      <tr><td><span class="time-badge">晚餐隨餐</span></td><td>魚油 CGN Omega 800</td><td>2粒（EPA+DHA 1600mg）</td><td>降TG、護血管</td></tr>
       <tr><td><span class="time-badge">睡前</span></td><td>鎂 Glycinate</td><td>200~300mg</td><td>血壓、睡眠品質</td></tr>
     </tbody>
   </table></div>
+</div></div>
+
+<!-- 2025 -->
+<div id="page-y2025" class="page"><div class="container">
+  <div class="yr-note">金鶯診所（台灣優品醫事檢驗所）・114/12/10（2025年）</div>
+  <div class="sec-title">2025年 關鍵數值</div>
+  <div class="cards">
+    <div class="card warn"><div class="card-label">LDL</div><div class="card-val">135<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;100</div><span class="badge badge-warn">偏高</span></div>
+    <div class="card warn"><div class="card-label">總膽固醇</div><div class="card-val">205<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;200</div><span class="badge badge-warn">略超標</span></div>
+    <div class="card ok"><div class="card-label">HDL</div><div class="card-val">55<span class="card-unit">mg/dL</span></div><div class="card-target">&gt;40</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">TG</div><div class="card-val">68<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;150</div><span class="badge badge-ok">優良</span></div>
+    <div class="card ok"><div class="card-label">空腹血糖</div><div class="card-val">87<span class="card-unit">mg/dL</span></div><div class="card-target">70~100</div><span class="badge badge-ok">優良</span></div>
+    <div class="card ok"><div class="card-label">eGFR</div><div class="card-val">104.40</div><div class="card-target">&gt;60</div><span class="badge badge-ok">優良</span></div>
+    <div class="card ok"><div class="card-label">尿酸</div><div class="card-val">5.86<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;7.7</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">SGPT</div><div class="card-val">18<span class="card-unit">U/L</span></div><div class="card-target">&lt;33</div><span class="badge badge-ok">正常</span></div>
+  </div>
+</div></div>
+
+<!-- 2024 -->
+<div id="page-y2024" class="page"><div class="container">
+  <div class="yr-note">金鶯診所（台灣優品醫事檢驗所）・113/11/12（2024年）</div>
+  <div class="sec-title">2024年 關鍵數值</div>
+  <div class="cards">
+    <div class="card warn"><div class="card-label">LDL</div><div class="card-val">134<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;100</div><span class="badge badge-warn">偏高</span></div>
+    <div class="card ok"><div class="card-label">總膽固醇</div><div class="card-val">197<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;200</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">TG</div><div class="card-val">123<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;150</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">空腹血糖</div><div class="card-val">100<span class="card-unit">mg/dL</span></div><div class="card-target">70~100</div><span class="badge badge-ok">上限</span></div>
+    <div class="card ok"><div class="card-label">eGFR</div><div class="card-val">87.43</div><div class="card-target">&gt;60</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">尿酸</div><div class="card-val">6.76<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;7.7</div><span class="badge badge-ok">正常</span></div>
+    <div class="card bad"><div class="card-label">Amylase 澱粉酶</div><div class="card-val">179<span class="card-unit">U/L</span></div><div class="card-target">28~100</div><span class="badge badge-bad">偏高需追蹤</span></div>
+  </div>
+</div></div>
+
+<!-- 2023 -->
+<div id="page-y2023" class="page"><div class="container">
+  <div class="yr-note">天成醫療社團法人天晟醫院・112/05/05（2023年）</div>
+  <div class="sec-title">2023年 關鍵數值</div>
+  <div class="cards">
+    <div class="card bad"><div class="card-label">LDL</div><div class="card-val">142<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;100</div><span class="badge badge-bad">偏高</span></div>
+    <div class="card warn"><div class="card-label">總膽固醇</div><div class="card-val">200<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;200</div><span class="badge badge-warn">上限</span></div>
+    <div class="card ok"><div class="card-label">HDL</div><div class="card-val">49<span class="card-unit">mg/dL</span></div><div class="card-target">&gt;40</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">TG</div><div class="card-val">46<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;150</div><span class="badge badge-ok">優良</span></div>
+    <div class="card warn"><div class="card-label">HbA1c</div><div class="card-val">5.9<span class="card-unit">%</span></div><div class="card-target">&lt;5.7%</div><span class="badge badge-warn">糖尿病前期</span></div>
+    <div class="card ok"><div class="card-label">空腹血糖</div><div class="card-val">86<span class="card-unit">mg/dL</span></div><div class="card-target">70~100</div><span class="badge badge-ok">優良</span></div>
+    <div class="card warn"><div class="card-label">尿酸</div><div class="card-val">7.6<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;7.0</div><span class="badge badge-warn">偏高</span></div>
+    <div class="card ok"><div class="card-label">eGFR</div><div class="card-val">84.77</div><div class="card-target">&gt;60</div><span class="badge badge-ok">正常</span></div>
+    <div class="card warn"><div class="card-label">體重</div><div class="card-val">77.7<span class="card-unit">kg</span></div><div class="card-target">&lt;69</div><span class="badge badge-warn">過重</span></div>
+    <div class="card warn"><div class="card-label">收縮壓</div><div class="card-val">139<span class="card-unit">mmHg</span></div><div class="card-target">&lt;130</div><span class="badge badge-warn">偏高</span></div>
+  </div>
+  <div class="sec-title">腹部超音波</div>
+  <div style="background:#fff;border-radius:10px;padding:1.1rem 1.3rem;font-size:13px;line-height:2.2;">
+    🔴 輕度脂肪肝<br>🟡 肝囊腫 <strong>2.75cm</strong>（右葉，歷年最大值）<br>🟡 腎囊腫 <strong>1.17cm</strong><br>🟢 ABI 正常（1.00/1.09）・baPWV 右 1373 / 左 1221（正常範圍）
+  </div>
+</div></div>
+
+<!-- 2018 -->
+<div id="page-y2018" class="page"><div class="container">
+  <div class="yr-note">聖保祿醫院健康管理中心・107/12/26（2018年）</div>
+  <div class="sec-title">2018年 異常項目摘要</div>
+  <div class="cards">
+    <div class="card bad"><div class="card-label">骨質密度 T-Score</div><div class="card-val">-1.07</div><div class="card-target">&gt;-1.0</div><span class="badge badge-bad">骨質流失</span></div>
+    <div class="card warn"><div class="card-label">SGOT/AST</div><div class="card-val" style="font-size:1.1rem;">偏高</div><div class="card-target">男&lt;40</div><span class="badge badge-warn">偏高</span></div>
+    <div class="card warn"><div class="card-label">Amylase</div><div class="card-val" style="font-size:1.1rem;">偏高</div><div class="card-target">28~100</div><span class="badge badge-warn">偏高</span></div>
+    <div class="card ok"><div class="card-label">心電圖</div><div class="card-val" style="font-size:1.1rem;">正常</div><div class="card-target">正常竇性節律</div><span class="badge badge-ok">正常</span></div>
+  </div>
+  <div class="sec-title">腹部超音波</div>
+  <div style="background:#fff;border-radius:10px;padding:1.1rem 1.3rem;font-size:13px;line-height:2.2;">
+    🟡 輕度脂肪肝<br>🟡 肝囊腫右葉 2.3cm<br>🔴 <strong>左腎囊腫首次發現 0.7cm</strong>
+  </div>
+</div></div>
+
+<!-- 2016 -->
+<div id="page-y2016" class="page"><div class="container">
+  <div class="yr-note">聖保祿醫院健康管理中心・105/10/20（2016年）</div>
+  <div class="sec-title">2016年 儀器與影像</div>
+  <div class="cards">
+    <div class="card ok"><div class="card-label">骨質密度 T-Score</div><div class="card-val">0.4</div><div class="card-target">&gt;-1.0</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">ABI右</div><div class="card-val">1.01</div><div class="card-target">0.9~1.3</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">ABI左</div><div class="card-val">1.10</div><div class="card-target">0.9~1.3</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">baPWV右</div><div class="card-val">1305<span class="card-unit">cm/s</span></div><div class="card-target">&lt;1400</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">心電圖</div><div class="card-val" style="font-size:1.1rem;">正常</div><div class="card-target">無異狀</div><span class="badge badge-ok">正常</span></div>
+  </div>
+</div></div>
+
+<!-- 2015 -->
+<div id="page-y2015" class="page"><div class="container">
+  <div class="yr-note">板橋國泰醫院・104/09/23（2015年）</div>
+  <div class="sec-title">2015年 主要數值</div>
+  <div class="cards">
+    <div class="card warn"><div class="card-label">收縮壓</div><div class="card-val">135<span class="card-unit">mmHg</span></div><div class="card-target">&lt;130</div><span class="badge badge-warn">略高</span></div>
+    <div class="card ok"><div class="card-label">骨質密度 T-Score</div><div class="card-val">-0.4</div><div class="card-target">&gt;-1.0</div><span class="badge badge-ok">正常</span></div>
+  </div>
+  <div class="sec-title">腹部超音波</div>
+  <div style="background:#fff;border-radius:10px;padding:1.1rem 1.3rem;font-size:13px;line-height:2.2;">
+    🟡 輕度脂肪肝<br>🟡 肝囊腫 2.0cm（略縮小）<br>🟢 膽、左右腎均正常
+  </div>
+  <div class="yr-note" style="margin-top:1rem;">血脂等血液數值未包含在已上傳的報告頁面中，待補充。</div>
+</div></div>
+
+<!-- 2014 -->
+<div id="page-y2014" class="page"><div class="container">
+  <div class="yr-note">板橋國泰醫院・103/09/24（2014年）</div>
+  <div class="sec-title">2014年 關鍵數值</div>
+  <div class="cards">
+    <div class="card warn"><div class="card-label">LDL</div><div class="card-val">112<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;100</div><span class="badge badge-warn">偏高</span></div>
+    <div class="card ok"><div class="card-label">總膽固醇</div><div class="card-val">194<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;200</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">HDL</div><div class="card-val">59<span class="card-unit">mg/dL</span></div><div class="card-target">&gt;40</div><span class="badge badge-ok">優良</span></div>
+    <div class="card ok"><div class="card-label">TG</div><div class="card-val">40<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;150</div><span class="badge badge-ok">優良</span></div>
+    <div class="card ok"><div class="card-label">空腹血糖</div><div class="card-val">78<span class="card-unit">mg/dL</span></div><div class="card-target">70~110</div><span class="badge badge-ok">優良</span></div>
+    <div class="card warn"><div class="card-label">尿酸</div><div class="card-val">7.7<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;7.7</div><span class="badge badge-warn">上限</span></div>
+    <div class="card warn"><div class="card-label">收縮壓</div><div class="card-val">136<span class="card-unit">mmHg</span></div><div class="card-target">&lt;130</div><span class="badge badge-warn">偏高</span></div>
+  </div>
+  <div class="sec-title">腹部超音波</div>
+  <div style="background:#fff;border-radius:10px;padding:1.1rem 1.3rem;font-size:13px;line-height:2.2;">
+    🟡 輕度脂肪肝（首次出現）<br>🟡 肝囊腫 2.1cm<br>🟢 膽、腎均正常
+  </div>
+</div></div>
+
+<!-- 2013 -->
+<div id="page-y2013" class="page"><div class="container">
+  <div class="yr-note">板橋國泰醫院・102/11/06（2013年）</div>
+  <div class="sec-title">2013年 關鍵數值</div>
+  <div class="cards">
+    <div class="card ok"><div class="card-label">LDL</div><div class="card-val">102<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;130（當時標準）</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">總膽固醇</div><div class="card-val">176<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;200</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">HDL</div><div class="card-val">58<span class="card-unit">mg/dL</span></div><div class="card-target">&gt;40</div><span class="badge badge-ok">優良</span></div>
+    <div class="card ok"><div class="card-label">TG</div><div class="card-val">58<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;150</div><span class="badge badge-ok">優良</span></div>
+    <div class="card ok"><div class="card-label">空腹血糖</div><div class="card-val">74<span class="card-unit">mg/dL</span></div><div class="card-target">70~110</div><span class="badge badge-ok">優良</span></div>
+    <div class="card ok"><div class="card-label">尿酸</div><div class="card-val">5.5<span class="card-unit">mg/dL</span></div><div class="card-target">&lt;7.0</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">收縮壓</div><div class="card-val">123<span class="card-unit">mmHg</span></div><div class="card-target">&lt;130</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">SGPT</div><div class="card-val">18<span class="card-unit">U/L</span></div><div class="card-target">&lt;42</div><span class="badge badge-ok">正常</span></div>
+    <div class="card ok"><div class="card-label">骨質密度 T-Score</div><div class="card-val">-0.3</div><div class="card-target">&gt;-1.0</div><span class="badge badge-ok">正常</span></div>
+  </div>
+  <div class="sec-title">腹部超音波</div>
+  <div style="background:#fff;border-radius:10px;padding:1.1rem 1.3rem;font-size:13px;line-height:2.2;">
+    🟡 肝囊腫 2.1cm（S7）<br>🟢 膽、腎均正常<br>🔵 脂肪肝：未提及
+  </div>
 </div></div>
 
 <!-- Modal -->
@@ -663,6 +753,7 @@ table.summary tr:hover td{background:#fafafa;}
 <div class="footer">王正皇・個人健康追蹤・資料僅供個人參考・請依醫師建議為準</div>
 
 <script>
+// ── 資料 ──
 const YEARS=['2026','2025','2024','2023','2018','2016','2015','2014','2013'];
 const YEARS_CHRONO=['2013','2014','2015','2016','2018','2023','2024','2025','2026'];
 const DATA={
@@ -677,8 +768,27 @@ const DATA={
   '2026':{'總膽固醇(mg/dL)':{val:205,ref:'<200',status:'warn'},'LDL(mg/dL)':{val:152,ref:'<100',status:'bad'},'HDL(mg/dL)':{val:51,ref:'>40',status:'ok'},'三酸甘油脂(mg/dL)':{val:47,ref:'<150',status:'ok'},'HbA1c(%)':{val:5.9,ref:'<5.7',status:'warn'},'空腹血糖(mg/dL)':{val:98,ref:'70~100',status:'ok'},'尿酸(mg/dL)':{val:7.8,ref:'<7.7',status:'warn'},'eGFR':{val:103.75,ref:'>60',status:'ok'},'SGPT(U/L)':{val:20,ref:'<42',status:'ok'},'收縮壓(mmHg)':{val:130,ref:'<130',status:'warn'},'骨質T-Score':{val:-0.8,ref:'>-1.0',status:'ok'}}
 };
 
+// ── 工具函式 ──
+function ptColor(s){return s==='bad'?'#e74c3c':s==='warn'?'#f39c12':'#27ae60';}
+function makeDataset(metric,color){
+  const years=YEARS_CHRONO.filter(y=>DATA[y]?.[metric]?.val!=null);
+  return{years,vals:years.map(y=>DATA[y][metric].val),ptColors:years.map(y=>ptColor(DATA[y][metric].status))};
+}
+function lineChart(id,metric,target,opts={}){
+  const {years,vals,ptColors}=makeDataset(metric);
+  const ds=[{label:metric,data:vals,borderColor:'#1a1a2e',backgroundColor:'rgba(26,26,46,0.07)',pointBackgroundColor:ptColors,pointRadius:opts.small?4:6,fill:true,tension:0.35}];
+  if(target!=null)ds.push({label:'目標',data:years.map(()=>target),borderColor:'#27ae60',borderWidth:1.5,borderDash:[5,5],pointRadius:0,fill:false});
+  return new Chart(document.getElementById(id),{
+    type:'line',data:{labels:years,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:!!opts.legend,labels:{font:{size:10},boxWidth:10}}},
+      scales:{y:{grid:{color:'#f5f5f5'},ticks:{font:{size:opts.small?9:11}}},x:{grid:{display:false},ticks:{font:{size:opts.small?9:11}}}}}
+  });
+}
+
+// ── 趨勢箭頭 ──
 function trendArrow(m){
-  const vals=YEARS_CHRONO.map(y=>DATA[y]?.[m]?.val).filter(v=>v!==null&&v!==undefined);
+  const vals=YEARS_CHRONO.map(y=>DATA[y]?.[m]?.val).filter(v=>v!=null);
   if(vals.length<2)return '';
   const diff=vals[vals.length-1]-vals[vals.length-2];
   const pct=Math.abs(diff/vals[vals.length-2]*100).toFixed(1);
@@ -688,6 +798,7 @@ function trendArrow(m){
   return diff>0?`<span class="trend-down">▲${pct}%</span>`:`<span class="trend-up">▼${pct}%</span>`;
 }
 
+// ── 歷年總表 ──
 function buildSummaryTable(){
   const tbody=document.getElementById('summary-tbody');
   const metrics=Object.keys(DATA['2026']);
@@ -695,43 +806,35 @@ function buildSummaryTable(){
     const ref=DATA['2026'][m].ref;
     const cells=YEARS.map(y=>{
       const d=DATA[y]?.[m];
-      if(!d||d.val===null||d.val===undefined)return '<td><span style="color:#ccc;font-size:12px;">—</span></td>';
-      return `<td><div class="dot dot-${d.status}" style="display:inline-block;vertical-align:middle;margin-right:4px;"></div><span class="val-num">${d.val}</span></td>`;
+      if(!d||d.val==null)return '<td><span style="color:#ccc;font-size:12px;">—</span></td>';
+      return `<td><div class="dot dot-${d.status}"></div><span class="val-num">${d.val}</span></td>`;
     }).join('');
-    const safeM = m.replace(/'/g,"&#39;").replace(/"/g,"&quot;");
-    const safeRef = ref.replace(/'/g,"&#39;").replace(/"/g,"&quot;");
-    return `<tr>
-      <td><span class="metric-name modal-trigger" data-metric="${safeM}" data-ref="${safeRef}" style="cursor:pointer;color:#1a1a2e;text-decoration:underline;text-underline-offset:3px;">${m}</span><span style="font-size:10px;color:#bbb;display:block;">${ref}</span></td>
-      <td style="font-size:11px;color:#bbb;">${ref}</td>
-      ${cells}
-      <td>${trendArrow(m)}</td>
-    </tr>`;
+    const safeM=m.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+    const safeR=ref.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+    return `<tr><td><span class="metric-name modal-trigger" data-metric="${safeM}" data-ref="${safeR}">${m}</span><span style="font-size:10px;color:#bbb;display:block;">${ref}</span></td><td style="font-size:11px;color:#bbb;">${ref}</td>${cells}<td>${trendArrow(m)}</td></tr>`;
   }).join('');
-  // attach click events after rendering
   document.querySelectorAll('.modal-trigger').forEach(el=>{
-    el.addEventListener('click',function(){
-      openModal(this.dataset.metric, this.dataset.ref);
-    });
+    el.addEventListener('click',function(){openModal(this.dataset.metric,this.dataset.ref);});
   });
 }
 
+// ── Modal ──
 let modalInst=null;
 function openModal(metric,ref){
-  const years=YEARS_CHRONO.filter(y=>DATA[y]?.[metric]?.val!==null&&DATA[y]?.[metric]?.val!==undefined);
-  const vals=years.map(y=>DATA[y][metric].val);
-  const ptColors=years.map(y=>{const s=DATA[y][metric].status;return s==='bad'?'#e74c3c':s==='warn'?'#f39c12':'#27ae60';});
+  const{years,vals,ptColors}=makeDataset(metric);
   document.getElementById('modal-title').textContent=metric+' 歷年趨勢';
   document.getElementById('modal-ref').textContent='正常範圍：'+ref;
   document.getElementById('modal').classList.add('open');
   if(modalInst){modalInst.destroy();}
   modalInst=new Chart(document.getElementById('modal-chart'),{
-    type:'line',data:{labels:years,datasets:[{label:metric,data:vals,borderColor:'#1a1a2e',backgroundColor:'rgba(26,26,46,0.07)',pointBackgroundColor:ptColors,pointRadius:7,pointHoverRadius:9,fill:true,tension:0.3}]},
+    type:'line',data:{labels:years,datasets:[{label:metric,data:vals,borderColor:'#1a1a2e',backgroundColor:'rgba(26,26,46,0.07)',pointBackgroundColor:ptColors,pointRadius:7,pointHoverRadius:9,fill:true,tension:0.35}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}
   });
 }
 function closeModal(){document.getElementById('modal').classList.remove('open');}
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
 
+// ── 頁切換 ──
 function showPage(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.year-tab').forEach(t=>t.classList.remove('active'));
@@ -739,104 +842,98 @@ function showPage(id,el){
   el.classList.add('active');
 }
 
-function makeTrendChart(id,metric,target,targetLabel,higherBetter){
-  const years=YEARS_CHRONO.filter(y=>DATA[y]?.[metric]?.val!==null&&DATA[y]?.[metric]?.val!==undefined);
-  const vals=years.map(y=>DATA[y][metric].val);
-  const ptColors=years.map(y=>{const s=DATA[y][metric].status;return s==='bad'?'#e74c3c':s==='warn'?'#f39c12':'#27ae60';});
-  const datasets=[{label:metric,data:vals,borderColor:'#1a1a2e',backgroundColor:'rgba(26,26,46,0.07)',pointBackgroundColor:ptColors,pointRadius:7,fill:true,tension:0.3}];
-  if(target!==null)datasets.push({label:targetLabel||'目標',data:years.map(()=>target),borderColor:'#27ae60',borderWidth:1.5,borderDash:[5,5],pointRadius:0,fill:false});
+// ── 螢幕趨勢圖 ──
+lineChart('t-ldl','LDL(mg/dL)',100);
+lineChart('t-chol','總膽固醇(mg/dL)',200);
+lineChart('t-tg','三酸甘油脂(mg/dL)',150);
+lineChart('t-hdl','HDL(mg/dL)',40);
+lineChart('t-glucose','空腹血糖(mg/dL)',100);
+lineChart('t-ua','尿酸(mg/dL)',7.0);
+lineChart('t-egfr','eGFR',60);
+lineChart('t-hba1c','HbA1c(%)',5.7);
+lineChart('t-sgpt','SGPT(U/L)',40);
+lineChart('t-sbp','收縮壓(mmHg)',120);
+
+// ── 腹部囊腫圖 (共用) ──
+function cystChart(id,small){
   new Chart(document.getElementById(id),{
-    type:'line',data:{labels:years,datasets},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:11},boxWidth:12}}},scales:{y:{grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}
+    type:'line',
+    data:{
+      labels:['2013','2014','2015','2018','2023','2026'],
+      datasets:[
+        {label:'肝囊腫最大（cm）',data:[2.1,2.1,2.0,2.3,2.75,2.6],borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.08)',pointBackgroundColor:['#f39c12','#f39c12','#f39c12','#f39c12','#e74c3c','#e74c3c'],pointRadius:small?4:7,fill:true,tension:0.3},
+        {label:'腎囊腫（cm）',data:[null,null,null,0.7,1.17,1.46],borderColor:'#3498db',backgroundColor:'rgba(52,152,219,0.06)',pointBackgroundColor:['#ddd','#ddd','#ddd','#27ae60','#f39c12','#f39c12'],pointRadius:small?4:7,fill:true,tension:0.3}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:small?9:11},boxWidth:small?10:14}}},
+      scales:{y:{beginAtZero:true,grid:{color:'#f0f0f0'},title:{display:!small,text:'cm'},ticks:{font:{size:small?9:11}}},x:{grid:{display:false},ticks:{font:{size:small?9:11}}}}}
   });
 }
+cystChart('t-cyst',false);
+cystChart('pc-cyst',true);
 
-// 腹部超音波囊腫尺寸追蹤
-new Chart(document.getElementById('t-cyst'),{
-  type:'line',
-  data:{
-    labels:['2013','2014','2015','2016','2018','2023','2026'],
-    datasets:[
-      {label:'肝囊腫最大（cm）',data:[2.1,2.1,2.0,null,2.3,2.75,2.6],borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.08)',pointBackgroundColor:['#f39c12','#f39c12','#f39c12','#ddd','#f39c12','#e74c3c','#e74c3c'],pointRadius:7,fill:true,tension:0.3},
-      {label:'腎囊腫（cm）',data:[null,null,null,null,0.7,1.17,1.46],borderColor:'#3498db',backgroundColor:'rgba(52,152,219,0.06)',pointBackgroundColor:['#ddd','#ddd','#ddd','#ddd','#27ae60','#f39c12','#f39c12'],pointRadius:7,fill:true,tension:0.3}
-    ]
-  },
-  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:12},boxWidth:14}}},scales:{y:{beginAtZero:true,grid:{color:'#f0f0f0'},title:{display:true,text:'公分（cm）'}},x:{grid:{display:false}}}}
-});
-
-buildSummaryTable();
-makeTrendChart('t-ldl','LDL(mg/dL)',100,'目標<100',false);
-makeTrendChart('t-chol','總膽固醇(mg/dL)',200,'目標<200',false);
-makeTrendChart('t-tg','三酸甘油脂(mg/dL)',150,'目標<150',false);
-makeTrendChart('t-hdl','HDL(mg/dL)',40,'目標>40',true);
-makeTrendChart('t-glucose','空腹血糖(mg/dL)',100,'目標<100',false);
-makeTrendChart('t-ua','尿酸(mg/dL)',7.0,'目標<7.0',false);
-makeTrendChart('t-egfr','eGFR',60,'下限60',true);
-makeTrendChart('t-hba1c','HbA1c(%)',5.7,'目標<5.7%',false);
-makeTrendChart('t-sgpt','SGPT(U/L)',40,'目標<40',false);
-makeTrendChart('t-sbp','收縮壓(mmHg)',120,'目標<120',false);
-
-// ===== 心臟健康頁圖表 =====
+// ── 心臟頁圖表 ──
 new Chart(document.getElementById('h-radar'),{
   type:'radar',
-  data:{
-    labels:['LDL膽固醇','血壓','血糖HbA1c','尿酸','腰圍','動脈硬化'],
+  data:{labels:['LDL膽固醇','血壓','血糖HbA1c','尿酸','腰圍','動脈硬化'],
     datasets:[
       {label:'2026現況',data:[85,65,70,68,78,60],backgroundColor:'rgba(231,76,60,.12)',borderColor:'#e74c3c',borderWidth:2,pointBackgroundColor:'#e74c3c',pointRadius:5},
-      {label:'目標狀態',data:[40,40,40,40,40,40],backgroundColor:'rgba(39,174,96,.06)',borderColor:'#27ae60',borderWidth:1.5,borderDash:[5,5],pointRadius:2}
-    ]
-  },
+      {label:'目標',data:[40,40,40,40,40,40],backgroundColor:'rgba(39,174,96,.06)',borderColor:'#27ae60',borderWidth:1.5,borderDash:[5,5],pointRadius:2}
+    ]},
   options:{responsive:true,maintainAspectRatio:false,
-    scales:{r:{min:0,max:100,ticks:{display:false},grid:{color:'#f0f0f0'},pointLabels:{font:{size:12}}}},
-    plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}}
-  }
+    scales:{r:{min:0,max:100,ticks:{display:false},grid:{color:'#f0f0f0'},pointLabels:{font:{size:11}}}},
+    plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}}}}
 });
-
 new Chart(document.getElementById('h-cac'),{
   type:'bar',
-  data:{
-    labels:['無鈣化(最佳)','極輕度(公子7分)','輕度','中度','重度'],
-    datasets:[{
-      data:[0,7,55,250,450],
-      backgroundColor:['#27ae60','#f39c12','#e67e22','#e74c3c','#922b21'],
-      borderRadius:6
-    }]
-  },
+  data:{labels:['無鈣化(最佳)','極輕度(公子7分)','輕度','中度','重度'],
+    datasets:[{data:[0,7,55,250,450],backgroundColor:['#27ae60','#f39c12','#e67e22','#e74c3c','#922b21'],borderRadius:6}]},
   options:{responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false}},
-    scales:{y:{beginAtZero:true,grid:{color:'#f5f5f5'},title:{display:true,text:'CAC分數'}},x:{grid:{display:false},ticks:{font:{size:10}}}}
-  }
+    scales:{y:{beginAtZero:true,grid:{color:'#f5f5f5'},title:{display:true,text:'CAC分數',font:{size:11}}},x:{grid:{display:false},ticks:{font:{size:10}}}}}
 });
 
-new Chart(document.getElementById('h-bapwv-r'),{
-  type:'line',
-  data:{
-    labels:['2016','2023'],
-    datasets:[
-      {label:'baPWV右（cm/s）',data:[1373,1373],borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.08)',pointBackgroundColor:['#27ae60','#27ae60'],pointRadius:7,fill:true,tension:0.3},
-      {label:'正常上限參考',data:[1400,1400],borderColor:'#27ae60',borderWidth:1.5,borderDash:[5,5],pointRadius:0,fill:false}
-    ]
-  },
-  options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}},
-    scales:{y:{grid:{color:'#f0f0f0'},min:800,max:2000},x:{grid:{display:false}}}
-  }
-});
+// ── 列印用小圖 ──
+lineChart('pc-ldl','LDL(mg/dL)',100,{small:true,legend:true});
+lineChart('pc-chol','總膽固醇(mg/dL)',200,{small:true,legend:true});
+lineChart('pc-tg','三酸甘油脂(mg/dL)',150,{small:true,legend:true});
+lineChart('pc-hdl','HDL(mg/dL)',40,{small:true,legend:true});
+lineChart('pc-hba1c','HbA1c(%)',5.7,{small:true,legend:true});
+lineChart('pc-glucose','空腹血糖(mg/dL)',100,{small:true,legend:true});
+lineChart('pc-ua','尿酸(mg/dL)',7.0,{small:true,legend:true});
+lineChart('pc-egfr','eGFR',60,{small:true,legend:true});
 
-new Chart(document.getElementById('h-bapwv-l'),{
-  type:'line',
-  data:{
-    labels:['2016','2023'],
-    datasets:[
-      {label:'baPWV左（cm/s）',data:[1221,1221],borderColor:'#3498db',backgroundColor:'rgba(52,152,219,0.08)',pointBackgroundColor:['#27ae60','#27ae60'],pointRadius:7,fill:true,tension:0.3},
-      {label:'正常上限參考',data:[1400,1400],borderColor:'#27ae60',borderWidth:1.5,borderDash:[5,5],pointRadius:0,fill:false}
-    ]
-  },
-  options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}},
-    scales:{y:{grid:{color:'#f0f0f0'},min:800,max:2000},x:{grid:{display:false}}}
-  }
-});
+// ── 列印用歷年總表 ──
+function buildPrintTable(){
+  const metrics=Object.keys(DATA['2026']);
+  const printYears=['2013','2014','2015','2016','2018','2023','2024','2025','2026'];
+  const t=document.getElementById('print-summary-table');
+  if(!t)return;
+  let h=`<thead><tr><th>項目</th><th>正常範圍</th>`;
+  printYears.forEach(y=>{h+=`<th>${y}</th>`;});
+  h+=`<th>趨勢</th></tr></thead><tbody>`;
+  metrics.forEach(m=>{
+    const ref=DATA['2026'][m].ref;
+    h+=`<tr><td style="font-weight:600;">${m}</td><td style="color:#888;font-size:8.5pt;">${ref}</td>`;
+    printYears.forEach(y=>{
+      const d=DATA[y]?.[m];
+      if(!d||d.val==null){h+=`<td style="color:#ccc;">—</td>`;return;}
+      const c=d.status==='bad'?'#e74c3c':d.status==='warn'?'#d68910':'#1e8449';
+      h+=`<td><span class="p-dot p-dot-${d.status}"></span><span style="font-weight:600;color:${c};">${d.val}</span></td>`;
+    });
+    h+=`<td>${trendArrow(m)}</td></tr>`;
+  });
+  h+=`</tbody>`;
+  t.innerHTML=h;
+}
+
+// ── 列印日期 ──
+document.getElementById('print-date').textContent=new Date().toLocaleDateString('zh-TW');
+
+// ── Init ──
+buildSummaryTable();
+buildPrintTable();
 </script>
 </body>
 </html>
