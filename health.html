@@ -153,8 +153,8 @@ table.summary tr:hover td{background:#fafafa;}
 
   /* trend charts — 2欄4列 */
   .p-charts{display:grid!important;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:7px;}
-  .p-chart-box{border:0.5pt solid #ddd;padding:6px;break-inside:avoid;overflow:hidden;}
-  .p-chart-box canvas{width:100%!important;}
+  .p-chart-box{border:0.5pt solid #ddd;padding:6px;break-inside:avoid;overflow:hidden;max-height:200px;}
+  .p-chart-box canvas{max-width:100%!important;max-height:160px!important;display:block;}
   .p-chart-title{font-size:7pt;font-weight:700;margin-bottom:4px;}
 
   /* abdomen section */
@@ -295,9 +295,9 @@ table.summary tr:hover td{background:#fafafa;}
       </tbody>
     </table>
 
-    <div style="margin-top:14px;">
+    <div style="height:12pt;"></div><!-- 章節間距 -->
       <div class="p-sec-title">四、腹部超音波歷年追蹤</div>
-      <div class="p-timeline" style="margin-bottom:10px;">
+      <div class="p-timeline" style="margin-bottom:8px;">
         <div class="p-tl-item"><div class="p-tl-year">2013</div><div>肝囊腫 2.1cm（S7），膽腎正常，無脂肪肝</div></div>
         <div class="p-tl-item"><div class="p-tl-year">2014</div><div>輕度脂肪肝（首次），肝囊腫 2.1cm，膽腎正常</div></div>
         <div class="p-tl-item"><div class="p-tl-year">2015</div><div>輕度脂肪肝，肝囊腫 2.0cm（略縮小），膽腎正常</div></div>
@@ -306,9 +306,9 @@ table.summary tr:hover td{background:#fafafa;}
         <div class="p-tl-item"><div class="p-tl-year">2023</div><div>輕度脂肪肝，肝囊腫 <strong>2.75cm</strong>（歷年最大），腎囊腫 1.17cm</div></div>
         <div class="p-tl-item" style="color:#c0392b;font-weight:600;"><div class="p-tl-year">2026</div><div>輕～中度脂肪肝（惡化），右肝囊腫 2.6cm + 左肝囊腫 0.79cm，左腎囊腫增至 1.46cm</div></div>
       </div>
-      <div class="p-chart-box no-break">
+      <div class="p-chart-box no-break" style="width:100%;break-inside:avoid;">
         <div class="p-chart-title">肝囊腫 / 腎囊腫尺寸追蹤（cm）</div>
-        <canvas id="pc-cyst" width="580" height="170"></canvas>
+        <canvas id="pc-cyst" width="500" height="150" style="width:100%;height:150px;display:block;"></canvas>
       </div>
     </div>
   </div>
