@@ -151,11 +151,11 @@ table.summary tr:hover td{background:#fafafa;}
   .p-dot-bad{background:#e74c3c!important;}
   .p-dot-na{background:#bbb!important;}
 
-  /* trend charts — fixed pixel canvas, 4 per row */
-  .p-charts{display:grid!important;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:7px;}
-  .p-chart-box{border:0.5pt solid #ddd;padding:5px;break-inside:avoid;overflow:hidden;}
-  .p-chart-box canvas{width:100%!important;max-height:90px!important;}
-  .p-chart-title{font-size:6.5pt;font-weight:700;margin-bottom:3px;}
+  /* trend charts — 2欄4列 */
+  .p-charts{display:grid!important;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:7px;}
+  .p-chart-box{border:0.5pt solid #ddd;padding:6px;break-inside:avoid;overflow:hidden;}
+  .p-chart-box canvas{width:100%!important;}
+  .p-chart-title{font-size:7pt;font-weight:700;margin-bottom:4px;}
 
   /* abdomen section */
   .p-timeline{font-size:7.5pt;line-height:1.6;}
@@ -188,7 +188,7 @@ table.summary tr:hover td{background:#fafafa;}
   }
   .print-header{display:flex;}
   .p-cards{display:grid;grid-template-columns:repeat(4,1fr);}
-  .p-charts{display:grid;grid-template-columns:repeat(4,1fr);}
+  .p-charts{display:grid;grid-template-columns:repeat(2,1fr);}
 }
 </style>
 </head>
@@ -257,26 +257,26 @@ table.summary tr:hover td{background:#fafafa;}
     </div>
   </div>
 
-  <!-- 二、歷年數值對比表 + 趨勢圖 -->
+  <!-- 二、歷年數值對比表 + 趨勢圖（2欄4列） -->
   <div class="p-sec pb-before">
     <div class="p-sec-title">二、歷年數值對比（2013–2026）</div>
     <table class="p-table" id="print-summary-table"></table>
-    <div style="margin-top:14px;">
-      <div style="font-size:8pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:8px;">重要指標歷年趨勢圖</div>
+    <div style="margin-top:12px;">
+      <div style="font-size:7pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:7px;">重要指標歷年趨勢圖</div>
       <div class="p-charts">
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#c0392b;">● LDL 壞膽固醇（目標 &lt;100）</div><canvas id="pc-ldl" width="160" height="90"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● 總膽固醇（目標 &lt;200）</div><canvas id="pc-chol" width="160" height="90"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● 三酸甘油脂 TG（&lt;150）</div><canvas id="pc-tg" width="160" height="90"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#2980b9;">● HDL 好膽固醇（&gt;40）</div><canvas id="pc-hdl" width="160" height="90"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● HbA1c（目標 &lt;5.7%）</div><canvas id="pc-hba1c" width="160" height="90"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● 空腹血糖（目標 &lt;100）</div><canvas id="pc-glucose" width="160" height="90"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#e67e22;">● 尿酸（目標 &lt;7.0）</div><canvas id="pc-ua" width="160" height="90"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● eGFR 腎功能（&gt;60）</div><canvas id="pc-egfr" width="160" height="90"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#c0392b;">● LDL 壞膽固醇（目標 &lt;100）</div><canvas id="pc-ldl" width="300" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● 總膽固醇（目標 &lt;200）</div><canvas id="pc-chol" width="300" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● 三酸甘油脂 TG（&lt;150）</div><canvas id="pc-tg" width="300" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#2980b9;">● HDL 好膽固醇（&gt;40）</div><canvas id="pc-hdl" width="300" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● HbA1c 糖化血色素（&lt;5.7%）</div><canvas id="pc-hba1c" width="300" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● 空腹血糖（目標 &lt;100）</div><canvas id="pc-glucose" width="300" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#e67e22;">● 尿酸（目標 &lt;7.0）</div><canvas id="pc-ua" width="300" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#1abc9c;">● eGFR 腎功能（&gt;60）</div><canvas id="pc-egfr" width="300" height="130"></canvas></div>
       </div>
     </div>
   </div>
 
-  <!-- 三、心臟與血管 -->
+  <!-- 三、心臟與血管 + 四、腹部超音波（合併同頁） -->
   <div class="p-sec pb-before">
     <div class="p-sec-title">三、心臟與血管（2026/05/08）</div>
     <table class="p-table">
@@ -294,26 +294,21 @@ table.summary tr:hover td{background:#fafafa;}
         <tr><td>左胸間歇性疼痛</td><td>乳頭下方，1秒/下，與脈搏不同步</td><td><span class="p-dot p-dot-warn"></span>待確認</td><td>建議心臟科評估</td></tr>
       </tbody>
     </table>
-  </div>
 
-  <!-- 四、腹部超音波歷年 -->
-  <div class="p-sec pb-before">
-    <div class="p-sec-title">四、腹部超音波歷年追蹤</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;">
-      <div>
-        <div class="p-timeline">
-          <div class="p-tl-item"><div class="p-tl-year">2013</div><div>肝囊腫 2.1cm（S7），膽腎正常，無脂肪肝</div></div>
-          <div class="p-tl-item"><div class="p-tl-year">2014</div><div>輕度脂肪肝（首次），肝囊腫 2.1cm，膽腎正常</div></div>
-          <div class="p-tl-item"><div class="p-tl-year">2015</div><div>輕度脂肪肝，肝囊腫 2.0cm（略縮小），膽腎正常</div></div>
-          <div class="p-tl-item"><div class="p-tl-year">2016</div><div>輕度脂肪肝，疑似肝血管瘤 0.63cm（S7），肝囊腫 S7</div></div>
-          <div class="p-tl-item"><div class="p-tl-year">2018</div><div>輕度脂肪肝，肝囊腫右葉 2.3cm，<strong>左腎囊腫首次出現 0.7cm</strong></div></div>
-          <div class="p-tl-item"><div class="p-tl-year">2023</div><div>輕度脂肪肝，肝囊腫 <strong>2.75cm</strong>（歷年最大），腎囊腫 1.17cm</div></div>
-          <div class="p-tl-item" style="color:#c0392b;font-weight:600;"><div class="p-tl-year">2026</div><div>輕～中度脂肪肝（惡化），右肝囊腫 2.6cm + 左肝囊腫 0.79cm，左腎囊腫增至 1.46cm</div></div>
-        </div>
+    <div style="margin-top:14px;">
+      <div class="p-sec-title">四、腹部超音波歷年追蹤</div>
+      <div class="p-timeline" style="margin-bottom:10px;">
+        <div class="p-tl-item"><div class="p-tl-year">2013</div><div>肝囊腫 2.1cm（S7），膽腎正常，無脂肪肝</div></div>
+        <div class="p-tl-item"><div class="p-tl-year">2014</div><div>輕度脂肪肝（首次），肝囊腫 2.1cm，膽腎正常</div></div>
+        <div class="p-tl-item"><div class="p-tl-year">2015</div><div>輕度脂肪肝，肝囊腫 2.0cm（略縮小），膽腎正常</div></div>
+        <div class="p-tl-item"><div class="p-tl-year">2016</div><div>輕度脂肪肝，疑似肝血管瘤 0.63cm（S7），肝囊腫 S7</div></div>
+        <div class="p-tl-item"><div class="p-tl-year">2018</div><div>輕度脂肪肝，肝囊腫右葉 2.3cm，<strong>左腎囊腫首次出現 0.7cm</strong></div></div>
+        <div class="p-tl-item"><div class="p-tl-year">2023</div><div>輕度脂肪肝，肝囊腫 <strong>2.75cm</strong>（歷年最大），腎囊腫 1.17cm</div></div>
+        <div class="p-tl-item" style="color:#c0392b;font-weight:600;"><div class="p-tl-year">2026</div><div>輕～中度脂肪肝（惡化），右肝囊腫 2.6cm + 左肝囊腫 0.79cm，左腎囊腫增至 1.46cm</div></div>
       </div>
       <div class="p-chart-box no-break">
         <div class="p-chart-title">肝囊腫 / 腎囊腫尺寸追蹤（cm）</div>
-        <canvas id="pc-cyst" width="300" height="160"></canvas>
+        <canvas id="pc-cyst" width="580" height="170"></canvas>
       </div>
     </div>
   </div>
