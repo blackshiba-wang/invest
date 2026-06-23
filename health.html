@@ -257,26 +257,26 @@ table.summary tr:hover td{background:#fafafa;}
     </div>
   </div>
 
-  <!-- 二、歷年數值對比表 + 趨勢圖（2欄4列） -->
+  <!-- 二、歷年數值對比表 + 趨勢圖（同一頁，2欄4列） -->
   <div class="p-sec pb-before">
     <div class="p-sec-title">二、歷年數值對比（2013–2026）</div>
     <table class="p-table" id="print-summary-table"></table>
-    <div style="margin-top:12px;">
-      <div style="font-size:7pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:7px;">重要指標歷年趨勢圖</div>
-      <div class="p-charts">
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#c0392b;">● LDL 壞膽固醇（目標 &lt;100）</div><canvas id="pc-ldl" width="300" height="160" style="display:block;width:300px;height:160px;"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● 總膽固醇（目標 &lt;200）</div><canvas id="pc-chol" width="300" height="160" style="display:block;width:300px;height:160px;"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● 三酸甘油脂 TG（&lt;150）</div><canvas id="pc-tg" width="300" height="160" style="display:block;width:300px;height:160px;"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#2980b9;">● HDL 好膽固醇（&gt;40）</div><canvas id="pc-hdl" width="300" height="160" style="display:block;width:300px;height:160px;"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● HbA1c 糖化血色素（&lt;5.7%）</div><canvas id="pc-hba1c" width="300" height="160" style="display:block;width:300px;height:160px;"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● 空腹血糖（目標 &lt;100）</div><canvas id="pc-glucose" width="300" height="160" style="display:block;width:300px;height:160px;"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#e67e22;">● 尿酸（目標 &lt;7.0）</div><canvas id="pc-ua" width="300" height="160" style="display:block;width:300px;height:160px;"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#1abc9c;">● eGFR 腎功能（&gt;60）</div><canvas id="pc-egfr" width="300" height="160" style="display:block;width:300px;height:160px;"></canvas></div>
+    <div style="margin-top:10px;">
+      <div style="font-size:7pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:6px;">重要指標歷年趨勢圖</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <div class="p-chart-box"><div class="p-chart-title" style="color:#c0392b;">● LDL 壞膽固醇（目標 &lt;100）</div><img id="pi-ldl" style="width:100%;display:block;"></div>
+        <div class="p-chart-box"><div class="p-chart-title" style="color:#d68910;">● 總膽固醇（目標 &lt;200）</div><img id="pi-chol" style="width:100%;display:block;"></div>
+        <div class="p-chart-box"><div class="p-chart-title" style="color:#27ae60;">● 三酸甘油脂 TG（&lt;150）</div><img id="pi-tg" style="width:100%;display:block;"></div>
+        <div class="p-chart-box"><div class="p-chart-title" style="color:#2980b9;">● HDL 好膽固醇（&gt;40）</div><img id="pi-hdl" style="width:100%;display:block;"></div>
+        <div class="p-chart-box"><div class="p-chart-title" style="color:#d68910;">● HbA1c 糖化血色素（&lt;5.7%）</div><img id="pi-hba1c" style="width:100%;display:block;"></div>
+        <div class="p-chart-box"><div class="p-chart-title" style="color:#27ae60;">● 空腹血糖（目標 &lt;100）</div><img id="pi-glucose" style="width:100%;display:block;"></div>
+        <div class="p-chart-box"><div class="p-chart-title" style="color:#e67e22;">● 尿酸（目標 &lt;7.0）</div><img id="pi-ua" style="width:100%;display:block;"></div>
+        <div class="p-chart-box"><div class="p-chart-title" style="color:#1abc9c;">● eGFR 腎功能（&gt;60）</div><img id="pi-egfr" style="width:100%;display:block;"></div>
       </div>
     </div>
   </div>
 
-  <!-- 三、心臟與血管 + 四、腹部超音波（合併同頁） -->
+  <!-- 三、心臟與血管 + 四、腹部超音波（同頁，中間空兩行） -->
   <div class="p-sec pb-before">
     <div class="p-sec-title">三、心臟與血管（2026/05/08）</div>
     <table class="p-table">
@@ -295,21 +295,21 @@ table.summary tr:hover td{background:#fafafa;}
       </tbody>
     </table>
 
-    <div style="height:12pt;"></div><!-- 章節間距 -->
-      <div class="p-sec-title">四、腹部超音波歷年追蹤</div>
-      <div class="p-timeline" style="margin-bottom:8px;">
-        <div class="p-tl-item"><div class="p-tl-year">2013</div><div>肝囊腫 2.1cm（S7），膽腎正常，無脂肪肝</div></div>
-        <div class="p-tl-item"><div class="p-tl-year">2014</div><div>輕度脂肪肝（首次），肝囊腫 2.1cm，膽腎正常</div></div>
-        <div class="p-tl-item"><div class="p-tl-year">2015</div><div>輕度脂肪肝，肝囊腫 2.0cm（略縮小），膽腎正常</div></div>
-        <div class="p-tl-item"><div class="p-tl-year">2016</div><div>輕度脂肪肝，疑似肝血管瘤 0.63cm（S7），肝囊腫 S7</div></div>
-        <div class="p-tl-item"><div class="p-tl-year">2018</div><div>輕度脂肪肝，肝囊腫右葉 2.3cm，<strong>左腎囊腫首次出現 0.7cm</strong></div></div>
-        <div class="p-tl-item"><div class="p-tl-year">2023</div><div>輕度脂肪肝，肝囊腫 <strong>2.75cm</strong>（歷年最大），腎囊腫 1.17cm</div></div>
-        <div class="p-tl-item" style="color:#c0392b;font-weight:600;"><div class="p-tl-year">2026</div><div>輕～中度脂肪肝（惡化），右肝囊腫 2.6cm + 左肝囊腫 0.79cm，左腎囊腫增至 1.46cm</div></div>
-      </div>
-      <div class="p-chart-box no-break" style="display:inline-block;width:auto;break-inside:avoid;margin-top:4px;">
-        <div class="p-chart-title">肝囊腫 / 腎囊腫尺寸追蹤（cm）</div>
-        <canvas id="pc-cyst" width="420" height="230" style="display:block;width:420px;height:230px;"></canvas>
-      </div>
+    <div style="height:20pt;"></div>
+
+    <div class="p-sec-title">四、腹部超音波歷年追蹤</div>
+    <div class="p-timeline">
+      <div class="p-tl-item"><div class="p-tl-year">2013</div><div>肝囊腫 2.1cm（S7），膽腎正常，無脂肪肝</div></div>
+      <div class="p-tl-item"><div class="p-tl-year">2014</div><div>輕度脂肪肝（首次），肝囊腫 2.1cm，膽腎正常</div></div>
+      <div class="p-tl-item"><div class="p-tl-year">2015</div><div>輕度脂肪肝，肝囊腫 2.0cm（略縮小），膽腎正常</div></div>
+      <div class="p-tl-item"><div class="p-tl-year">2016</div><div>輕度脂肪肝，疑似肝血管瘤 0.63cm（S7），肝囊腫 S7</div></div>
+      <div class="p-tl-item"><div class="p-tl-year">2018</div><div>輕度脂肪肝，肝囊腫右葉 2.3cm，<strong>左腎囊腫首次出現 0.7cm</strong></div></div>
+      <div class="p-tl-item"><div class="p-tl-year">2023</div><div>輕度脂肪肝，肝囊腫 <strong>2.75cm</strong>（歷年最大），腎囊腫 1.17cm</div></div>
+      <div class="p-tl-item" style="color:#c0392b;font-weight:600;"><div class="p-tl-year">2026</div><div>輕～中度脂肪肝（惡化），右肝囊腫 2.6cm＋左肝囊腫 0.79cm，左腎囊腫增至 1.46cm</div></div>
+    </div>
+    <div class="p-chart-box" style="margin-top:8px;break-inside:avoid;">
+      <div class="p-chart-title">肝囊腫 / 腎囊腫尺寸追蹤（cm）</div>
+      <img id="pi-cyst" style="width:100%;display:block;">
     </div>
   </div>
 
@@ -878,7 +878,6 @@ function cystChart(id,small){
   });
 }
 cystChart('t-cyst',false);
-cystChart('pc-cyst',true);
 
 // ── 心臟頁圖表 ──
 new Chart(document.getElementById('h-radar'),{
@@ -901,83 +900,86 @@ new Chart(document.getElementById('h-cac'),{
     scales:{y:{beginAtZero:true,grid:{color:'#f5f5f5'},title:{display:true,text:'CAC分數',font:{size:11}}},x:{grid:{display:false},ticks:{font:{size:10}}}}}
 });
 
-// ── 列印用小圖 (渲染在畫面外的容器，確保 Chart.js 正常渲染) ──
+// ── 列印圖表：用隱藏 canvas 渲染後轉成 <img>，完全避免列印變形 ──
 function buildPrintCharts(){
+  // 共用渲染函式：在隱藏 canvas 渲染，完成後把 base64 塞進對應 <img>
+  function renderToImg(imgId, type, data, options, w, h){
+    const tmpC = document.createElement('canvas');
+    tmpC.width = w; tmpC.height = h;
+    // 白底
+    const ctx = tmpC.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,w,h);
+    const ch = new Chart(tmpC, {type, data, options});
+    // Chart.js 4 是同步渲染（animation:false 時）
+    const img = document.getElementById(imgId);
+    if(img) img.src = tmpC.toDataURL('image/png');
+    ch.destroy();
+  }
+
+  const W=560, H=220; // 趨勢圖尺寸
+  const fontSm = 11;
+
   const configs=[
-    {id:'pc-ldl',  metric:'LDL(mg/dL)',         target:100, color:'#e74c3c'},
-    {id:'pc-chol', metric:'總膽固醇(mg/dL)',      target:200, color:'#f39c12'},
-    {id:'pc-tg',   metric:'三酸甘油脂(mg/dL)',    target:150, color:'#27ae60'},
-    {id:'pc-hdl',  metric:'HDL(mg/dL)',           target:40,  color:'#2980b9'},
-    {id:'pc-hba1c',metric:'HbA1c(%)',             target:5.7, color:'#f39c12'},
-    {id:'pc-glucose',metric:'空腹血糖(mg/dL)',    target:100, color:'#27ae60'},
-    {id:'pc-ua',   metric:'尿酸(mg/dL)',          target:7.0, color:'#e67e22'},
-    {id:'pc-egfr', metric:'eGFR',                 target:60,  color:'#1abc9c'},
+    {id:'pi-ldl',   metric:'LDL(mg/dL)',        target:100, color:'#e74c3c'},
+    {id:'pi-chol',  metric:'總膽固醇(mg/dL)',     target:200, color:'#f39c12'},
+    {id:'pi-tg',    metric:'三酸甘油脂(mg/dL)',   target:150, color:'#27ae60'},
+    {id:'pi-hdl',   metric:'HDL(mg/dL)',          target:40,  color:'#2980b9'},
+    {id:'pi-hba1c', metric:'HbA1c(%)',            target:5.7, color:'#f39c12'},
+    {id:'pi-glucose',metric:'空腹血糖(mg/dL)',    target:100, color:'#27ae60'},
+    {id:'pi-ua',    metric:'尿酸(mg/dL)',         target:7.0, color:'#e67e22'},
+    {id:'pi-egfr',  metric:'eGFR',                target:60,  color:'#1abc9c'},
   ];
+
   configs.forEach(({id,metric,target,color})=>{
-    const el=document.getElementById(id);
-    if(!el)return;
     const years=YEARS_CHRONO.filter(y=>DATA[y]?.[metric]?.val!=null);
     const vals=years.map(y=>DATA[y][metric].val);
     const ptC=years.map(y=>ptColor(DATA[y][metric].status));
-    new Chart(el,{
-      type:'line',
-      data:{labels:years,datasets:[
-        {label:metric,data:vals,borderColor:color,backgroundColor:color+'28',pointBackgroundColor:ptC,pointRadius:3,pointHoverRadius:4,fill:true,tension:0.35,borderWidth:2},
-        {label:'目標',data:years.map(()=>target),borderColor:'#27ae60',borderWidth:1,borderDash:[4,3],pointRadius:0,fill:false}
+    renderToImg(id,'line',
+      {labels:years,datasets:[
+        {label:metric,data:vals,borderColor:color,backgroundColor:color+'30',
+         pointBackgroundColor:ptC,pointRadius:4,fill:true,tension:0.35,borderWidth:2.5},
+        {label:'目標',data:years.map(()=>target),borderColor:'#27ae60',
+         borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false}
       ]},
-      options:{
-        responsive:false,
-        animation:false,
-        plugins:{
-          legend:{display:true,position:'bottom',labels:{font:{size:8},boxWidth:8,padding:4}},
-          tooltip:{enabled:false}
-        },
-        scales:{
-          y:{grid:{color:'#f0f0f0'},ticks:{font:{size:8},maxTicksLimit:5}},
-          x:{grid:{display:false},ticks:{font:{size:7},maxTicksLimit:6}}
-        }
-      }
-    });
+      {animation:false,responsive:false,
+       plugins:{legend:{display:true,position:'bottom',
+         labels:{font:{size:fontSm},boxWidth:12,padding:6}}},
+       scales:{
+         y:{grid:{color:'#eeeeee'},ticks:{font:{size:fontSm},maxTicksLimit:5}},
+         x:{grid:{display:false},ticks:{font:{size:fontSm}}}
+       }},
+      W, H
+    );
   });
 
-  const cystEl=document.getElementById('pc-cyst');
-  if(cystEl){
-    new Chart(cystEl,{
-      type:'line',
-      data:{
-        labels:['2013','2014','2015','2018','2023','2026'],
-        datasets:[
-          {label:'肝囊腫最大（cm）',data:[2.1,2.1,2.0,2.3,2.75,2.6],borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.1)',pointBackgroundColor:['#f39c12','#f39c12','#f39c12','#f39c12','#e74c3c','#e74c3c'],pointRadius:5,pointHoverRadius:6,fill:true,tension:0.3,borderWidth:2.5},
-          {label:'腎囊腫（cm）',data:[null,null,null,0.7,1.17,1.46],borderColor:'#3498db',backgroundColor:'rgba(52,152,219,0.1)',pointBackgroundColor:['#ddd','#ddd','#ddd','#27ae60','#f39c12','#f39c12'],pointRadius:5,pointHoverRadius:6,fill:true,tension:0.3,borderWidth:2.5}
-        ]
-      },
-      options:{
-        responsive:false,
-        animation:false,
-        plugins:{
-          legend:{
-            display:true,
-            position:'bottom',
-            labels:{font:{size:10},boxWidth:12,padding:8}
-          },
-          tooltip:{enabled:false}
-        },
-        scales:{
-          y:{
-            beginAtZero:true,
-            grid:{color:'#f0f0f0'},
-            ticks:{font:{size:10},maxTicksLimit:6,stepSize:0.5},
-            title:{display:true,text:'公分（cm）',font:{size:10},color:'#555'}
-          },
-          x:{
-            grid:{display:false},
-            ticks:{font:{size:10}},
-            title:{display:true,text:'年份',font:{size:10},color:'#555'}
-          }
-        }
-      }
-    });
-  }
+  // 囊腫圖（較高）
+  const CW=700, CH=280;
+  renderToImg('pi-cyst','line',
+    {labels:['2013','2014','2015','2018','2023','2026'],datasets:[
+      {label:'肝囊腫最大（cm）',
+       data:[2.1,2.1,2.0,2.3,2.75,2.6],
+       borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.1)',
+       pointBackgroundColor:['#f39c12','#f39c12','#f39c12','#f39c12','#e74c3c','#e74c3c'],
+       pointRadius:5,fill:true,tension:0.3,borderWidth:2.5},
+      {label:'腎囊腫（cm）',
+       data:[null,null,null,0.7,1.17,1.46],
+       borderColor:'#3498db',backgroundColor:'rgba(52,152,219,0.1)',
+       pointBackgroundColor:['#ccc','#ccc','#ccc','#27ae60','#f39c12','#f39c12'],
+       pointRadius:5,fill:true,tension:0.3,borderWidth:2.5}
+    ]},
+    {animation:false,responsive:false,
+     plugins:{legend:{display:true,position:'bottom',
+       labels:{font:{size:13},boxWidth:14,padding:8}}},
+     scales:{
+       y:{beginAtZero:true,grid:{color:'#eeeeee'},
+          ticks:{font:{size:12},stepSize:0.5},
+          title:{display:true,text:'公分（cm）',font:{size:12},color:'#555'}},
+       x:{grid:{display:false},ticks:{font:{size:12}},
+          title:{display:true,text:'年份',font:{size:12},color:'#555'}}
+     }},
+    CW, CH
+  );
 }
 
 // ── 列印用歷年總表 ──
