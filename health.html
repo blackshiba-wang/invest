@@ -97,88 +97,98 @@ table.summary tr:hover td{background:#fafafa;}
    PRINT STYLES  — 醫師閱讀版
 ══════════════════════════════════════ */
 @media print {
-  @page{size:A4;margin:14mm 11mm;}
+  @page{size:A4 portrait;margin:0;}
   -webkit-print-color-adjust:exact;
   print-color-adjust:exact;
   color-adjust:exact;
 
-  .header,.year-nav,.print-btn,.footer,.modal-overlay{display:none!important;}
-  .page{display:none!important;}
+  html,body{margin:0;padding:0;background:#fff;}
+  .header,.year-nav,.print-btn,.footer,.modal-overlay,.page{display:none!important;}
 
-  /* show print page */
   #page-print{
+    display:block!important;
     position:static!important;
     left:auto!important;
-    width:auto!important;
+    width:210mm!important;
     visibility:visible!important;
-    pointer-events:auto!important;
-    display:block!important;
+    margin:0 auto;
+    padding:12mm 13mm;
   }
 
-  body{background:#fff;font-size:10.5pt;color:#000;}
+  body{font-size:9pt;color:#000;}
   .container{max-width:100%;padding:0;}
 
-  .print-header{display:flex!important;justify-content:space-between;align-items:flex-start;border-bottom:2pt solid #1a1a2e;padding-bottom:7px;margin-bottom:12px;}
-  .print-header h1{font-size:15pt;font-weight:700;color:#1a1a2e;}
-  .print-header .ph-meta{font-size:8.5pt;color:#555;line-height:1.8;text-align:right;}
+  .print-header{display:flex!important;justify-content:space-between;align-items:flex-start;border-bottom:2pt solid #1a1a2e;padding-bottom:6px;margin-bottom:10px;}
+  .print-header h1{font-size:14pt;font-weight:700;color:#1a1a2e;}
+  .print-header .ph-meta{font-size:8pt;color:#555;line-height:1.8;text-align:right;}
 
-  .p-sec{margin-bottom:12px;}
-  .p-sec-title{font-size:8pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#1a1a2e;border-bottom:0.5pt solid #1a1a2e;padding-bottom:3px;margin-bottom:8px;}
+  .p-sec{margin-bottom:10px;}
+  .p-sec-title{font-size:7.5pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#fff;background:#1a1a2e!important;padding:3px 7px;margin-bottom:7px;}
 
-  /* key value cards */
-  .p-cards{display:grid!important;grid-template-columns:repeat(4,1fr);gap:5px;}
-  .p-card{border:0.5pt solid #ddd;border-radius:3px;padding:5px 7px;break-inside:avoid;}
+  /* key value cards — 4 columns */
+  .p-cards{display:grid!important;grid-template-columns:repeat(4,1fr);gap:4px;}
+  .p-card{border:0.5pt solid #ddd;padding:4px 6px;break-inside:avoid;}
   .p-card.p-bad{border-left:3pt solid #e74c3c;background:#fff8f8!important;}
   .p-card.p-warn{border-left:3pt solid #f39c12;background:#fffdf5!important;}
-  .p-card.p-ok{border-left:3pt solid #27ae60;background:#f8fff9!important;}
-  .p-card-label{font-size:7pt;color:#666;margin-bottom:1px;}
-  .p-card-val{font-size:12pt;font-weight:700;line-height:1.1;}
-  .p-card-unit{font-size:7pt;color:#888;}
-  .p-card-ref{font-size:7pt;color:#888;margin-top:1px;}
-  .p-badge{font-size:6.5pt;font-weight:700;padding:1px 4px;border-radius:2px;display:inline-block;margin-top:2px;}
+  .p-card.p-ok{border-left:3pt solid #27ae60;background:#f9fff9!important;}
+  .p-card-label{font-size:6.5pt;color:#666;margin-bottom:1px;}
+  .p-card-val{font-size:11pt;font-weight:700;line-height:1.1;}
+  .p-card-unit{font-size:6.5pt;color:#888;}
+  .p-card-ref{font-size:6.5pt;color:#888;margin-top:1px;}
+  .p-badge{font-size:6pt;font-weight:700;padding:1px 4px;display:inline-block;margin-top:2px;}
   .p-badge.pb-bad{background:#fdecea!important;color:#c0392b!important;}
   .p-badge.pb-warn{background:#fef9e7!important;color:#d68910!important;}
   .p-badge.pb-ok{background:#eafaf1!important;color:#1e8449!important;}
 
-  /* summary table */
-  .p-table{width:100%;border-collapse:collapse;font-size:8.5pt;}
-  .p-table th{background:#1a1a2e!important;color:#fff!important;padding:4px 7px;font-size:7.5pt;font-weight:700;text-align:left;border:0.5pt solid #1a1a2e;}
-  .p-table td{padding:4px 7px;border:0.5pt solid #e0e0e0;vertical-align:middle;}
+  /* summary table — compact */
+  .p-table{width:100%;border-collapse:collapse;font-size:7.5pt;}
+  .p-table th{background:#1a1a2e!important;color:#fff!important;padding:3px 5px;font-size:7pt;font-weight:700;text-align:left;}
+  .p-table td{padding:3px 5px;border-bottom:0.25pt solid #e8e8e8;vertical-align:middle;}
   .p-table tr:nth-child(even) td{background:#f9f9f9!important;}
-  .p-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle;}
-  .p-dot-ok{background:#27ae60!important;}.p-dot-warn{background:#f39c12!important;}.p-dot-bad{background:#e74c3c!important;}.p-dot-na{background:#ccc!important;}
+  .p-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;vertical-align:middle;}
+  .p-dot-ok{background:#27ae60!important;}
+  .p-dot-warn{background:#f39c12!important;}
+  .p-dot-bad{background:#e74c3c!important;}
+  .p-dot-na{background:#bbb!important;}
 
-  /* trend charts grid */
-  .p-charts{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;}
-  .p-chart-box{border:0.5pt solid #ddd;border-radius:3px;padding:6px;break-inside:avoid;}
-  .p-chart-title{font-size:7pt;font-weight:700;margin-bottom:4px;}
+  /* trend charts — fixed pixel canvas, 4 per row */
+  .p-charts{display:grid!important;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:7px;}
+  .p-chart-box{border:0.5pt solid #ddd;padding:5px;break-inside:avoid;overflow:hidden;}
+  .p-chart-box canvas{width:100%!important;max-height:90px!important;}
+  .p-chart-title{font-size:6.5pt;font-weight:700;margin-bottom:3px;}
 
-  /* abdomen 2-col */
-  .p-timeline{font-size:8.5pt;line-height:1.7;}
-  .p-tl-item{padding:3px 0;border-bottom:0.5pt solid #f0f0f0;display:flex;gap:7px;}
-  .p-tl-year{font-weight:700;min-width:36px;color:#555;flex-shrink:0;}
+  /* abdomen section */
+  .p-timeline{font-size:7.5pt;line-height:1.6;}
+  .p-tl-item{padding:2px 0;border-bottom:0.25pt solid #eee;display:flex;gap:6px;}
+  .p-tl-year{font-weight:700;min-width:34px;color:#555;flex-shrink:0;}
 
   /* clinic table */
-  .p-clinic-table{width:100%;border-collapse:collapse;font-size:8.5pt;}
-  .p-clinic-table th{background:#1a1a2e!important;color:#fff!important;padding:4px 8px;font-size:7.5pt;font-weight:700;text-align:left;}
-  .p-clinic-table td{padding:4px 8px;border:0.5pt solid #ddd;vertical-align:top;}
+  .p-clinic-table{width:100%;border-collapse:collapse;font-size:7.5pt;}
+  .p-clinic-table th{background:#1a1a2e!important;color:#fff!important;padding:3px 6px;font-size:7pt;font-weight:700;text-align:left;}
+  .p-clinic-table td{padding:3px 6px;border:0.25pt solid #ddd;vertical-align:top;}
+  .p-clinic-table tr:nth-child(even) td{background:#f9f9f9!important;}
+
+  /* heart table */
+  .p-table.heart-table td:nth-child(3){color:#555;}
 
   .pb-before{page-break-before:always;}
   .no-break{break-inside:avoid;}
 }
 
-/* hide print page visually on screen but keep it renderable for charts */
+/* ── 螢幕：隱藏列印頁但讓 canvas 仍能渲染 ── */
 @media screen {
   #page-print{
     position:fixed;
     left:-9999px;
     top:0;
-    width:210mm;
+    width:794px; /* 96dpi A4 width */
     visibility:hidden;
     pointer-events:none;
+    overflow:hidden;
   }
   .print-header{display:flex;}
-  .p-cards,.p-charts,.p-timeline,.p-clinic-table{display:grid;}
+  .p-cards{display:grid;grid-template-columns:repeat(4,1fr);}
+  .p-charts{display:grid;grid-template-columns:repeat(4,1fr);}
 }
 </style>
 </head>
@@ -254,14 +264,14 @@ table.summary tr:hover td{background:#fafafa;}
     <div style="margin-top:14px;">
       <div style="font-size:8pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:8px;">重要指標歷年趨勢圖</div>
       <div class="p-charts">
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#c0392b;">● LDL 壞膽固醇（目標 &lt;100 mg/dL）</div><canvas id="pc-ldl" height="130"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● 總膽固醇（目標 &lt;200 mg/dL）</div><canvas id="pc-chol" height="130"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● 三酸甘油脂 TG（目標 &lt;150）</div><canvas id="pc-tg" height="130"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● HDL 好膽固醇（目標 &gt;40）</div><canvas id="pc-hdl" height="130"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● HbA1c 糖化血色素（目標 &lt;5.7%）</div><canvas id="pc-hba1c" height="130"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● 空腹血糖（目標 &lt;100 mg/dL）</div><canvas id="pc-glucose" height="130"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● 尿酸（目標 &lt;7.0 mg/dL）</div><canvas id="pc-ua" height="130"></canvas></div>
-        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● eGFR 腎功能（下限 60）</div><canvas id="pc-egfr" height="130"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#c0392b;">● LDL 壞膽固醇（目標 &lt;100）</div><canvas id="pc-ldl" width="160" height="90"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● 總膽固醇（目標 &lt;200）</div><canvas id="pc-chol" width="160" height="90"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● 三酸甘油脂 TG（&lt;150）</div><canvas id="pc-tg" width="160" height="90"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#2980b9;">● HDL 好膽固醇（&gt;40）</div><canvas id="pc-hdl" width="160" height="90"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#d68910;">● HbA1c（目標 &lt;5.7%）</div><canvas id="pc-hba1c" width="160" height="90"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● 空腹血糖（目標 &lt;100）</div><canvas id="pc-glucose" width="160" height="90"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#e67e22;">● 尿酸（目標 &lt;7.0）</div><canvas id="pc-ua" width="160" height="90"></canvas></div>
+        <div class="p-chart-box no-break"><div class="p-chart-title" style="color:#27ae60;">● eGFR 腎功能（&gt;60）</div><canvas id="pc-egfr" width="160" height="90"></canvas></div>
       </div>
     </div>
   </div>
@@ -303,7 +313,7 @@ table.summary tr:hover td{background:#fafafa;}
       </div>
       <div class="p-chart-box no-break">
         <div class="p-chart-title">肝囊腫 / 腎囊腫尺寸追蹤（cm）</div>
-        <canvas id="pc-cyst" height="160"></canvas>
+        <canvas id="pc-cyst" width="300" height="160"></canvas>
       </div>
     </div>
   </div>
@@ -899,40 +909,42 @@ new Chart(document.getElementById('h-cac'),{
 // ── 列印用小圖 (渲染在畫面外的容器，確保 Chart.js 正常渲染) ──
 function buildPrintCharts(){
   const configs=[
-    {id:'pc-ldl', metric:'LDL(mg/dL)', target:100, color:'#e74c3c'},
-    {id:'pc-chol', metric:'總膽固醇(mg/dL)', target:200, color:'#f39c12'},
-    {id:'pc-tg', metric:'三酸甘油脂(mg/dL)', target:150, color:'#27ae60'},
-    {id:'pc-hdl', metric:'HDL(mg/dL)', target:40, color:'#2980b9'},
-    {id:'pc-hba1c', metric:'HbA1c(%)', target:5.7, color:'#f39c12'},
-    {id:'pc-glucose', metric:'空腹血糖(mg/dL)', target:100, color:'#27ae60'},
-    {id:'pc-ua', metric:'尿酸(mg/dL)', target:7.0, color:'#e67e22'},
-    {id:'pc-egfr', metric:'eGFR', target:60, color:'#27ae60'},
+    {id:'pc-ldl',  metric:'LDL(mg/dL)',         target:100, color:'#e74c3c'},
+    {id:'pc-chol', metric:'總膽固醇(mg/dL)',      target:200, color:'#f39c12'},
+    {id:'pc-tg',   metric:'三酸甘油脂(mg/dL)',    target:150, color:'#27ae60'},
+    {id:'pc-hdl',  metric:'HDL(mg/dL)',           target:40,  color:'#2980b9'},
+    {id:'pc-hba1c',metric:'HbA1c(%)',             target:5.7, color:'#f39c12'},
+    {id:'pc-glucose',metric:'空腹血糖(mg/dL)',    target:100, color:'#27ae60'},
+    {id:'pc-ua',   metric:'尿酸(mg/dL)',          target:7.0, color:'#e67e22'},
+    {id:'pc-egfr', metric:'eGFR',                 target:60,  color:'#1abc9c'},
   ];
   configs.forEach(({id,metric,target,color})=>{
     const el=document.getElementById(id);
     if(!el)return;
     const years=YEARS_CHRONO.filter(y=>DATA[y]?.[metric]?.val!=null);
     const vals=years.map(y=>DATA[y][metric].val);
-    const ptColors=years.map(y=>ptColor(DATA[y][metric].status));
+    const ptC=years.map(y=>ptColor(DATA[y][metric].status));
     new Chart(el,{
       type:'line',
       data:{labels:years,datasets:[
-        {label:metric,data:vals,borderColor:color,backgroundColor:color+'22',pointBackgroundColor:ptColors,pointRadius:4,fill:true,tension:0.35},
-        {label:'目標',data:years.map(()=>target),borderColor:'#27ae60',borderWidth:1.5,borderDash:[4,4],pointRadius:0,fill:false}
+        {label:metric,data:vals,borderColor:color,backgroundColor:color+'28',pointBackgroundColor:ptC,pointRadius:3,pointHoverRadius:4,fill:true,tension:0.35,borderWidth:2},
+        {label:'目標',data:years.map(()=>target),borderColor:'#27ae60',borderWidth:1,borderDash:[4,3],pointRadius:0,fill:false}
       ]},
       options:{
         responsive:false,
         animation:false,
-        plugins:{legend:{display:true,labels:{font:{size:9},boxWidth:10}}},
+        plugins:{
+          legend:{display:true,position:'bottom',labels:{font:{size:8},boxWidth:8,padding:4}},
+          tooltip:{enabled:false}
+        },
         scales:{
-          y:{grid:{color:'#f0f0f0'},ticks:{font:{size:9}}},
-          x:{grid:{display:false},ticks:{font:{size:9}}}
+          y:{grid:{color:'#f0f0f0'},ticks:{font:{size:8},maxTicksLimit:5}},
+          x:{grid:{display:false},ticks:{font:{size:7},maxTicksLimit:6}}
         }
       }
     });
   });
 
-  // 囊腫圖
   const cystEl=document.getElementById('pc-cyst');
   if(cystEl){
     new Chart(cystEl,{
@@ -940,17 +952,17 @@ function buildPrintCharts(){
       data:{
         labels:['2013','2014','2015','2018','2023','2026'],
         datasets:[
-          {label:'肝囊腫最大（cm）',data:[2.1,2.1,2.0,2.3,2.75,2.6],borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.12)',pointBackgroundColor:['#f39c12','#f39c12','#f39c12','#f39c12','#e74c3c','#e74c3c'],pointRadius:5,fill:true,tension:0.3},
-          {label:'腎囊腫（cm）',data:[null,null,null,0.7,1.17,1.46],borderColor:'#3498db',backgroundColor:'rgba(52,152,219,0.1)',pointBackgroundColor:['#ddd','#ddd','#ddd','#27ae60','#f39c12','#f39c12'],pointRadius:5,fill:true,tension:0.3}
+          {label:'肝囊腫（cm）',data:[2.1,2.1,2.0,2.3,2.75,2.6],borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.1)',pointBackgroundColor:['#f39c12','#f39c12','#f39c12','#f39c12','#e74c3c','#e74c3c'],pointRadius:4,fill:true,tension:0.3,borderWidth:2},
+          {label:'腎囊腫（cm）',data:[null,null,null,0.7,1.17,1.46],borderColor:'#3498db',backgroundColor:'rgba(52,152,219,0.1)',pointBackgroundColor:['#ddd','#ddd','#ddd','#27ae60','#f39c12','#f39c12'],pointRadius:4,fill:true,tension:0.3,borderWidth:2}
         ]
       },
       options:{
         responsive:false,
         animation:false,
-        plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}}},
+        plugins:{legend:{position:'bottom',labels:{font:{size:8},boxWidth:8,padding:4}},tooltip:{enabled:false}},
         scales:{
-          y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{font:{size:9}}},
-          x:{grid:{display:false},ticks:{font:{size:9}}}
+          y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{font:{size:8},maxTicksLimit:5},title:{display:true,text:'cm',font:{size:8}}},
+          x:{grid:{display:false},ticks:{font:{size:8}}}
         }
       }
     });
