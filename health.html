@@ -104,7 +104,16 @@ table.summary tr:hover td{background:#fafafa;}
 
   .header,.year-nav,.print-btn,.footer,.modal-overlay{display:none!important;}
   .page{display:none!important;}
-  #page-print{display:block!important;}
+
+  /* show print page */
+  #page-print{
+    position:static!important;
+    left:auto!important;
+    width:auto!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    display:block!important;
+  }
 
   body{background:#fff;font-size:10.5pt;color:#000;}
   .container{max-width:100%;padding:0;}
@@ -158,11 +167,18 @@ table.summary tr:hover td{background:#fafafa;}
   .no-break{break-inside:avoid;}
 }
 
-/* hide print page in screen */
+/* hide print page visually on screen but keep it renderable for charts */
 @media screen {
-  #page-print{display:none!important;}
-  .print-header{display:none;}
-  .p-cards,.p-charts,.p-timeline,.p-clinic-table{display:none;}
+  #page-print{
+    position:fixed;
+    left:-9999px;
+    top:0;
+    width:210mm;
+    visibility:hidden;
+    pointer-events:none;
+  }
+  .print-header{display:flex;}
+  .p-cards,.p-charts,.p-timeline,.p-clinic-table{display:grid;}
 }
 </style>
 </head>
@@ -880,15 +896,66 @@ new Chart(document.getElementById('h-cac'),{
     scales:{y:{beginAtZero:true,grid:{color:'#f5f5f5'},title:{display:true,text:'CAC分數',font:{size:11}}},x:{grid:{display:false},ticks:{font:{size:10}}}}}
 });
 
-// ── 列印用小圖 ──
-lineChart('pc-ldl','LDL(mg/dL)',100,{small:true,legend:true});
-lineChart('pc-chol','總膽固醇(mg/dL)',200,{small:true,legend:true});
-lineChart('pc-tg','三酸甘油脂(mg/dL)',150,{small:true,legend:true});
-lineChart('pc-hdl','HDL(mg/dL)',40,{small:true,legend:true});
-lineChart('pc-hba1c','HbA1c(%)',5.7,{small:true,legend:true});
-lineChart('pc-glucose','空腹血糖(mg/dL)',100,{small:true,legend:true});
-lineChart('pc-ua','尿酸(mg/dL)',7.0,{small:true,legend:true});
-lineChart('pc-egfr','eGFR',60,{small:true,legend:true});
+// ── 列印用小圖 (渲染在畫面外的容器，確保 Chart.js 正常渲染) ──
+function buildPrintCharts(){
+  const configs=[
+    {id:'pc-ldl', metric:'LDL(mg/dL)', target:100, color:'#e74c3c'},
+    {id:'pc-chol', metric:'總膽固醇(mg/dL)', target:200, color:'#f39c12'},
+    {id:'pc-tg', metric:'三酸甘油脂(mg/dL)', target:150, color:'#27ae60'},
+    {id:'pc-hdl', metric:'HDL(mg/dL)', target:40, color:'#2980b9'},
+    {id:'pc-hba1c', metric:'HbA1c(%)', target:5.7, color:'#f39c12'},
+    {id:'pc-glucose', metric:'空腹血糖(mg/dL)', target:100, color:'#27ae60'},
+    {id:'pc-ua', metric:'尿酸(mg/dL)', target:7.0, color:'#e67e22'},
+    {id:'pc-egfr', metric:'eGFR', target:60, color:'#27ae60'},
+  ];
+  configs.forEach(({id,metric,target,color})=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const years=YEARS_CHRONO.filter(y=>DATA[y]?.[metric]?.val!=null);
+    const vals=years.map(y=>DATA[y][metric].val);
+    const ptColors=years.map(y=>ptColor(DATA[y][metric].status));
+    new Chart(el,{
+      type:'line',
+      data:{labels:years,datasets:[
+        {label:metric,data:vals,borderColor:color,backgroundColor:color+'22',pointBackgroundColor:ptColors,pointRadius:4,fill:true,tension:0.35},
+        {label:'目標',data:years.map(()=>target),borderColor:'#27ae60',borderWidth:1.5,borderDash:[4,4],pointRadius:0,fill:false}
+      ]},
+      options:{
+        responsive:false,
+        animation:false,
+        plugins:{legend:{display:true,labels:{font:{size:9},boxWidth:10}}},
+        scales:{
+          y:{grid:{color:'#f0f0f0'},ticks:{font:{size:9}}},
+          x:{grid:{display:false},ticks:{font:{size:9}}}
+        }
+      }
+    });
+  });
+
+  // 囊腫圖
+  const cystEl=document.getElementById('pc-cyst');
+  if(cystEl){
+    new Chart(cystEl,{
+      type:'line',
+      data:{
+        labels:['2013','2014','2015','2018','2023','2026'],
+        datasets:[
+          {label:'肝囊腫最大（cm）',data:[2.1,2.1,2.0,2.3,2.75,2.6],borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.12)',pointBackgroundColor:['#f39c12','#f39c12','#f39c12','#f39c12','#e74c3c','#e74c3c'],pointRadius:5,fill:true,tension:0.3},
+          {label:'腎囊腫（cm）',data:[null,null,null,0.7,1.17,1.46],borderColor:'#3498db',backgroundColor:'rgba(52,152,219,0.1)',pointBackgroundColor:['#ddd','#ddd','#ddd','#27ae60','#f39c12','#f39c12'],pointRadius:5,fill:true,tension:0.3}
+        ]
+      },
+      options:{
+        responsive:false,
+        animation:false,
+        plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}}},
+        scales:{
+          y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{font:{size:9}}},
+          x:{grid:{display:false},ticks:{font:{size:9}}}
+        }
+      }
+    });
+  }
+}
 
 // ── 列印用歷年總表 ──
 function buildPrintTable(){
@@ -920,6 +987,7 @@ document.getElementById('print-date').textContent=new Date().toLocaleDateString(
 // ── Init ──
 buildSummaryTable();
 buildPrintTable();
+buildPrintCharts();
 </script>
 </body>
 </html>
