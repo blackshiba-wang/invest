@@ -151,11 +151,11 @@ table.summary tr:hover td{background:#fafafa;}
   .p-dot-bad{background:#e74c3c!important;}
   .p-dot-na{background:#bbb!important;}
 
-  /* trend charts — 2欄4列 */
-  .p-charts{display:grid!important;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:7px;align-items:start;}
-  .p-chart-box{border:0.5pt solid #ddd;padding:6px;break-inside:avoid;overflow:hidden;}
-  .p-chart-box canvas{display:block!important;width:auto!important;height:auto!important;max-width:100%!important;}
-  .p-chart-title{font-size:14pt;font-weight:700;margin-bottom:4px;}
+  /* trend charts — 2欄4列，8張同一頁 */
+  .p-charts{display:grid!important;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:7px;align-items:start;}
+  .p-chart-box{border:0.5pt solid #ddd;padding:5px;overflow:hidden;}
+  .p-chart-box img{display:block;width:100%;height:auto;}
+  .p-chart-title{font-size:14pt;font-weight:700;margin-bottom:3px;}
 
   /* abdomen section */
   .p-timeline{font-size:12pt;line-height:1.8;}
@@ -919,7 +919,7 @@ function buildPrintCharts(){
     ch.destroy();
   }
 
-  const W=560, H=220; // 趨勢圖尺寸
+  const W=560, H=290; // 趨勢圖：加高，2欄4列剛好一頁
   const fontSm = 12;
 
   const configs=[
@@ -940,16 +940,19 @@ function buildPrintCharts(){
     renderToImg(id,'line',
       {labels:years,datasets:[
         {label:metric,data:vals,borderColor:color,backgroundColor:color+'30',
-         pointBackgroundColor:ptC,pointRadius:4,fill:true,tension:0.35,borderWidth:2.5},
+         pointBackgroundColor:ptC,pointRadius:5,fill:true,tension:0.35,borderWidth:2.5},
         {label:'目標',data:years.map(()=>target),borderColor:'#27ae60',
          borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false}
       ]},
       {animation:false,responsive:false,
        plugins:{legend:{display:true,position:'bottom',
-         labels:{font:{size:fontSm},boxWidth:12,padding:6}}},
+         labels:{font:{size:fontSm},boxWidth:14,padding:8}}},
        scales:{
-         y:{grid:{color:'#eeeeee'},ticks:{font:{size:fontSm},maxTicksLimit:5}},
-         x:{grid:{display:false},ticks:{font:{size:fontSm}}}
+         y:{grid:{color:'#eeeeee'},
+            ticks:{font:{size:fontSm},maxTicksLimit:5},
+            title:{display:false}},
+         x:{grid:{display:false},
+            ticks:{font:{size:fontSm},maxRotation:0}}
        }},
       W, H
     );
