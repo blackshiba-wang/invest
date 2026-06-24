@@ -919,8 +919,8 @@ function buildPrintCharts(){
     ch.destroy();
   }
 
-  const W=560, H=290; // 趨勢圖：加高，2欄4列剛好一頁
-  const fontSm = 12;
+  const W=560, H=380; // 趨勢圖：字體放大後加高補償
+  const fontSm = 24;
 
   const configs=[
     {id:'pi-ldl',   metric:'LDL(mg/dL)',        target:100, color:'#e74c3c'},
