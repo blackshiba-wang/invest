@@ -257,22 +257,24 @@ table.summary tr:hover td{background:#fafafa;}
     </div>
   </div>
 
-  <!-- 二、歷年數值對比表 + 趨勢圖（同一頁，2欄4列） -->
+  <!-- 二、歷年數值對比表（單獨一頁） -->
   <div class="p-sec pb-before">
     <div class="p-sec-title">二、歷年數值對比（2013–2026）</div>
     <table class="p-table" id="print-summary-table"></table>
-    <div style="margin-top:10px;">
-      <div style="font-size:7pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:6px;">重要指標歷年趨勢圖</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        <div class="p-chart-box"><div class="p-chart-title" style="color:#c0392b;">● LDL 壞膽固醇（目標 &lt;100）</div><img id="pi-ldl" style="width:100%;display:block;"></div>
-        <div class="p-chart-box"><div class="p-chart-title" style="color:#d68910;">● 總膽固醇（目標 &lt;200）</div><img id="pi-chol" style="width:100%;display:block;"></div>
-        <div class="p-chart-box"><div class="p-chart-title" style="color:#27ae60;">● 三酸甘油脂 TG（&lt;150）</div><img id="pi-tg" style="width:100%;display:block;"></div>
-        <div class="p-chart-box"><div class="p-chart-title" style="color:#2980b9;">● HDL 好膽固醇（&gt;40）</div><img id="pi-hdl" style="width:100%;display:block;"></div>
-        <div class="p-chart-box"><div class="p-chart-title" style="color:#d68910;">● HbA1c 糖化血色素（&lt;5.7%）</div><img id="pi-hba1c" style="width:100%;display:block;"></div>
-        <div class="p-chart-box"><div class="p-chart-title" style="color:#27ae60;">● 空腹血糖（目標 &lt;100）</div><img id="pi-glucose" style="width:100%;display:block;"></div>
-        <div class="p-chart-box"><div class="p-chart-title" style="color:#e67e22;">● 尿酸（目標 &lt;7.0）</div><img id="pi-ua" style="width:100%;display:block;"></div>
-        <div class="p-chart-box"><div class="p-chart-title" style="color:#1abc9c;">● eGFR 腎功能（&gt;60）</div><img id="pi-egfr" style="width:100%;display:block;"></div>
-      </div>
+  </div>
+
+  <!-- 三、重要指標歷年趨勢圖（單獨一頁） -->
+  <div class="p-sec pb-before">
+    <div class="p-sec-title">三、重要指標歷年趨勢圖</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="p-chart-box"><div class="p-chart-title" style="color:#c0392b;">● LDL 壞膽固醇（目標 &lt;100）</div><img id="pi-ldl" style="width:100%;display:block;"></div>
+      <div class="p-chart-box"><div class="p-chart-title" style="color:#d68910;">● 總膽固醇（目標 &lt;200）</div><img id="pi-chol" style="width:100%;display:block;"></div>
+      <div class="p-chart-box"><div class="p-chart-title" style="color:#27ae60;">● 三酸甘油脂 TG（&lt;150）</div><img id="pi-tg" style="width:100%;display:block;"></div>
+      <div class="p-chart-box"><div class="p-chart-title" style="color:#2980b9;">● HDL 好膽固醇（&gt;40）</div><img id="pi-hdl" style="width:100%;display:block;"></div>
+      <div class="p-chart-box"><div class="p-chart-title" style="color:#d68910;">● HbA1c 糖化血色素（&lt;5.7%）</div><img id="pi-hba1c" style="width:100%;display:block;"></div>
+      <div class="p-chart-box"><div class="p-chart-title" style="color:#27ae60;">● 空腹血糖（目標 &lt;100）</div><img id="pi-glucose" style="width:100%;display:block;"></div>
+      <div class="p-chart-box"><div class="p-chart-title" style="color:#e67e22;">● 尿酸（目標 &lt;7.0）</div><img id="pi-ua" style="width:100%;display:block;"></div>
+      <div class="p-chart-box"><div class="p-chart-title" style="color:#1abc9c;">● eGFR 腎功能（&gt;60）</div><img id="pi-egfr" style="width:100%;display:block;"></div>
     </div>
   </div>
 
@@ -993,13 +995,18 @@ function buildPrintTable(){
   h+=`<th>趨勢</th></tr></thead><tbody>`;
   metrics.forEach(m=>{
     const ref=DATA['2026'][m].ref;
-    h+=`<tr><td style="font-weight:600;">${m}</td><td style="color:#888;font-size:8.5pt;">${ref}</td>`;
+    h+=`<tr><td style="font-weight:700;">${m}</td><td style="color:#888;">${ref}</td>`;
     printYears.forEach(y=>{
       const d=DATA[y]?.[m];
       if(!d||d.val==null){h+=`<td style="color:#ccc;">—</td>`;return;}
-      const c=d.status==='bad'?'#e74c3c':d.status==='warn'?'#d68910':'#1e8449';
-      h+=`<td><span class="p-dot p-dot-${d.status}"></span><span style="font-weight:600;color:${c};">${d.val}</span></td>`;
+      // 紅綠兩色：ok=綠，warn/bad=紅
+      const c=d.status==='ok'?'#1e8449':'#c0392b';
+      const dot=d.status==='ok'
+        ?`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#27ae60;margin-right:4px;vertical-align:middle;"></span>`
+        :`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e74c3c;margin-right:4px;vertical-align:middle;"></span>`;
+      h+=`<td>${dot}<span style="font-weight:700;color:${c};">${d.val}</span></td>`;
     });
+    // 趨勢：沿用 trendArrow，已是紅綠
     h+=`<td>${trendArrow(m)}</td></tr>`;
   });
   h+=`</tbody>`;
