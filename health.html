@@ -140,12 +140,12 @@ table.summary tr:hover td{background:#fafafa;}
   .p-badge.pb-warn{background:#fef9e7!important;color:#d68910!important;}
   .p-badge.pb-ok{background:#eafaf1!important;color:#1e8449!important;}
 
-  /* summary table — compact */
-  .p-table{width:100%;border-collapse:collapse;font-size:7.5pt;}
-  .p-table th{background:#1a1a2e!important;color:#fff!important;padding:3px 5px;font-size:7pt;font-weight:700;text-align:left;}
-  .p-table td{padding:3px 5px;border-bottom:0.25pt solid #e8e8e8;vertical-align:middle;}
+  /* summary table */
+  .p-table{width:100%;border-collapse:collapse;font-size:12pt;}
+  .p-table th{background:#1a1a2e!important;color:#fff!important;padding:5px 7px;font-size:12pt;font-weight:700;text-align:left;}
+  .p-table td{padding:5px 7px;border-bottom:0.25pt solid #e8e8e8;vertical-align:middle;}
   .p-table tr:nth-child(even) td{background:#f9f9f9!important;}
-  .p-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;vertical-align:middle;}
+  .p-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle;}
   .p-dot-ok{background:#27ae60!important;}
   .p-dot-warn{background:#f39c12!important;}
   .p-dot-bad{background:#e74c3c!important;}
@@ -155,17 +155,17 @@ table.summary tr:hover td{background:#fafafa;}
   .p-charts{display:grid!important;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:7px;align-items:start;}
   .p-chart-box{border:0.5pt solid #ddd;padding:6px;break-inside:avoid;overflow:hidden;}
   .p-chart-box canvas{display:block!important;width:auto!important;height:auto!important;max-width:100%!important;}
-  .p-chart-title{font-size:7.5pt;font-weight:700;margin-bottom:4px;}
+  .p-chart-title{font-size:14pt;font-weight:700;margin-bottom:4px;}
 
   /* abdomen section */
-  .p-timeline{font-size:7.5pt;line-height:1.6;}
-  .p-tl-item{padding:2px 0;border-bottom:0.25pt solid #eee;display:flex;gap:6px;}
-  .p-tl-year{font-weight:700;min-width:34px;color:#555;flex-shrink:0;}
+  .p-timeline{font-size:12pt;line-height:1.8;}
+  .p-tl-item{padding:3px 0;border-bottom:0.25pt solid #eee;display:flex;gap:6px;}
+  .p-tl-year{font-weight:700;min-width:42px;color:#555;flex-shrink:0;}
 
   /* clinic table */
-  .p-clinic-table{width:100%;border-collapse:collapse;font-size:7.5pt;}
-  .p-clinic-table th{background:#1a1a2e!important;color:#fff!important;padding:3px 6px;font-size:7pt;font-weight:700;text-align:left;}
-  .p-clinic-table td{padding:3px 6px;border:0.25pt solid #ddd;vertical-align:top;}
+  .p-clinic-table{width:100%;border-collapse:collapse;font-size:12pt;}
+  .p-clinic-table th{background:#1a1a2e!important;color:#fff!important;padding:5px 8px;font-size:12pt;font-weight:700;text-align:left;}
+  .p-clinic-table td{padding:5px 8px;border:0.25pt solid #ddd;vertical-align:top;}
   .p-clinic-table tr:nth-child(even) td{background:#f9f9f9!important;}
 
   /* heart table */
@@ -918,7 +918,7 @@ function buildPrintCharts(){
   }
 
   const W=560, H=220; // 趨勢圖尺寸
-  const fontSm = 11;
+  const fontSm = 12;
 
   const configs=[
     {id:'pi-ldl',   metric:'LDL(mg/dL)',        target:100, color:'#e74c3c'},
