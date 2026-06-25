@@ -317,8 +317,8 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
       <div class="sub hide-amt" id="totalSub">等待資料...</div>
     </div>
     <div class="banner-metrics" id="bannerMetrics">
-      <div class="bm-item"><div class="bm-lbl">今日損益</div><div class="bm-val hide-amt" id="bmDay">--</div></div>
-      <div class="bm-item"><div class="bm-lbl">今日損益%</div><div class="bm-val" id="bmTotal">--</div></div>
+      <div class="bm-item"><div class="bm-lbl">今日損益</div><div class="bm-val hide-amt" id="bmDay" style="font-size:28px">--</div></div>
+      <div class="bm-item"><div class="bm-lbl">今日損益%</div><div class="bm-val" id="bmTotal" style="font-size:28px">--</div></div>
       <div class="bm-item"><div class="bm-lbl">已實現損益</div><div class="bm-val hide-amt" id="bmRealized">--</div></div>
       <div class="bm-item"><div class="bm-lbl">計入組合</div><div class="bm-val" id="bmPortCount">--</div></div>
     </div>
@@ -1054,8 +1054,11 @@ async function refreshAll(){
     try{ localStorage.setItem('inv_prices_cache', JSON.stringify(prices)); }catch(e){}
 
     const fxStr = fxRate ? `USD/TWD ${fxRate.toFixed(2)}` : '';
+    const _now = new Date();
+    const _dateStr = _now.toLocaleDateString('zh-TW', {month:'2-digit', day:'2-digit'});
+    const _timeStr = _now.toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'});
     document.getElementById('lastUpd').textContent =
-      '更新：' + new Date().toLocaleTimeString('zh-TW') + (fxStr ? ' · ' + fxStr : '');
+      '更新：' + _dateStr + ' ' + _timeStr + (fxStr ? ' · ' + fxStr : '');
     updateFxBadge(fxRate);
     btn.classList.remove('loading'); icon.innerHTML = '↻';
     renderAll();
@@ -2184,7 +2187,11 @@ function buildPortCard(p){
             : `<span class="badge" style="background:rgba(0,229,160,.15);color:var(--green)" title="所有標的皆在容許區間內">✅ 配置正常</span>`
           ) : ''}
         </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:3px">${hs.length} 檔 · 今日 <span style="color:${v.dayPnl>=0?'var(--gain)':'var(--loss)'}">${_privacyOn?'****':(v.dayPnl>=0?'+':'')+fm(v.dayPnl)} (${fp((v.total-v.dayPnl)>0?(v.dayPnl/(v.total-v.dayPnl)*100):0)})</span></div>
+        <div style="margin-top:6px;color:var(--text3);font-size:10px">${hs.length} 檔</div>
+        <div style="font-size:20px;font-weight:800;margin-top:2px;color:${v.dayPnl>=0?'var(--gain)':'var(--loss)'}">
+          ${_privacyOn?'****':(v.dayPnl>=0?'+':'')+fm(v.dayPnl)}
+          <span style="font-size:14px;font-weight:700;margin-left:4px">(${fp((v.total-v.dayPnl)>0?(v.dayPnl/(v.total-v.dayPnl)*100):0)})</span>
+        </div>
       </div>
       <div>
         <div class="p-mktval">${fmPrivate(v.total)}</div>
