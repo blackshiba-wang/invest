@@ -1128,6 +1128,24 @@ function calcTotalSnap(){
   return{total,cost,pnl:total-cost,pnlPct:cost>0?(total-cost)/cost*100:0,dayPnl,byPort,realizedTotal,todayBuyCost};
 }
 function calcPeriodReturn(pid,days){
+  // 「今日」特殊處理：用個股漲跌%加權計算，避免新增資金扭曲
+  if(days===1){
+    const hs=getHoldings(pid);
+    if(!hs.length)return null;
+    const totalMkt=hs.reduce((s,h)=>s+calcHV(h).mktVal,0);
+    if(totalMkt<=0)return null;
+    let weighted=0, hasPrice=false;
+    hs.forEach(h=>{
+      const hv=calcHV(h);
+      const pr=prices[h.ticker];
+      if(pr&&pr.changePct!=null){
+        weighted += (hv.mktVal/totalMkt) * pr.changePct;
+        hasPrice=true;
+      }
+    });
+    return hasPrice ? weighted : null;
+  }
+  // 其他期間：用歷史快照計算，並扣除期間新增買入成本
   const hist=DB.history?.[pid];
   if(!hist||Object.keys(hist).length<2)return null;
   const dates=Object.keys(hist).sort();
@@ -1136,7 +1154,12 @@ function calcPeriodReturn(pid,days){
   const cutStr=cut.toISOString().slice(0,10);
   const pastDate=dates.filter(d=>d<=cutStr).pop();
   if(!pastDate||pastDate===today)return null;
-  return((hist[today]-hist[pastDate])/hist[pastDate])*100;
+  // 扣除期間內的新增買入成本，避免新資金虛增報酬
+  const newCapital=DB.trades
+    .filter(t=>t.portfolio===pid&&t.action==='BUY'&&t.date>pastDate&&t.date<=today)
+    .reduce((s,t)=>s+t.shares*t.price*(t.currency==='USD'?getRate('USD'):1),0);
+  const base=hist[pastDate]+newCapital;
+  return base>0 ? ((hist[today]-base)/base)*100 : null;
 }
 function calcRealizedPnl(){
   // sum realized from SELL trades
