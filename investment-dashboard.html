@@ -2174,9 +2174,17 @@ function renderBanner(){
   document.getElementById('totalVal').textContent=fmPrivate(s.total);
   document.getElementById('totalSub').innerHTML=_privacyOn?`成本 ****　損益 <span style="color:${s.pnl>=0?'var(--gain)':'var(--loss)'}">**** (${fp(s.pnlPct)})</span>`:`成本 ${fm(s.cost)}　損益 <span style="color:${s.pnl>=0?'var(--gain)':'var(--loss)'}">${s.pnl>=0?'+':''}${fm(s.pnl)} (${fp(s.pnlPct)})</span>`;
   document.getElementById('bmDay').innerHTML=`<span style="color:${s.dayPnl>=0?'var(--gain)':'var(--loss)'}">${ _privacyOn?'****':(s.dayPnl>=0?'+':'')+fm(s.dayPnl)}</span>`;
-  // 昨日市值 = 現在市值 - 今日損益 - 今日新增買入成本（避免新資金膨脹今日損益%）
-  const yestTotal = s.total - s.dayPnl - (s.todayBuyCost||0);
-  const dayPnlPct = yestTotal>0 ? (s.dayPnl/yestTotal*100) : 0;
+  // 總資產今日%：用計入總資產組合的個股加權漲跌%
+  const inclPortIds = DB.portfolios.filter(p=>p.included).map(p=>p.id);
+  const allInclHs = inclPortIds.flatMap(pid=>getHoldings(pid));
+  const allInclMkt = allInclHs.reduce((s,h)=>s+calcHV(h).mktVal,0);
+  let dayPnlPct = 0;
+  if(allInclMkt>0){
+    allInclHs.forEach(h=>{
+      const hv=calcHV(h); const pr=prices[h.ticker];
+      if(pr&&pr.changePct!=null) dayPnlPct += (hv.mktVal/allInclMkt)*pr.changePct;
+    });
+  }
   document.getElementById('bmTotal').innerHTML=`<span style="color:${dayPnlPct>=0?'var(--gain)':'var(--loss)'}">${fp(dayPnlPct)}</span>`;
   document.getElementById('bmRealized').innerHTML=`<span style="color:${s.realizedTotal>=0?'var(--gain)':'var(--loss)'}">${_privacyOn?'****':fm(s.realizedTotal)}</span>`;
   document.getElementById('bmPortCount').textContent=`${DB.portfolios.filter(p=>p.included).length}/${DB.portfolios.length}`;
@@ -2226,7 +2234,7 @@ function buildPortCard(p){
         <div style="margin-top:6px;color:var(--text3);font-size:10px">${hs.length} 檔</div>
         <div class="card-today-pnl" style="color:${v.dayPnl>=0?'var(--gain)':'var(--loss)'}">
           ${_privacyOn?'****':(v.dayPnl>=0?'+':'')+fm(v.dayPnl)}
-          <span style="font-size:13px;font-weight:700;margin-left:4px">(${fp((v.total-v.dayPnl-(v.todayBuyCost||0))>0?(v.dayPnl/(v.total-v.dayPnl-(v.todayBuyCost||0))*100):0)})</span>
+          <span style="font-size:13px;font-weight:700;margin-left:4px">(${fp(calcPeriodReturn(p.id,1)??0)})</span>
         </div>
       </div>
       <div>
