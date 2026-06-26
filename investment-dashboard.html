@@ -1108,7 +1108,11 @@ function calcPortSnap(pid){
   const hs=getHoldings(pid);
   let total=0,cost=0,dayPnl=0;
   hs.forEach(h=>{const v=calcHV(h);total+=v.mktVal;cost+=v.cost;dayPnl+=v.dayPnl||0;});
-  return{total,cost,pnl:total-cost,pnlPct:cost>0?(total-cost)/cost*100:0,dayPnl};
+  // 今日新增買入成本（今天的買入交易，避免新資金墊高今日損益%）
+  const today=new Date().toISOString().slice(0,10);
+  const todayBuyCost=DB.trades.filter(t=>t.portfolio===pid&&t.date===today&&t.action==='BUY')
+    .reduce((s,t)=>s+t.shares*t.price*(t.currency==='USD'?getRate('USD'):1),0);
+  return{total,cost,pnl:total-cost,pnlPct:cost>0?(total-cost)/cost*100:0,dayPnl,todayBuyCost};
 }
 function calcTotalSnap(){
   let total=0,cost=0,dayPnl=0;
@@ -1118,7 +1122,10 @@ function calcTotalSnap(){
     if(p.included){total+=v.total;cost+=v.cost;dayPnl+=v.dayPnl;}
   });
   const realizedTotal=Object.values(DB.realized||{}).reduce((s,v)=>s+v,0);
-  return{total,cost,pnl:total-cost,pnlPct:cost>0?(total-cost)/cost*100:0,dayPnl,byPort,realizedTotal};
+  const today=new Date().toISOString().slice(0,10);
+  const todayBuyCost=DB.trades.filter(t=>t.date===today&&t.action==='BUY')
+    .reduce((s,t)=>s+t.shares*t.price*(t.currency==='USD'?getRate('USD'):1),0);
+  return{total,cost,pnl:total-cost,pnlPct:cost>0?(total-cost)/cost*100:0,dayPnl,byPort,realizedTotal,todayBuyCost};
 }
 function calcPeriodReturn(pid,days){
   const hist=DB.history?.[pid];
@@ -2144,7 +2151,8 @@ function renderBanner(){
   document.getElementById('totalVal').textContent=fmPrivate(s.total);
   document.getElementById('totalSub').innerHTML=_privacyOn?`成本 ****　損益 <span style="color:${s.pnl>=0?'var(--gain)':'var(--loss)'}">**** (${fp(s.pnlPct)})</span>`:`成本 ${fm(s.cost)}　損益 <span style="color:${s.pnl>=0?'var(--gain)':'var(--loss)'}">${s.pnl>=0?'+':''}${fm(s.pnl)} (${fp(s.pnlPct)})</span>`;
   document.getElementById('bmDay').innerHTML=`<span style="color:${s.dayPnl>=0?'var(--gain)':'var(--loss)'}">${ _privacyOn?'****':(s.dayPnl>=0?'+':'')+fm(s.dayPnl)}</span>`;
-  const yestTotal = s.total - s.dayPnl;
+  // 昨日市值 = 現在市值 - 今日損益 - 今日新增買入成本（避免新資金膨脹今日損益%）
+  const yestTotal = s.total - s.dayPnl - (s.todayBuyCost||0);
   const dayPnlPct = yestTotal>0 ? (s.dayPnl/yestTotal*100) : 0;
   document.getElementById('bmTotal').innerHTML=`<span style="color:${dayPnlPct>=0?'var(--gain)':'var(--loss)'}">${fp(dayPnlPct)}</span>`;
   document.getElementById('bmRealized').innerHTML=`<span style="color:${s.realizedTotal>=0?'var(--gain)':'var(--loss)'}">${_privacyOn?'****':fm(s.realizedTotal)}</span>`;
@@ -2195,7 +2203,7 @@ function buildPortCard(p){
         <div style="margin-top:6px;color:var(--text3);font-size:10px">${hs.length} 檔</div>
         <div class="card-today-pnl" style="color:${v.dayPnl>=0?'var(--gain)':'var(--loss)'}">
           ${_privacyOn?'****':(v.dayPnl>=0?'+':'')+fm(v.dayPnl)}
-          <span style="font-size:13px;font-weight:700;margin-left:4px">(${fp((v.total-v.dayPnl)>0?(v.dayPnl/(v.total-v.dayPnl)*100):0)})</span>
+          <span style="font-size:13px;font-weight:700;margin-left:4px">(${fp((v.total-v.dayPnl-(v.todayBuyCost||0))>0?(v.dayPnl/(v.total-v.dayPnl-(v.todayBuyCost||0))*100):0)})</span>
         </div>
       </div>
       <div>
