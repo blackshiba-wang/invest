@@ -291,6 +291,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
     <button class="btn btn-primary" id="btnRef" onclick="refreshAll()"><span id="refIcon">↻</span> 更新</button>
     <button class="btn btn-ghost" onclick="openAddTrade()">+ 交易</button>
     <button class="btn btn-ghost" onclick="openManagePortfolio()">組合管理</button>
+    <button class="btn btn-ghost" onclick="openReportModal()" title="匯出PDF報告">📄 報告</button>
     <button class="btn btn-ghost" id="privacyBtn" onclick="togglePrivacy()" title="隱藏金額數字">🙈</button>
     <button class="btn btn-ghost" onclick="openSettings()">⚙</button>
   </div>
@@ -697,6 +698,41 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
       <button class="btn btn-sm btn-ghost" onclick="closeModal('enlargeModal')">✕ 關閉</button>
     </div>
     <div id="enlargeBody" style="width:100%;min-height:60vh;display:flex;align-items:flex-start;justify-content:center;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="modal-bg" id="reportModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">📄 匯出投資報告</div>
+    <div class="frow">
+      <label class="flbl">報告期間</label>
+      <select id="reportPeriod" class="fselect" onchange="onReportPeriodChange()">
+        <option value="week">週報告（近7天）</option>
+        <option value="month" selected>月報告（近30天）</option>
+        <option value="quarter">季報告（近90天）</option>
+        <option value="year">年報告（近365天）</option>
+        <option value="custom">自訂日期區間</option>
+      </select>
+    </div>
+    <div id="customDateRow" style="display:none">
+      <div class="frow"><label class="flbl">起始日期</label><input type="date" class="finput" id="reportStart"></div>
+      <div class="frow"><label class="flbl">結束日期</label><input type="date" class="finput" id="reportEnd"></div>
+    </div>
+    <div class="frow">
+      <label class="flbl">包含組合</label>
+      <select id="reportPort" class="fselect">
+        <option value="total">全部組合（計入總資產）</option>
+      </select>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin:8px 0;line-height:1.6">
+      報告將包含：總覽數據、各組合績效、資產配置、最佳/最差標的、XIRR年化報酬、趨勢圖、財富自由進度等。<br>
+      <span style="color:var(--amber)">提示：產生後會開啟列印視窗，選擇「另存為PDF」即可。</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeModal('reportModal')">取消</button>
+      <button class="btn btn-primary" onclick="generateReport()">產生報告</button>
+    </div>
   </div>
 </div>
 
@@ -2148,6 +2184,271 @@ function renderRanking(){
     </div>
     <div style="font-size:10px;color:var(--text3);margin-top:8px;text-align:right">損益 = (現價 - 成本) × 股數，不含已實現損益</div>
   `;
+}
+
+
+// ── XIRR 計算（內部報酬率）─────────────────────────────────────
+// cashflows: [{date:Date, amount:number}]，買入為負（流出），目前市值為正（流入）
+function calcXIRR(cashflows){
+  if(cashflows.length < 2) return null;
+  const sorted = [...cashflows].sort((a,b)=>a.date-b.date);
+  const d0 = sorted[0].date;
+  const yearFrac = d => (d - d0) / (365*24*3600*1000);
+
+  // Newton-Raphson 求解
+  const npv = rate => sorted.reduce((s,cf)=>s + cf.amount/Math.pow(1+rate, yearFrac(cf.date)), 0);
+  const npvDeriv = rate => sorted.reduce((s,cf)=>{
+    const t = yearFrac(cf.date);
+    return s - t*cf.amount/Math.pow(1+rate, t+1);
+  }, 0);
+
+  let rate = 0.1;
+  for(let i=0; i<100; i++){
+    const f = npv(rate);
+    const fp = npvDeriv(rate);
+    if(Math.abs(fp) < 1e-10) break;
+    const newRate = rate - f/fp;
+    if(Math.abs(newRate - rate) < 1e-7) return newRate*100;
+    rate = newRate;
+    if(rate < -0.9999) rate = -0.9999; // 避免發散
+  }
+  return isFinite(rate) ? rate*100 : null;
+}
+
+// 計算某組合（或全部）的 XIRR
+function getPortfolioXIRR(pid){
+  let trades;
+  if(pid==='total'){
+    const inclIds = DB.portfolios.filter(p=>p.included).map(p=>p.id);
+    trades = DB.trades.filter(t=>inclIds.includes(t.portfolio));
+  } else {
+    trades = DB.trades.filter(t=>t.portfolio===pid);
+  }
+  if(!trades.length) return null;
+
+  const cashflows = trades.map(t=>{
+    const fx = t.currency==='USD' ? getRate('USD') : 1;
+    const amt = t.shares * t.price * fx;
+    // 買入=資金流出(負)，賣出=資金流入(正)
+    return { date:new Date(t.date), amount: t.action==='BUY' ? -amt : amt };
+  });
+
+  // 加入目前市值作為最後一筆流入
+  const hs = pid==='total' ? getIncludedHoldings() : getHoldings(pid);
+  const curMktVal = hs.reduce((s,h)=>s+calcHV(h).mktVal, 0);
+  cashflows.push({ date:new Date(), amount: curMktVal });
+
+  return calcXIRR(cashflows);
+}
+
+// ── 報告 Modal ────────────────────────────────────────────────
+function openReportModal(){
+  // 填入組合下拉
+  const sel = document.getElementById('reportPort');
+  sel.innerHTML = '<option value="total">全部組合（計入總資產）</option>' +
+    DB.portfolios.map(p=>`<option value="${p.id}">組合${p.id}・${p.name}</option>`).join('');
+  // 預設日期
+  const today = new Date();
+  const monthAgo = new Date(); monthAgo.setDate(monthAgo.getDate()-30);
+  document.getElementById('reportEnd').value = today.toISOString().slice(0,10);
+  document.getElementById('reportStart').value = monthAgo.toISOString().slice(0,10);
+  openModal('reportModal');
+}
+function onReportPeriodChange(){
+  const v = document.getElementById('reportPeriod').value;
+  document.getElementById('customDateRow').style.display = v==='custom' ? 'block' : 'none';
+}
+
+function generateReport(){
+  const period = document.getElementById('reportPeriod').value;
+  const portId = document.getElementById('reportPort').value;
+
+  // 決定日期區間
+  let startDate, endDate=new Date(), periodLabel;
+  if(period==='custom'){
+    startDate = new Date(document.getElementById('reportStart').value);
+    endDate = new Date(document.getElementById('reportEnd').value);
+    periodLabel = `${document.getElementById('reportStart').value} ～ ${document.getElementById('reportEnd').value}`;
+  } else {
+    const days = {week:7, month:30, quarter:90, year:365}[period];
+    startDate = new Date(); startDate.setDate(startDate.getDate()-days);
+    periodLabel = {week:'週報告（近7天）', month:'月報告（近30天）', quarter:'季報告（近90天）', year:'年報告（近365天）'}[period];
+  }
+
+  closeModal('reportModal');
+  showStatus('正在產生報告...', 2000);
+  setTimeout(()=>buildReportHTML(portId, startDate, endDate, periodLabel), 100);
+}
+
+function buildReportHTML(portId, startDate, endDate, periodLabel){
+  const startStr = startDate.toISOString().slice(0,10);
+  const endStr = endDate.toISOString().slice(0,10);
+
+  // ── 收集數據 ──
+  const isTotal = portId==='total';
+  const portName = isTotal ? '全部組合' : (()=>{const p=DB.portfolios.find(x=>x.id===portId);return p?`組合${p.id}・${p.name}`:portId;})();
+  const hs = isTotal ? getIncludedHoldings() : getHoldings(portId);
+  const snap = isTotal ? calcTotalSnap() : calcPortSnap(portId);
+  const xirr = getPortfolioXIRR(portId);
+
+  // 期間報酬（用 history）
+  const histKey = isTotal ? 'total' : portId;
+  const hist = DB.history?.[histKey] || {};
+  const histDates = Object.keys(hist).filter(d=>d>=startStr&&d<=endStr).sort();
+  const periodStart = histDates.length ? hist[histDates[0]] : null;
+  const periodEnd = histDates.length ? hist[histDates[histDates.length-1]] : null;
+  const periodReturn = (periodStart && periodEnd && periodStart>0) ? ((periodEnd-periodStart)/periodStart*100) : null;
+
+  // 最佳/最差標的
+  const items = hs.map(h=>{const hv=calcHV(h);return{ticker:h.ticker,name:h.name||h.ticker,pnl:hv.pnl||0,pnlPct:hv.pnlPct||0,mktVal:hv.mktVal||0};}).filter(it=>it.mktVal>0);
+  const sorted = [...items].sort((a,b)=>b.pnl-a.pnl);
+  const winners = sorted.filter(it=>it.pnl>0).slice(0,5);
+  const losers = sorted.filter(it=>it.pnl<0).slice(-5).reverse();
+
+  // 各組合績效（僅 total 時顯示）
+  const portRows = isTotal ? DB.portfolios.filter(p=>p.included).map(p=>{
+    const ps=calcPortSnap(p.id); const px=getPortfolioXIRR(p.id);
+    return {name:`組合${p.id}・${p.name}`, total:ps.total, pnl:ps.pnl, pnlPct:ps.pnlPct, xirr:px};
+  }) : [];
+
+  // 配置（圓餅資料）
+  const allocItems = isTotal
+    ? DB.portfolios.filter(p=>p.included).map((p,i)=>({label:`組合${p.id}`,val:calcPortSnap(p.id).total,color:p.color||COLORS[i]}))
+    : hs.map((h,i)=>({label:h.ticker,val:calcHV(h).mktVal,color:COLORS[i%COLORS.length]}));
+  const allocTotal = allocItems.reduce((s,it)=>s+it.val,0);
+
+  // 財富自由
+  const fireTarget = DB.settings.fireTarget||0;
+  const firePct = fireTarget>0 ? Math.min(100,(calcTotalSnap().total/fireTarget*100)) : null;
+
+  // 上漲/下跌天數、最大回撤（用 history）
+  let upDays=0, downDays=0, maxDD=0, peak=0;
+  const allHistDates = Object.keys(hist).filter(d=>d>=startStr&&d<=endStr).sort();
+  for(let i=0;i<allHistDates.length;i++){
+    const v=hist[allHistDates[i]];
+    if(i>0){const prev=hist[allHistDates[i-1]]; if(v>prev)upDays++; else if(v<prev)downDays++;}
+    if(v>peak)peak=v;
+    const dd=peak>0?(v-peak)/peak*100:0;
+    if(dd<maxDD)maxDD=dd;
+  }
+
+  const fmt = v => 'NT$'+fm(v);
+  const fpc = v => v==null?'--':(v>=0?'+':'')+v.toFixed(2)+'%';
+  const gainColor = '#ff4d6a', lossColor = '#00e5a0';
+  const pnlColor = v => v>=0?gainColor:lossColor;
+
+  // ── 產生 HTML ──
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8">
+<title>投資報告 ${endStr}</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;color:#1a1a2e;background:#fff;padding:40px;max-width:800px;margin:0 auto;line-height:1.6}
+  h1{font-size:26px;margin-bottom:4px;color:#1a1a2e}
+  h2{font-size:17px;margin:24px 0 12px;padding-bottom:6px;border-bottom:2px solid #5b8ff9;color:#2a2a4e}
+  .subtitle{color:#888;font-size:13px;margin-bottom:20px}
+  .hero{background:linear-gradient(135deg,#5b8ff9,#a370f7);color:#fff;padding:24px;border-radius:12px;margin-bottom:20px}
+  .hero .big{font-size:36px;font-weight:900;margin:4px 0}
+  .hero .sub{font-size:13px;opacity:.9}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0}
+  .stat{background:#f5f6fa;border-radius:10px;padding:14px;text-align:center}
+  .stat .lbl{font-size:11px;color:#888;margin-bottom:4px}
+  .stat .val{font-size:20px;font-weight:800}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+  th{background:#f0f2f8;padding:8px 10px;text-align:right;font-size:11px;color:#666;border-bottom:2px solid #ddd}
+  th:first-child{text-align:left}
+  td{padding:8px 10px;text-align:right;border-bottom:1px solid #eee}
+  td:first-child{text-align:left;font-weight:600}
+  .rank{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #eee}
+  .rank .medal{font-size:16px;margin-right:8px}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .bar-row{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px}
+  .bar-track{flex:1;height:18px;background:#f0f2f8;border-radius:9px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:9px}
+  .footer{margin-top:30px;padding-top:16px;border-top:1px solid #eee;font-size:11px;color:#aaa;text-align:center}
+  @media print{body{padding:20px}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}.bar-fill,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+
+<h1>📊 投資報告</h1>
+<div class="subtitle">${portName}　|　${periodLabel}　|　報告日期 ${endStr}</div>
+
+<div class="hero">
+  <div class="sub">${isTotal?'總資產':'組合市值'}</div>
+  <div class="big">${fmt(snap.total)}</div>
+  <div class="sub">成本 ${fmt(snap.cost)}　|　總損益 ${snap.pnl>=0?'+':''}${fmt(snap.pnl)}（${fpc(snap.pnlPct)}）</div>
+</div>
+
+<div class="grid">
+  <div class="stat"><div class="lbl">總報酬率</div><div class="val" style="color:${pnlColor(snap.pnlPct)}">${fpc(snap.pnlPct)}</div></div>
+  <div class="stat"><div class="lbl">XIRR 年化報酬</div><div class="val" style="color:${xirr==null?'#888':pnlColor(xirr)}">${xirr==null?'資料不足':fpc(xirr)}</div></div>
+  <div class="stat"><div class="lbl">期間報酬</div><div class="val" style="color:${periodReturn==null?'#888':pnlColor(periodReturn)}">${periodReturn==null?'資料不足':fpc(periodReturn)}</div></div>
+</div>
+
+${isTotal && portRows.length ? `
+<h2>各組合績效</h2>
+<table>
+  <thead><tr><th>組合</th><th>市值</th><th>總損益</th><th>報酬率</th><th>XIRR</th></tr></thead>
+  <tbody>
+  ${portRows.map(r=>`<tr>
+    <td>${r.name}</td>
+    <td>${fmt(r.total)}</td>
+    <td style="color:${pnlColor(r.pnl)}">${r.pnl>=0?'+':''}${fmt(r.pnl)}</td>
+    <td style="color:${pnlColor(r.pnlPct)}">${fpc(r.pnlPct)}</td>
+    <td style="color:${r.xirr==null?'#888':pnlColor(r.xirr)}">${r.xirr==null?'--':fpc(r.xirr)}</td>
+  </tr>`).join('')}
+  </tbody>
+</table>` : ''}
+
+<h2>資產配置</h2>
+${allocItems.map(it=>{
+  const pct = allocTotal>0?(it.val/allocTotal*100):0;
+  return `<div class="bar-row">
+    <span style="width:90px">${it.label}</span>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${it.color}"></div></div>
+    <span style="width:90px;text-align:right">${fmt(it.val)}</span>
+    <span style="width:50px;text-align:right;color:#888">${pct.toFixed(1)}%</span>
+  </div>`;
+}).join('')}
+
+<h2>最佳與最差標的</h2>
+<div class="two-col">
+  <div>
+    <div style="font-weight:700;color:${gainColor};margin-bottom:8px">📈 賺最多</div>
+    ${winners.length?winners.map((it,i)=>`<div class="rank">
+      <span><span class="medal">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.'}</span>${it.ticker}</span>
+      <span style="color:${gainColor};font-weight:700">+${fm(it.pnl)} (${it.pnlPct.toFixed(1)}%)</span>
+    </div>`).join(''):'<div style="color:#aaa;padding:10px">無獲利標的</div>'}
+  </div>
+  <div>
+    <div style="font-weight:700;color:${lossColor};margin-bottom:8px">📉 賠最多</div>
+    ${losers.length?losers.map((it,i)=>`<div class="rank">
+      <span><span class="medal">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.'}</span>${it.ticker}</span>
+      <span style="color:${lossColor};font-weight:700">${fm(it.pnl)} (${it.pnlPct.toFixed(1)}%)</span>
+    </div>`).join(''):'<div style="color:#aaa;padding:10px">無虧損標的 🎉</div>'}
+  </div>
+</div>
+
+<h2>期間有趣數據</h2>
+<div class="grid">
+  <div class="stat"><div class="lbl">📈 上漲天數</div><div class="val" style="color:${gainColor}">${upDays} 天</div></div>
+  <div class="stat"><div class="lbl">📉 下跌天數</div><div class="val" style="color:${lossColor}">${downDays} 天</div></div>
+  <div class="stat"><div class="lbl">最大回撤</div><div class="val" style="color:${lossColor}">${maxDD.toFixed(2)}%</div></div>
+</div>
+${firePct!=null?`
+<div class="stat" style="margin-top:12px">
+  <div class="lbl">🏁 財富自由進度（目標 ${fmt(fireTarget)}）</div>
+  <div class="val" style="color:#5b8ff9">${firePct.toFixed(1)}%</div>
+  <div class="bar-track" style="margin-top:8px"><div class="bar-fill" style="width:${firePct}%;background:linear-gradient(90deg,#5b8ff9,#00e5a0)"></div></div>
+</div>`:''}
+
+<div class="footer">
+  本報告由個人投資觀測面板自動產生　|　${new Date().toLocaleString('zh-TW')}<br>
+  XIRR=資金時間加權年化報酬率　|　數據僅供個人參考，非投資建議
+</div>
+
+<script>window.onload=()=>{setTimeout(()=>window.print(),400)}<\/script>
+</body></html>`);
+  win.document.close();
 }
 
 // ── RENDER ALL ────────────────────────────────────────────────
