@@ -2302,7 +2302,7 @@ function buildReportHTML(portId, startDate, endDate, periodLabel){
   // ── 格式化工具（fm 已含 NT$，不重複加）──
   const fmt = v => fm(v);
   const fpc = v => v==null?'--':(v>=0?'+':'')+v.toFixed(2)+'%';
-  const gainColor = '#ff4d6a', lossColor = '#00e5a0';
+  const gainColor = '#e0395a', lossColor = '#0a8f6a';
   const pnlColor = v => v==null?'#888':(v>=0?gainColor:lossColor);
 
   // ── 區間報酬計算（核心）──
