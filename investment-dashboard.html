@@ -797,6 +797,7 @@ var DB = {
   ],
   trades: [],
   history: {},
+  histTickers: {},
   realized: {},
   settings: {usdRate:32, displayCurrency:'TWD', firebaseUrl:''}
 };
@@ -828,6 +829,7 @@ function loadDB(){
         if(d.portfolios && d.portfolios.length) DB.portfolios = d.portfolios;
         if(d.trades) DB.trades = d.trades;
         if(d.history) DB.history = d.history;
+        if(d.histTickers) DB.histTickers = d.histTickers;
         if(d.realized) DB.realized = d.realized;
         if(d.settings) DB.settings = Object.assign(DB.settings, d.settings);
         if(key !== 'inv_dashboard'){
@@ -911,6 +913,7 @@ async function fbLoad(){
           DB.trades = [...d.trades, ...localOnly];
         }
         if(d.history) DB.history = d.history;
+        if(d.histTickers) DB.histTickers = d.histTickers;
         if(d.realized) DB.realized = d.realized;
         if(d.settings) DB.settings = Object.assign(DB.settings, d.settings);
         if(d.colConfig) DB.colConfig = d.colConfig;
@@ -1087,6 +1090,13 @@ async function refreshAll(){
       DB.portfolios.forEach(p => {
         if(!DB.history[p.id]) DB.history[p.id] = {};
         DB.history[p.id][today] = snap.byPort[p.id] || 0;
+      });
+      // 加存「個股市值」快照（從今天起累積，未來可算個股區間報酬）
+      if(!DB.histTickers) DB.histTickers = {};
+      DB.histTickers[today] = {};
+      getAllHoldings().forEach(h => {
+        const mv = calcHV(h).mktVal;
+        if(mv > 0) DB.histTickers[today][h.portfolio + '|' + h.ticker] = mv;
       });
       saveDB();
     }
@@ -2284,72 +2294,155 @@ function buildReportHTML(portId, startDate, endDate, periodLabel){
   const startStr = startDate.toISOString().slice(0,10);
   const endStr = endDate.toISOString().slice(0,10);
 
-  // ── 收集數據 ──
   const isTotal = portId==='total';
   const portName = isTotal ? '全部組合' : (()=>{const p=DB.portfolios.find(x=>x.id===portId);return p?`組合${p.id}・${p.name}`:portId;})();
   const hs = isTotal ? getIncludedHoldings() : getHoldings(portId);
   const snap = isTotal ? calcTotalSnap() : calcPortSnap(portId);
-  const xirr = getPortfolioXIRR(portId);
 
-  // 期間報酬（用 history）
+  // ── 格式化工具（fm 已含 NT$，不重複加）──
+  const fmt = v => fm(v);
+  const fpc = v => v==null?'--':(v>=0?'+':'')+v.toFixed(2)+'%';
+  const gainColor = '#ff4d6a', lossColor = '#00e5a0';
+  const pnlColor = v => v==null?'#888':(v>=0?gainColor:lossColor);
+
+  // ── 區間報酬計算（核心）──
+  // 取得期間內快照，找期初值與期末值，並扣除期間新增買入成本
+  function periodReturnFor(histKey, pid){
+    const hist = DB.history?.[histKey] || {};
+    const dates = Object.keys(hist).filter(d=>d>=startStr && d<=endStr).sort();
+    if(dates.length < 2) return {ret:null, startVal:null, endVal:null, days:dates.length, newCap:0};
+    const startVal = hist[dates[0]];
+    const endVal = hist[dates[dates.length-1]];
+    // 期間內新增買入成本
+    const newCap = DB.trades
+      .filter(t=>{
+        if(pid && pid!=='total' && t.portfolio!==pid) return false;
+        if(pid==='total'){const inc=DB.portfolios.filter(p=>p.included).map(p=>p.id);if(!inc.includes(t.portfolio))return false;}
+        return t.action==='BUY' && t.date>dates[0] && t.date<=dates[dates.length-1];
+      })
+      .reduce((s,t)=>s+t.shares*t.price*(t.currency==='USD'?getRate('USD'):1),0);
+    const base = startVal + newCap;
+    const ret = base>0 ? ((endVal-base)/base*100) : null;
+    return {ret, startVal, endVal, days:dates.length, newCap};
+  }
+
   const histKey = isTotal ? 'total' : portId;
-  const hist = DB.history?.[histKey] || {};
-  const histDates = Object.keys(hist).filter(d=>d>=startStr&&d<=endStr).sort();
-  const periodStart = histDates.length ? hist[histDates[0]] : null;
-  const periodEnd = histDates.length ? hist[histDates[histDates.length-1]] : null;
-  const periodReturn = (periodStart && periodEnd && periodStart>0) ? ((periodEnd-periodStart)/periodStart*100) : null;
+  const pr = periodReturnFor(histKey, portId);
+  const periodReturn = pr.ret;
+  const periodPnl = (pr.startVal!=null && pr.endVal!=null) ? (pr.endVal - pr.startVal - pr.newCap) : null;
 
-  // 最佳/最差標的
-  const items = hs.map(h=>{const hv=calcHV(h);return{ticker:h.ticker,name:h.name||h.ticker,pnl:hv.pnl||0,pnlPct:hv.pnlPct||0,mktVal:hv.mktVal||0};}).filter(it=>it.mktVal>0);
-  const sorted = [...items].sort((a,b)=>b.pnl-a.pnl);
-  const winners = sorted.filter(it=>it.pnl>0).slice(0,5);
-  const losers = sorted.filter(it=>it.pnl<0).slice(-5).reverse();
+  // 期間 XIRR：用期間內交易現金流 + 期初市值(流出) + 期末市值(流入)
+  function periodXIRR(pid){
+    if(pr.startVal==null || pr.endVal==null) return null;
+    const dates = Object.keys(DB.history?.[histKey]||{}).filter(d=>d>=startStr&&d<=endStr).sort();
+    if(dates.length<2) return null;
+    const cfs = [{date:new Date(dates[0]), amount:-pr.startVal}];
+    DB.trades.filter(t=>{
+      if(pid==='total'){const inc=DB.portfolios.filter(p=>p.included).map(p=>p.id);if(!inc.includes(t.portfolio))return false;}
+      else if(t.portfolio!==pid) return false;
+      return t.date>dates[0] && t.date<=dates[dates.length-1];
+    }).forEach(t=>{
+      const fx=t.currency==='USD'?getRate('USD'):1;
+      const amt=t.shares*t.price*fx;
+      cfs.push({date:new Date(t.date), amount:t.action==='BUY'?-amt:amt});
+    });
+    cfs.push({date:new Date(dates[dates.length-1]), amount:pr.endVal});
+    return calcXIRR(cfs);
+  }
+  const xirrPeriod = periodXIRR(portId);
+  const xirrAll = getPortfolioXIRR(portId); // 全期XIRR（參考用）
 
-  // 各組合績效（僅 total 時顯示）
+  // ── 各組合「區間」績效 ──
   const portRows = isTotal ? DB.portfolios.filter(p=>p.included).map(p=>{
-    const ps=calcPortSnap(p.id); const px=getPortfolioXIRR(p.id);
-    return {name:`組合${p.id}・${p.name}`, total:ps.total, pnl:ps.pnl, pnlPct:ps.pnlPct, xirr:px};
+    const pp = periodReturnFor(p.id, p.id);
+    const ps = calcPortSnap(p.id);
+    const ppnl = (pp.startVal!=null&&pp.endVal!=null)?(pp.endVal-pp.startVal-pp.newCap):null;
+    return {name:`組合${p.id}・${p.name}`, endVal:pp.endVal??ps.total, periodPnl:ppnl, periodRet:pp.ret, days:pp.days};
   }) : [];
 
-  // 配置（圓餅資料）
+  // ── 個股區間報酬（用 histTickers，從今天起才有，過去沒有就標示）──
+  const tickerDates = Object.keys(DB.histTickers||{}).filter(d=>d>=startStr&&d<=endStr).sort();
+  let tickerRanking = [];
+  let tickerDataAvailable = false;
+  if(tickerDates.length>=2){
+    const firstDay = DB.histTickers[tickerDates[0]];
+    const lastDay = DB.histTickers[tickerDates[tickerDates.length-1]];
+    const keys = isTotal
+      ? Object.keys(lastDay)
+      : Object.keys(lastDay).filter(k=>k.startsWith(portId+'|'));
+    keys.forEach(k=>{
+      const startV = firstDay[k];
+      const endV = lastDay[k];
+      if(startV!=null && endV!=null && startV>0){
+        const ticker = k.split('|')[1];
+        const ret = (endV-startV)/startV*100;
+        tickerRanking.push({ticker, ret, change:endV-startV});
+      }
+    });
+    if(tickerRanking.length) tickerDataAvailable = true;
+  }
+  tickerRanking.sort((a,b)=>b.ret-a.ret);
+  const tWinners = tickerRanking.filter(t=>t.ret>0).slice(0,5);
+  const tLosers = tickerRanking.filter(t=>t.ret<0).slice(-5).reverse();
+
+  // ── 資產配置（期末）──
   const allocItems = isTotal
-    ? DB.portfolios.filter(p=>p.included).map((p,i)=>({label:`組合${p.id}`,val:calcPortSnap(p.id).total,color:p.color||COLORS[i]}))
-    : hs.map((h,i)=>({label:h.ticker,val:calcHV(h).mktVal,color:COLORS[i%COLORS.length]}));
+    ? DB.portfolios.filter(p=>p.included).map((p,i)=>({label:`組合${p.id}`,val:calcPortSnap(p.id).total,color:p.color||'#5b8ff9'}))
+    : hs.map((h,i)=>{const cs=['#5b8ff9','#00e5a0','#ffb84d','#ff6b9d','#a370f7','#4dd2ff','#ff8c42','#22d3a8'];return{label:h.ticker,val:calcHV(h).mktVal,color:cs[i%cs.length]};});
   const allocTotal = allocItems.reduce((s,it)=>s+it.val,0);
+
+  // ── 期間趨勢（淨值走勢，用快照畫迷你折線）──
+  const trendDates = Object.keys(DB.history?.[histKey]||{}).filter(d=>d>=startStr&&d<=endStr).sort();
+  const trendVals = trendDates.map(d=>DB.history[histKey][d]);
+
+  // ── 期間統計：上漲/下跌天數、最大回撤、期間最高/最低 ──
+  let upDays=0, downDays=0, maxDD=0, peak=0, periodHigh=0, periodLow=Infinity;
+  for(let i=0;i<trendDates.length;i++){
+    const v=trendVals[i];
+    if(i>0){const prev=trendVals[i-1]; if(v>prev)upDays++; else if(v<prev)downDays++;}
+    if(v>peak)peak=v;
+    const dd=peak>0?(v-peak)/peak*100:0;
+    if(dd<maxDD)maxDD=dd;
+    if(v>periodHigh)periodHigh=v;
+    if(v<periodLow)periodLow=v;
+  }
+  if(periodLow===Infinity)periodLow=0;
 
   // 財富自由
   const fireTarget = DB.settings.fireTarget||0;
   const firePct = fireTarget>0 ? Math.min(100,(calcTotalSnap().total/fireTarget*100)) : null;
 
-  // 上漲/下跌天數、最大回撤（用 history）
-  let upDays=0, downDays=0, maxDD=0, peak=0;
-  const allHistDates = Object.keys(hist).filter(d=>d>=startStr&&d<=endStr).sort();
-  for(let i=0;i<allHistDates.length;i++){
-    const v=hist[allHistDates[i]];
-    if(i>0){const prev=hist[allHistDates[i-1]]; if(v>prev)upDays++; else if(v<prev)downDays++;}
-    if(v>peak)peak=v;
-    const dd=peak>0?(v-peak)/peak*100:0;
-    if(dd<maxDD)maxDD=dd;
+  // 迷你折線 SVG
+  function miniLineSVG(vals, w=720, h=120){
+    if(vals.length<2) return '<div style="color:#aaa;padding:20px;text-align:center">需累積至少 2 天快照才能繪製趨勢</div>';
+    const min=Math.min(...vals), max=Math.max(...vals), range=(max-min)||1;
+    const pts=vals.map((v,i)=>{const x=(i/(vals.length-1))*w;const y=h-((v-min)/range)*(h-20)-10;return`${x.toFixed(1)},${y.toFixed(1)}`;}).join(' ');
+    const last=vals[vals.length-1], first=vals[0];
+    const lineColor=last>=first?gainColor:lossColor;
+    const areaPts=`0,${h} ${pts} ${w},${h}`;
+    return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px">
+      <polygon points="${areaPts}" fill="${lineColor}" opacity="0.08"/>
+      <polyline points="${pts}" fill="none" stroke="${lineColor}" stroke-width="2.5"/>
+    </svg>`;
   }
 
-  const fmt = v => 'NT$'+fm(v);
-  const fpc = v => v==null?'--':(v>=0?'+':'')+v.toFixed(2)+'%';
-  const gainColor = '#ff4d6a', lossColor = '#00e5a0';
-  const pnlColor = v => v>=0?gainColor:lossColor;
+  const dataWarn = pr.days<2
+    ? '<div style="background:#fff4e0;border:1px solid #ffd591;color:#d48806;padding:12px 16px;border-radius:8px;margin:16px 0;font-size:13px">⚠️ 此期間的每日快照不足 2 筆，區間報酬無法計算。請每個交易日按一次「更新」累積快照，過幾天再產生報告。</div>'
+    : '';
 
   // ── 產生 HTML ──
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8">
-<title>投資報告 ${endStr}</title>
+<title>投資報告 ${periodLabel} ${endStr}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:-apple-system,'Microsoft JhengHei',sans-serif;color:#1a1a2e;background:#fff;padding:40px;max-width:800px;margin:0 auto;line-height:1.6}
-  h1{font-size:26px;margin-bottom:4px;color:#1a1a2e}
+  h1{font-size:26px;margin-bottom:4px}
   h2{font-size:17px;margin:24px 0 12px;padding-bottom:6px;border-bottom:2px solid #5b8ff9;color:#2a2a4e}
   .subtitle{color:#888;font-size:13px;margin-bottom:20px}
   .hero{background:linear-gradient(135deg,#5b8ff9,#a370f7);color:#fff;padding:24px;border-radius:12px;margin-bottom:20px}
-  .hero .big{font-size:36px;font-weight:900;margin:4px 0}
-  .hero .sub{font-size:13px;opacity:.9}
+  .hero .big{font-size:34px;font-weight:900;margin:4px 0}
+  .hero .sub{font-size:13px;opacity:.92}
   .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0}
   .stat{background:#f5f6fa;border-radius:10px;padding:14px;text-align:center}
   .stat .lbl{font-size:11px;color:#888;margin-bottom:4px}
@@ -2365,88 +2458,112 @@ function buildReportHTML(portId, startDate, endDate, periodLabel){
   .bar-row{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px}
   .bar-track{flex:1;height:18px;background:#f0f2f8;border-radius:9px;overflow:hidden}
   .bar-fill{height:100%;border-radius:9px}
+  .note{font-size:11px;color:#aaa;margin-top:4px}
   .footer{margin-top:30px;padding-top:16px;border-top:1px solid #eee;font-size:11px;color:#aaa;text-align:center}
-  @media print{body{padding:20px}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}.bar-fill,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  @media print{body{padding:20px}.hero,.bar-fill,th,svg polygon,svg polyline{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
 
 <h1>📊 投資報告</h1>
-<div class="subtitle">${portName}　|　${periodLabel}　|　報告日期 ${endStr}</div>
+<div class="subtitle">${portName}　|　${periodLabel}　|　${startStr} ～ ${endStr}</div>
+
+${dataWarn}
 
 <div class="hero">
-  <div class="sub">${isTotal?'總資產':'組合市值'}</div>
-  <div class="big">${fmt(snap.total)}</div>
-  <div class="sub">成本 ${fmt(snap.cost)}　|　總損益 ${snap.pnl>=0?'+':''}${fmt(snap.pnl)}（${fpc(snap.pnlPct)}）</div>
+  <div class="sub">期間資產變化（${pr.days} 個快照日）</div>
+  <div class="big">${pr.startVal!=null?fmt(pr.startVal):'--'} → ${pr.endVal!=null?fmt(pr.endVal):fmt(snap.total)}</div>
+  <div class="sub">期間損益 ${periodPnl!=null?(periodPnl>=0?'+':'')+fmt(periodPnl):'資料不足'}${pr.newCap>0?`　（已扣除期間新增投入 ${fmt(pr.newCap)}）`:''}</div>
 </div>
 
 <div class="grid">
-  <div class="stat"><div class="lbl">總報酬率</div><div class="val" style="color:${pnlColor(snap.pnlPct)}">${fpc(snap.pnlPct)}</div></div>
-  <div class="stat"><div class="lbl">XIRR 年化報酬</div><div class="val" style="color:${xirr==null?'#888':pnlColor(xirr)}">${xirr==null?'資料不足':fpc(xirr)}</div></div>
-  <div class="stat"><div class="lbl">期間報酬</div><div class="val" style="color:${periodReturn==null?'#888':pnlColor(periodReturn)}">${periodReturn==null?'資料不足':fpc(periodReturn)}</div></div>
+  <div class="stat"><div class="lbl">期間報酬率</div><div class="val" style="color:${pnlColor(periodReturn)}">${periodReturn==null?'資料不足':fpc(periodReturn)}</div></div>
+  <div class="stat"><div class="lbl">期間 XIRR 年化</div><div class="val" style="color:${pnlColor(xirrPeriod)}">${xirrPeriod==null?'資料不足':fpc(xirrPeriod)}</div></div>
+  <div class="stat"><div class="lbl">期間損益金額</div><div class="val" style="color:${pnlColor(periodPnl)}">${periodPnl==null?'資料不足':(periodPnl>=0?'+':'')+fmt(periodPnl)}</div></div>
 </div>
 
+<h2>期間淨值走勢</h2>
+${miniLineSVG(trendVals)}
+${trendVals.length>=2?`<div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-top:4px">
+  <span>期間最低 ${fmt(periodLow)}</span>
+  <span>期間最高 ${fmt(periodHigh)}</span>
+</div>`:''}
+
 ${isTotal && portRows.length ? `
-<h2>各組合績效</h2>
+<h2>各組合期間績效</h2>
 <table>
-  <thead><tr><th>組合</th><th>市值</th><th>總損益</th><th>報酬率</th><th>XIRR</th></tr></thead>
+  <thead><tr><th>組合</th><th>期末市值</th><th>期間損益</th><th>期間報酬率</th></tr></thead>
   <tbody>
   ${portRows.map(r=>`<tr>
     <td>${r.name}</td>
-    <td>${fmt(r.total)}</td>
-    <td style="color:${pnlColor(r.pnl)}">${r.pnl>=0?'+':''}${fmt(r.pnl)}</td>
-    <td style="color:${pnlColor(r.pnlPct)}">${fpc(r.pnlPct)}</td>
-    <td style="color:${r.xirr==null?'#888':pnlColor(r.xirr)}">${r.xirr==null?'--':fpc(r.xirr)}</td>
+    <td>${fmt(r.endVal)}</td>
+    <td style="color:${pnlColor(r.periodPnl)}">${r.periodPnl==null?'--':(r.periodPnl>=0?'+':'')+fmt(r.periodPnl)}</td>
+    <td style="color:${pnlColor(r.periodRet)}">${r.periodRet==null?'資料不足':fpc(r.periodRet)}</td>
   </tr>`).join('')}
   </tbody>
-</table>` : ''}
+</table>
+<div class="note">期間報酬率已扣除期間內新增投入資金，反映真實漲跌</div>` : ''}
 
-<h2>資產配置</h2>
+<h2>資產配置（期末）</h2>
 ${allocItems.map(it=>{
   const pct = allocTotal>0?(it.val/allocTotal*100):0;
   return `<div class="bar-row">
     <span style="width:90px">${it.label}</span>
     <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${it.color}"></div></div>
-    <span style="width:90px;text-align:right">${fmt(it.val)}</span>
+    <span style="width:100px;text-align:right">${fmt(it.val)}</span>
     <span style="width:50px;text-align:right;color:#888">${pct.toFixed(1)}%</span>
   </div>`;
 }).join('')}
 
-<h2>最佳與最差標的</h2>
+${tickerDataAvailable ? `
+<h2>期間個股漲跌排行</h2>
 <div class="two-col">
   <div>
-    <div style="font-weight:700;color:${gainColor};margin-bottom:8px">📈 賺最多</div>
-    ${winners.length?winners.map((it,i)=>`<div class="rank">
+    <div style="font-weight:700;color:${gainColor};margin-bottom:8px">📈 期間漲最多</div>
+    ${tWinners.length?tWinners.map((it,i)=>`<div class="rank">
       <span><span class="medal">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.'}</span>${it.ticker}</span>
-      <span style="color:${gainColor};font-weight:700">+${fm(it.pnl)} (${it.pnlPct.toFixed(1)}%)</span>
-    </div>`).join(''):'<div style="color:#aaa;padding:10px">無獲利標的</div>'}
+      <span style="color:${gainColor};font-weight:700">+${it.ret.toFixed(1)}%</span>
+    </div>`).join(''):'<div style="color:#aaa;padding:10px">期間無上漲標的</div>'}
   </div>
   <div>
-    <div style="font-weight:700;color:${lossColor};margin-bottom:8px">📉 賠最多</div>
-    ${losers.length?losers.map((it,i)=>`<div class="rank">
+    <div style="font-weight:700;color:${lossColor};margin-bottom:8px">📉 期間跌最多</div>
+    ${tLosers.length?tLosers.map((it,i)=>`<div class="rank">
       <span><span class="medal">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.'}</span>${it.ticker}</span>
-      <span style="color:${lossColor};font-weight:700">${fm(it.pnl)} (${it.pnlPct.toFixed(1)}%)</span>
-    </div>`).join(''):'<div style="color:#aaa;padding:10px">無虧損標的 🎉</div>'}
+      <span style="color:${lossColor};font-weight:700">${it.ret.toFixed(1)}%</span>
+    </div>`).join(''):'<div style="color:#aaa;padding:10px">期間無下跌標的 🎉</div>'}
   </div>
-</div>
+</div>` : `
+<h2>期間個股漲跌排行</h2>
+<div style="background:#f5f6fa;border-radius:8px;padding:16px;color:#888;font-size:13px;text-align:center">
+  個股區間報酬需累積每日個股快照才能呈現。<br>系統已從今天起記錄個股市值，請每交易日按一次更新，數天後此區段即會顯示真實的「期間個股漲跌排行」。
+</div>`}
 
-<h2>期間有趣數據</h2>
+<h2>期間統計</h2>
 <div class="grid">
   <div class="stat"><div class="lbl">📈 上漲天數</div><div class="val" style="color:${gainColor}">${upDays} 天</div></div>
   <div class="stat"><div class="lbl">📉 下跌天數</div><div class="val" style="color:${lossColor}">${downDays} 天</div></div>
-  <div class="stat"><div class="lbl">最大回撤</div><div class="val" style="color:${lossColor}">${maxDD.toFixed(2)}%</div></div>
+  <div class="stat"><div class="lbl">期間最大回撤</div><div class="val" style="color:${lossColor}">${maxDD.toFixed(2)}%</div></div>
 </div>
+
 ${firePct!=null?`
-<div class="stat" style="margin-top:12px">
-  <div class="lbl">🏁 財富自由進度（目標 ${fmt(fireTarget)}）</div>
+<h2>財富自由進度</h2>
+<div class="stat">
+  <div class="lbl">🏁 目標 ${fmt(fireTarget)}</div>
   <div class="val" style="color:#5b8ff9">${firePct.toFixed(1)}%</div>
   <div class="bar-track" style="margin-top:8px"><div class="bar-fill" style="width:${firePct}%;background:linear-gradient(90deg,#5b8ff9,#00e5a0)"></div></div>
 </div>`:''}
 
-<div class="footer">
-  本報告由個人投資觀測面板自動產生　|　${new Date().toLocaleString('zh-TW')}<br>
-  XIRR=資金時間加權年化報酬率　|　數據僅供個人參考，非投資建議
+<h2>全期參考數據</h2>
+<div class="grid">
+  <div class="stat"><div class="lbl">目前總市值</div><div class="val">${fmt(snap.total)}</div></div>
+  <div class="stat"><div class="lbl">累積總報酬率</div><div class="val" style="color:${pnlColor(snap.pnlPct)}">${fpc(snap.pnlPct)}</div></div>
+  <div class="stat"><div class="lbl">全期 XIRR</div><div class="val" style="color:${pnlColor(xirrAll)}">${xirrAll==null?'--':fpc(xirrAll)}</div></div>
 </div>
 
-<script>window.onload=()=>{setTimeout(()=>window.print(),400)}<\/script>
+<div class="footer">
+  本報告由個人投資觀測面板自動產生　|　${new Date().toLocaleString('zh-TW')}<br>
+  期間報酬已扣除期間新增投入　|　XIRR=資金時間加權年化報酬率　|　數據僅供個人參考，非投資建議
+</div>
+
+<script>window.onload=()=>{setTimeout(()=>window.print(),500)}<\/script>
 </body></html>`);
   win.document.close();
 }
