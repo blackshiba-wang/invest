@@ -103,6 +103,94 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC',sans
 .ct-lbl{font-size:10px;color:#7A9AB5;margin-top:2px}
 hr.d{border:none;border-top:1px solid #DCE6EE;margin:8px 0}
 @media(max-width:640px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}.content{padding:12px 14px}.ch-big{font-size:36px}}
+/* ===== 列印按鈕 ===== */
+.print-btn{background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.35);padding:5px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:500;display:flex;align-items:center;gap:5px;transition:all 0.15s}
+.print-btn:hover{background:rgba(255,255,255,0.28)}
+.print-section-label{display:none}
+/* ===== 列印樣式 ===== */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  body{background:white!important;font-size:11pt;color:#1A2E45}
+  .header{background:#1A2E45!important;padding:10px 16px;-webkit-print-color-adjust:exact!important}
+  .patient-name{font-size:14pt!important}
+  .patient-meta{font-size:9pt!important;color:#8FB0CA!important}
+  .update-badge{background:#0E8F7F!important;font-size:9pt!important}
+  .status-bar{background:#0E8F7F!important;font-size:9pt!important;padding:5px 16px;-webkit-print-color-adjust:exact!important}
+  .sdot{background:#7FEAD9!important}
+  .sdot.warn{background:#FFEDB0!important}
+  .tabs,.print-btn{display:none!important}
+  .content{padding:8px 14px;max-width:100%}
+  .tp{display:block!important}
+  .card{box-shadow:none!important;border:1px solid #DCE6EE;break-inside:avoid;page-break-inside:avoid;margin-bottom:8px;padding:12px}
+  .g2{grid-template-columns:1fr 1fr!important}
+  .g3{grid-template-columns:1fr 1fr 1fr!important}
+  .g4{grid-template-columns:repeat(4,1fr)!important}
+  /* CEA 英雄卡 */
+  .cea-hero{background:linear-gradient(135deg,#0A2540,#0E3A5C)!important;-webkit-print-color-adjust:exact!important;break-inside:avoid;padding:14px}
+  .ch-t{color:#7FB5D0!important;font-size:8pt!important}
+  .ch-big{font-size:32pt!important;color:#7FEAD9!important}
+  .ch-badge{border:1px solid #0E8F7F!important;color:#7FEAD9!important;background:rgba(14,143,127,0.3)!important;font-size:9pt!important}
+  /* 各種數字顏色 */
+  .sv{font-size:15pt!important;font-weight:700!important}
+  .sl{font-size:8pt!important;color:#5A7A95!important}
+  .sn{font-size:8pt!important;color:#5A7A95!important}
+  .stat{box-shadow:none!important;border:1px solid #DCE6EE!important;padding:10px!important}
+  .stat.g .sv{color:#2A7D46!important}
+  .stat.w .sv{color:#C17A1A!important}
+  .stat.b .sv{color:#C23A3A!important}
+  .vl{color:#C23A3A!important;font-weight:700!important}
+  .vh{color:#C17A1A!important;font-weight:700!important}
+  .vg{color:#2A7D46!important;font-weight:700!important}
+  .vn{color:#1A2E45!important}
+  /* 分析報告 */
+  .analysis{background:linear-gradient(135deg,#0A2540,#1A3A5C)!important;-webkit-print-color-adjust:exact!important;break-inside:avoid;padding:14px}
+  .analysis-t{color:#7FEAD9!important;font-size:11pt!important}
+  .ai{color:rgba(255,255,255,0.92)!important;border-bottom-color:rgba(255,255,255,0.12)!important;font-size:10pt!important}
+  /* 警告框 */
+  .alert-box.ok{background:#E4F4EA!important;border-left:3px solid #2A7D46!important;color:#1A3D28!important}
+  .alert-box.wn{background:#FEF3E2!important;border-left:3px solid #C17A1A!important;color:#5C3A0A!important}
+  .alert-box.er{background:#FDE8E8!important;border-left:3px solid #C23A3A!important;color:#5A1A1A!important}
+  .alert-box.info{background:#E3EFF8!important;border-left:3px solid #2980B9!important;color:#1A3A5A!important}
+  /* 路徑列 */
+  .pr{font-size:10pt!important;break-inside:avoid}
+  .pl{color:#5A7A95!important}
+  .pv{color:#1A2E45!important}
+  /* 時間軸 */
+  .tl-item{break-inside:avoid}
+  .tl-text{font-size:10pt!important}
+  .tl-detail{font-size:9pt!important;color:#4A6A85!important}
+  /* 表格 */
+  .bt{font-size:9pt!important}
+  .bt th{font-size:8pt!important;padding:5px 6px!important;background:#F4F7FA!important;color:#5A7A95!important}
+  .bt td{padding:5px 6px!important}
+  .rlt{background:#F0FBF5!important}
+  .rty{background:#FFFBF0!important}
+  /* 小標籤 */
+  .badge{font-size:9pt!important}
+  .b-ok{background:#E4F4EA!important;color:#2A7D46!important}
+  .b-watch{background:#FEF3E2!important;color:#B06210!important}
+  .b-stable{background:#E3EFF8!important;color:#1A5F8A!important}
+  .b-pending{background:#FFF0E0!important;color:#C17A1A!important}
+  .b-alert{background:#FDE8E8!important;color:#C23A3A!important}
+  /* 圖表高度 */
+  .cw{display:none!important}
+  .cw-tall{height:170px!important}
+  canvas{max-height:170px!important}
+  /* 分頁標籤 */
+  .print-section-label{display:block!important;font-size:14pt!important;font-weight:700!important;color:white!important;background:#1A2E45!important;padding:8px 14px!important;margin:20px -14px 12px!important;letter-spacing:0.03em!important;-webkit-print-color-adjust:exact!important}
+  #tab-ov .print-section-label{margin-top:6px!important;break-before:avoid!important;page-break-before:avoid!important}
+  #tab-ca .print-section-label,#tab-cd .print-section-label,#tab-ne .print-section-label,#tab-bl .print-section-label,#tab-sc .print-section-label{break-before:page!important;page-break-before:always!important}
+  /* 量表格 mini */
+  .mm{background:#F4F7FA!important;padding:8px!important}
+  .mml{font-size:8pt!important;color:#5A7A95!important}
+  .mmv{font-size:14pt!important}
+  /* 皮質素時間軸 */
+  .ct-lbl{color:#5A7A95!important}
+  hr.d{border-top:1px solid #DCE6EE!important}
+  /* 隱藏不需要的元素 */
+  .sr small{color:#7A9AB5!important}
+  .st{background:#E3EFF8!important;color:#1A5F8A!important}
+}
 </style>
 </head>
 <body>
@@ -112,7 +200,10 @@ hr.d{border:none;border-top:1px solid #DCE6EE;margin:8px 0}
     <div class="patient-name">王榮富・健康看板 v3</div>
     <div class="patient-meta">男・79歲（民國36/02/20生）・病歷號 22566822（長庚）/ 91597608（聖保祿）</div>
   </div>
-  <span class="update-badge">更新 2026/07/02</span>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button class="print-btn" onclick="doPrint()">🖨️ 列印報告</button>
+    <span class="update-badge">更新 2026/07/02</span>
+  </div>
 </div>
 
 <div class="status-bar">
@@ -137,6 +228,7 @@ hr.d{border:none;border-top:1px solid #DCE6EE;margin:8px 0}
 
 <!-- ===== 總覽 ===== -->
 <div id="tab-ov" class="tp active">
+  <div class="print-section-label">📊 總覽・王榮富 健康看板（2026/07/02）</div>
   <div class="cea-hero">
     <div class="ch-t">CEA 腫瘤指標（最重要）術前 307.98 → 目前 4.03</div>
     <div class="ch-n">
@@ -194,6 +286,7 @@ hr.d{border:none;border-top:1px solid #DCE6EE;margin:8px 0}
 
 <!-- ===== 腫瘤科 ===== -->
 <div id="tab-ca" class="tp">
+  <div class="print-section-label">🎗 腫瘤科追蹤・王榮富</div>
   <div class="cea-hero" style="margin-bottom:14px">
     <div class="ch-t">CEA 腫瘤標記完整趨勢</div>
     <div class="ch-n">
@@ -272,6 +365,7 @@ hr.d{border:none;border-top:1px solid #DCE6EE;margin:8px 0}
 
 <!-- ===== 心臟內外科 ===== -->
 <div id="tab-cd" class="tp">
+  <div class="print-section-label">🫀 心臟內外科・王榮富</div>
   <div class="g2">
     <div class="card">
       <div class="ct">🫀 腹主動脈瘤支架（EVAR）</div>
@@ -356,6 +450,7 @@ hr.d{border:none;border-top:1px solid #DCE6EE;margin:8px 0}
 
 <!-- ===== 神經內科 ===== -->
 <div id="tab-ne" class="tp">
+  <div class="print-section-label">🧠 神經內科・王榮富</div>
   <div class="card">
     <div class="ct">🚨 腎上腺危機完整紀錄（已恢復）</div>
     <div class="alert-box ok" style="margin-bottom:12px"><span>✅</span><div><strong>已完全恢復！</strong>2025/04 爆發腎上腺危機，2025/08 確認完全恢復。皮質素、ACTH 均正常，類固醇已停用。</div></div>
@@ -469,6 +564,7 @@ hr.d{border:none;border-top:1px solid #DCE6EE;margin:8px 0}
 
 <!-- ===== 血液檢查 ===== -->
 <div id="tab-bl" class="tp">
+  <div class="print-section-label">🩸 血液檢查歷史・王榮富</div>
   <div class="card">
     <div class="ct">血色素・白血球・白蛋白趨勢圖</div>
     <div class="cw-tall"><canvas id="bloodChart"></canvas></div>
@@ -537,6 +633,7 @@ hr.d{border:none;border-top:1px solid #DCE6EE;margin:8px 0}
 
 <!-- ===== 時程提醒 ===== -->
 <div id="tab-sc" class="tp">
+  <div class="print-section-label">📅 時程提醒・王榮富</div>
   <div class="alert-box ok"><span>✅</span><div><strong>今日完成（2026/07/02）：</strong>腫瘤科 #24 回診・Port-A 沖洗・抽血送檢（CEA、Alb、Cr、AST、ALK-P、CBC）</div></div>
 
   <div class="card">
@@ -641,6 +738,42 @@ function IP(){
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>'PLT: '+c.parsed.y+' K'}}},scales:{x:{grid:{color:'#F0F4F8'},ticks:{color:'#7A9AB5',font:{size:9}}},y:{min:0,max:500,grid:{color:'#F0F4F8'},ticks:{color:'#7A9AB5',font:{size:10}}}}}
   });
 }
+
+// ===== 列印功能 =====
+function doPrint(){
+  // 先把所有圖表初始化
+  if(!window._ca){IC();window._ca=1;}
+  if(!window._bl){IB();IP();window._bl=1;}
+
+  // 記錄目前顯示的 tab
+  const activePanel=document.querySelector('.tp.active');
+  const allPanels=document.querySelectorAll('.tp');
+
+  // 顯示所有分頁
+  allPanels.forEach(p=>{p.classList.add('active');p.style.display='block';});
+
+  // 稍等圖表渲染後再列印
+  setTimeout(()=>{
+    window.print();
+    // 列印對話框關閉後恢復原狀
+    setTimeout(()=>{
+      allPanels.forEach(p=>{p.classList.remove('active');p.style.display='';});
+      if(activePanel){activePanel.classList.add('active');activePanel.style.display='block';}
+    },800);
+  },450);
+}
+
+// 讓瀏覽器列印前後也自動處理（Ctrl+P 快捷鍵）
+window.addEventListener('beforeprint',()=>{
+  if(!window._ca){IC();window._ca=1;}
+  if(!window._bl){IB();IP();window._bl=1;}
+  document.querySelectorAll('.tp').forEach(p=>{p.style.display='block';});
+});
+window.addEventListener('afterprint',()=>{
+  const activePanel=document.querySelector('.tp.active');
+  document.querySelectorAll('.tp').forEach(p=>{p.style.display='';});
+  if(activePanel){activePanel.style.display='block';}
+});
 </script>
 </body>
 </html>
