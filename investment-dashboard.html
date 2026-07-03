@@ -390,11 +390,11 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
   <div class="card mb14">
     <div class="card-hd">
       <div class="card-title">淨值走勢</div>
-      <div style="display:flex;gap:6px;align-items:center">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
         <select id="lineSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderLine()">
           <option value="total">總資產</option>
         </select>
-        <div class="ptabs" id="lineModeTabs" style="margin-right:6px">
+        <div class="ptabs" id="lineModeTabs">
           <button class="ptab active" onclick="setLineMode('amount',this)">金額</button>
           <button class="ptab" onclick="setLineMode('return',this)">報酬率</button>
         </div>
