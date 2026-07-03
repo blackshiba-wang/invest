@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>張錦鳳 健康看板 v1</title>
+<title>家人健康看板 v2</title>
 <style>
   :root{
     --ink:#22303a;
@@ -174,9 +174,9 @@
 <header>
   <div class="headrow">
     <div>
-      <h1>張錦鳳・健康看板 v1</h1>
-      <div class="sub">女・76歲（民國38/07/20生）・病歷號 158077（屏基）/ 290939（寶建）/ 932525（屏東榮總）</div>
-      <div class="updated">更新 2026/07/03（已加入最新保骼麗施打紀錄）</div>
+      <h1>張女士・健康看板 v2</h1>
+      <div class="sub">女・76歲（民國38年生）</div>
+      <div class="updated">更新 2026/07/03（新增腦血管健康頁籤、完備回診期程規劃）</div>
     </div>
     <button class="printbtn" onclick="window.print()">🖨️ 列印報告</button>
   </div>
@@ -191,10 +191,11 @@
 <nav class="tabs" id="tabnav">
   <button data-tab="overview" class="active">📊 總覽</button>
   <button data-tab="cardiac">🫀 心臟內科</button>
+  <button data-tab="cerebro">🧠 腦血管健康</button>
   <button data-tab="bone">🦴 骨科／保骼麗</button>
   <button data-tab="labs">🩸 抽血尿液檢驗</button>
   <button data-tab="supplements">💊 保健品時程</button>
-  <button data-tab="schedule">📅 時程提醒／時間軸</button>
+  <button data-tab="schedule">📅 回診期程規劃</button>
 </nav>
 
 <main>
@@ -350,6 +351,66 @@
   </div>
 </section>
 
+<!-- ============ 腦血管健康 ============ -->
+<section class="tabpanel" id="cerebro">
+
+  <div class="card">
+    <h2>🧠 秘書先講結論</h2>
+    <div class="box good">
+      <span class="ic">✅</span>
+      <div><b>這些都是76歲常見的老化痕跡，不是急症，也不是失智前兆。</b>兩家醫院各自照的CT互相印證了同樣的發現，代表資料本身可信；而後續做的頸動脈超音波結果是正常的，兩者對照起來反而是安心的證據。目前沒有記憶力減退、走路不穩等相關症狀，這件事可以用「每年追蹤」的節奏處理，不需要緊急掛號，也不用勉強媽媽去她排斥的神經內科。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📄 原始報告出處（逐份列出，供核對）</h2>
+    <table>
+      <tr><th>日期</th><th>醫院</th><th>檢查</th><th>報告原文重點</th></tr>
+      <tr>
+        <td>113/09/20</td><td><span class="pill hosp">屏基醫院</span></td><td>腦部CT（無造影劑）</td>
+        <td>Cerebral cortical atrophy with ventricular dilatation／Periventricular, deep and subcortical white matters lucency, DDx: ischemic-gliotic change, <b>old insults</b>／Atherosclerosis of bilateral internal carotid arteries and vertebrobasilar system</td>
+      </tr>
+      <tr>
+        <td>113/09/20</td><td><span class="pill hosp">寶建醫院</span></td><td>腦部CT（無造影劑）</td>
+        <td>Low density lesion around ventricles, periventricular lucency／Calcified plaques along bilateral internal carotid arteries and basilar artery, atherosclerosis</td>
+      </tr>
+      <tr>
+        <td>113/11/11</td><td><span class="pill hosp">台北榮總</span></td><td>頸動脈超音波</td>
+        <td class="ok">Clear vessel walls，雙側頸動脈分岔處及總頸動脈血管壁清晰，<b>無狹窄異常</b></td>
+      </tr>
+    </table>
+    <div class="box info">
+      <span class="ic">📋</span>
+      <div>兩份CT是<b>同一天（113/9/20昏厥送醫當天）</b>，先在屏基急診照一次，晚上轉診寶建又照一次，屬於當時謹慎兩地確認，不是重複檢查出錯。兩份報告在「頸動脈鈣化斑塊」與「腦室周邊病變」兩點上互相印證，可信度高。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📖 名詞白話翻譯</h2>
+    <ul class="clean">
+      <li><b>腦室擴大／腦皮質輕度萎縮：</b>大腦隨年紀自然縮小一點、腦室相對變大的現象，70歲以上長輩做影像檢查很常見，報告寫的是「輕度」。</li>
+      <li><b>缺血性白質病變（old insults）：</b>report裡的old（舊的）是關鍵字，代表這是過去、非近期造成的小血管痕跡，不是這次掃到「正在發生」的中風，與長期血壓、血管彈性有關。</li>
+      <li><b>頸動脈鈣化斑塊：</b>CT有看到鈣化痕跡值得留意，但後續頸動脈超音波（功能性檢查）結果正常、無狹窄，兩者合併看是安心訊號。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🔁 因為媽媽排斥神經內科，改走這條路一樣顧得到</h2>
+    <div class="box info">
+      <span class="ic">📋</span>
+      <div><b>併入林口長庚心臟內科：</b>血管硬化、血壓、血脂本來就是謝宜璋醫師會關注的範圍，下次回診直接帶這份報告請醫師一併評估，媽媽感受上仍是「看她本來就在看的心臟科」，抗拒感低。</div>
+    </div>
+    <div class="box info">
+      <span class="ic">📋</span>
+      <div><b>用家醫科年度健檢取代神經內科門診：</b>每年安排一次，請醫師順便做簡單的認知功能篩檢（幾分鐘問答），聽起來是例行檢查，不會讓媽媽有「被當病人看」的抗拒感。</div>
+    </div>
+    <div class="box warn">
+      <span class="ic">⚠️</span>
+      <div><b>家人日常觀察出現以下狀況才需要主動回頭找醫師：</b>記性明顯變差到影響生活、走路變得不穩或容易跌倒、說話表達突然困難、個性或情緒有明顯轉變。沒有這些狀況，現階段用血管風險控制取代神經內科追蹤是安全的做法。</div>
+    </div>
+  </div>
+</section>
+
 <!-- ============ 骨科／保骼麗 ============ -->
 <section class="tabpanel" id="bone">
   <div class="card">
@@ -476,6 +537,68 @@
 
 <!-- ============ 時程提醒／時間軸 ============ -->
 <section class="tabpanel" id="schedule">
+
+  <div class="card">
+    <h2>🩺 秘書幫妳整理：完備回診期程規劃表</h2>
+    <p style="font-size:13px;color:var(--muted);margin-top:-4px;">以20年全科醫師的角度幫媽媽規劃的完整回診地圖，哪些科別要看、多久看一次、每次要盯緊什麼，一次列給妳。</p>
+    <table>
+      <tr><th>科別</th><th>回診頻率</th><th>負責院所／醫師</th><th>該科別要注意的問題（含來源）</th><th>下次建議時間</th></tr>
+      <tr>
+        <td><b>心臟內科</b><br><span class="pill hosp">現有</span></td>
+        <td>依醫囑固定回診</td>
+        <td>林口長庚 謝宜璋醫師</td>
+        <td>四院MR判讀落差待統一確認（113/9/28寶建Severe vs 113/10/9屏基、113/12/20署屏、114/2/6屏東榮總皆Mild）；胸腔X光雙肺浸潤、肺門增大待釐清（113/11/5台北榮總）</td>
+        <td>依現有排程，下次請帶四院比對表與胸腔X光報告一併討論</td>
+      </tr>
+      <tr>
+        <td><b>骨科</b><br><span class="pill hosp">現有</span></td>
+        <td>每半年一次</td>
+        <td>聖保祿 陳俊仰醫師</td>
+        <td>DXA -2.9（L2，2022/12/13）；保骼麗持續施打中</td>
+        <td class="ok">2026/07/28（已預約）</td>
+      </tr>
+      <tr>
+        <td><b>泌尿科／腎臟科</b><br><span class="pill hosp">新建議</span></td>
+        <td>近期安排1次，視結果訂追蹤頻率</td>
+        <td>尚無固定醫師</td>
+        <td class="flag">尿白血球3–5→10–19↑、白血球脂酶(+)→(++)（114/04/29→115/03/09德安婦產科）；紅血球持續偏低3.88–3.98（同兩次）</td>
+        <td class="flag">建議2週內安排</td>
+      </tr>
+      <tr>
+        <td><b>胸腔內科</b><br><span class="pill hosp">新建議</span></td>
+        <td>近期安排1次，依結果決定後續</td>
+        <td>尚無固定醫師</td>
+        <td class="flag">雙肺浸潤增加、雙側肺門增大，原報告建議「clinical correlation and follow up」，目前無後續追蹤紀錄（113/11/5台北榮總）</td>
+        <td class="flag">建議1個月內安排</td>
+      </tr>
+      <tr>
+        <td><b>腦血管風險追蹤</b><br><span class="pill hosp">併入現有科別</span></td>
+        <td>每年1次</td>
+        <td>併入心臟內科或家醫科年度健檢</td>
+        <td>腦室擴大、腦皮質輕度萎縮、缺血性白質病變（113/9/20屏基＋寶建CT雙院印證）；頸動脈鈣化斑塊，惟頸動脈超音波正常無狹窄（113/11/11台北榮總）</td>
+        <td>下次心臟科回診時一併提出</td>
+      </tr>
+      <tr>
+        <td><b>血液／貧血追蹤</b><br><span class="pill hosp">併入現有抽血</span></td>
+        <td>下次抽血時加驗</td>
+        <td>不需新掛科別</td>
+        <td>RBC持續偏低3.88–3.98（114/04/29、115/03/09德安婦產科兩次）</td>
+        <td>下次任一科回診抽血時加驗鐵質、網狀紅血球</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>💬 看診小抄：每一科要跟醫師說什麼</h2>
+    <h3>🩺 泌尿科／腎臟科（優先安排）</h3>
+    <div class="box info"><span class="ic">📋</span><div>「我媽媽兩次尿液檢驗（114/04/29、115/03/09）顯示白血球從3–5上升到10–19，白血球脂酶從(+)上升到(++)，想請醫師評估是否需要治療或安排複驗；她的紅血球數值也持續偏低（3.88–3.98），想一併請醫師看是否需要貧血相關檢查。」</div></div>
+
+    <h3>🫁 胸腔內科</h3>
+    <div class="box info"><span class="ic">📋</span><div>「這是2024/11/5台北榮總的胸腔X光報告，當時寫的是雙肺浸潤增加、雙側肺門增大，建議追蹤，但後續沒有安排追蹤檢查，想請醫師評估是否需要進一步檢查，例如低劑量胸部CT。」</div></div>
+
+    <h3>❤️ 心臟內科（下次回診）</h3>
+    <div class="box info"><span class="ic">📋</span><div>「這是媽媽四家醫院心臟超音波的比對表，除了昏厥當週那次寶建判讀重度二尖瓣逆流，之後三次都是輕度，想請醫師確認目前程度是否穩定；另外這是她腦部CT報告，有提到血管硬化斑塊跟白質病變，想請醫師評估要不要調整血壓或血脂的控制目標，不需要另外掛神經內科。」</div></div>
+  </div>
 
   <div class="card">
     <h2>📅 待辦事項優先序</h2>
