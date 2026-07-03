@@ -1572,7 +1572,27 @@ function renderGrowthChart(){
     // 找第一個有值的基準
     const firstVal=entries.find(v=>v!==null);
     if(!firstVal) return;
-    const normalized=entries.map(v=>v!==null?parseFloat((v/firstVal*100).toFixed(2)):null);
+    // 首日日期（用於計算之後的淨加碼本金）
+    const firstIdx=entries.findIndex(v=>v!==null);
+    const firstDate=allDates[firstIdx];
+    // 決定納入哪些組合的交易（total = 計入總資產的組合；否則單一組合）
+    const inclIds = s.id==='total'
+      ? DB.portfolios.filter(pp=>pp.included).map(pp=>pp.id)
+      : [s.id];
+    // 報酬率(t) = (當日市值 - 首日市值 - 期間淨加碼) / 首日市值 × 100 + 100
+    const normalized=allDates.map((d,i)=>{
+      const v=entries[i];
+      if(v===null) return null;
+      // 首日之後(不含首日) 到 當日(含) 的淨加碼本金 = 買入成本 - 賣出金額
+      const netCapital=DB.trades
+        .filter(t=>inclIds.includes(t.portfolio) && t.date>firstDate && t.date<=d)
+        .reduce((sum,t)=>{
+          const fx=t.currency==='USD'?getRate('USD'):1;
+          const amt=t.shares*t.price*fx;
+          return sum + (t.action==='BUY'? amt : -amt);
+        },0);
+      return parseFloat((((v - netCapital)/firstVal*100)).toFixed(2));
+    });
     datasets.push({
       label:s.label,
       data:normalized,
@@ -2017,13 +2037,28 @@ function renderMonthlyReturns(){
   const labels = [];
   const data = [];
   let prevLast = null;
+  let prevYm = null;
+  // 決定納入哪些組合的交易
+  const inclIds = sel==='total'
+    ? DB.portfolios.filter(pp=>pp.included).map(pp=>pp.id)
+    : [sel];
   months.forEach(ym=>{
     const m = monthly[ym];
     const base = prevLast!==null ? prevLast : m.first;
-    const ret = base>0 ? ((m.last-base)/base*100) : 0;
+    // 當月淨加碼本金 = 該月所有買入成本 - 賣出金額
+    const netCapital = DB.trades
+      .filter(t=>inclIds.includes(t.portfolio) && t.date.slice(0,7)===ym)
+      .reduce((sum,t)=>{
+        const fx=t.currency==='USD'?getRate('USD'):1;
+        const amt=t.shares*t.price*fx;
+        return sum + (t.action==='BUY'? amt : -amt);
+      },0);
+    // 報酬 = (月末市值 - 月初基準 - 當月淨加碼) / 月初基準
+    const ret = base>0 ? (((m.last-base-netCapital)/base)*100) : 0;
     labels.push(ym);
     data.push(parseFloat(ret.toFixed(2)));
     prevLast = m.last;
+    prevYm = ym;
   });
 
   const colors = data.map(v=>v>=0?'#ff4d6a':'#00e5a0');
