@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>王榮富 健康看板 v3</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC',sans-serif;background:#EEF2F7;color:#1A2E45;min-height:100vh;font-size:14px}
+.header{background:#1A2E45;color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.patient-name{font-size:18px;font-weight:700}
+.patient-meta{font-size:11px;color:#8FB0CA;margin-top:2px}
+.update-badge{background:#0E8F7F;color:white;font-size:11px;padding:4px 12px;border-radius:20px;font-weight:600}
+.status-bar{background:#0E8F7F;color:white;padding:7px 20px;font-size:12px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.sdot{width:7px;height:7px;border-radius:50%;background:#7FEAD9;display:inline-block;margin-right:5px}
+.sdot.warn{background:#FFEDB0}
+.tabs{background:#1A2E45;padding:0 20px;display:flex;overflow-x:auto}
+.tab{padding:10px 16px;color:#8FB0CA;cursor:pointer;font-size:13px;font-weight:500;border-bottom:3px solid transparent;white-space:nowrap;transition:all 0.15s}
+.tab:hover{color:#D0E6F5}
+.tab.active{color:white;border-bottom-color:#0E8F7F}
+.content{padding:16px 20px;max-width:1000px}
+.tp{display:none}
+.tp.active{display:block}
+.card{background:white;border-radius:10px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.ct{font-size:12px;font-weight:600;color:#5A7A95;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid #0E8F7F}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.stat{background:white;border-radius:10px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.sl{font-size:10px;color:#7A9AB5;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px}
+.sv{font-size:22px;font-weight:700;color:#1A2E45;line-height:1.1}
+.su{font-size:11px;font-weight:400;color:#7A9AB5;margin-left:2px}
+.sn{font-size:11px;color:#7A9AB5;margin-top:3px}
+.stat.g .sv{color:#2A7D46}
+.stat.w .sv{color:#C17A1A}
+.stat.b .sv{color:#C23A3A}
+.cea-hero{background:linear-gradient(135deg,#0A2540 0%,#0E3A5C 100%);border-radius:12px;padding:20px;color:white;margin-bottom:12px;position:relative;overflow:hidden}
+.cea-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:150px;height:150px;border-radius:50%;background:rgba(14,143,127,0.18)}
+.ch-t{font-size:11px;color:#7FB5D0;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px}
+.ch-n{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.ch-big{font-size:50px;font-weight:800;color:#7FEAD9;line-height:1}
+.ch-badge{display:inline-block;background:rgba(14,143,127,0.3);border:1px solid rgba(14,143,127,0.5);color:#7FEAD9;font-size:12px;padding:3px 12px;border-radius:20px;font-weight:600;margin-top:7px}
+.cw{position:relative;height:65px;margin-top:10px}
+.cw-tall{position:relative;height:240px}
+.pr{display:flex;padding:5px 0;border-bottom:1px solid #F0F4F8;font-size:13px}
+.pr:last-child{border-bottom:none}
+.pl{color:#5A7A95;width:145px;flex-shrink:0}
+.pv{color:#1A2E45;font-weight:500;flex:1}
+.tl-item{display:flex;gap:10px;padding:8px 0;position:relative}
+.tl-item:not(:last-child)::before{content:'';position:absolute;left:10px;top:24px;bottom:-8px;width:2px;background:#DCE6EE}
+.tl-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:8px;font-weight:700;color:white;margin-top:2px}
+.tl-dot.g{background:#2A7D46}
+.tl-dot.t{background:#0E8F7F}
+.tl-dot.n{background:#1A2E45}
+.tl-dot.w{background:#C17A1A}
+.tl-dot.r{background:#C23A3A}
+.tl-date{font-size:11px;color:#7A9AB5;font-weight:500}
+.tl-text{font-size:13px;color:#1A2E45;margin-top:1px;line-height:1.4}
+.tl-detail{font-size:12px;color:#5A7A95;margin-top:2px;line-height:1.4}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500}
+.b-ok{background:#E4F4EA;color:#2A7D46}
+.b-watch{background:#FEF3E2;color:#B06210}
+.b-stable{background:#E3EFF8;color:#1A5F8A}
+.b-pending{background:#FFF0E0;color:#C17A1A}
+.b-alert{background:#FDE8E8;color:#C23A3A}
+.alert-box{border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:10px;display:flex;gap:9px;align-items:flex-start;line-height:1.6}
+.alert-box.info{background:#E3EFF8;border-left:3px solid #2980B9;color:#1A3A5A}
+.alert-box.ok{background:#E4F4EA;border-left:3px solid #2A7D46;color:#1A3D28}
+.alert-box.wn{background:#FEF3E2;border-left:3px solid #C17A1A;color:#5C3A0A}
+.alert-box.er{background:#FDE8E8;border-left:3px solid #C23A3A;color:#5A1A1A}
+.sr{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid #F0F4F8;align-items:flex-start}
+.sr:last-child{border-bottom:none}
+.sd{width:76px;flex-shrink:0;font-size:13px;font-weight:600;color:#1A2E45}
+.sd small{display:block;font-size:10px;font-weight:400;color:#7A9AB5}
+.st{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;background:#E3EFF8;color:#1A5F8A;white-space:nowrap;flex-shrink:0}
+.bt{width:100%;border-collapse:collapse;font-size:12px}
+.bt th{background:#F4F7FA;color:#5A7A95;font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:0.04em;padding:6px 8px;text-align:center;border-bottom:1px solid #DCE6EE}
+.bt th:first-child{text-align:left}
+.bt td{padding:7px 8px;border-bottom:1px solid #F0F4F8;color:#2A3F55;text-align:center}
+.bt td:first-child{text-align:left;font-weight:500}
+.bt tr:last-child td{border-bottom:none}
+.vl{color:#C23A3A;font-weight:600}
+.vh{color:#C17A1A;font-weight:600}
+.vg{color:#2A7D46;font-weight:600}
+.vn{color:#2A3F55}
+.rlt{background:#F0FBF5}
+.rty{background:#FFFBF0}
+.ctag{background:#E4F4EA;color:#2A7D46;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:500;display:inline-block;margin:2px}
+.mm{background:#F4F7FA;border-radius:8px;padding:9px;text-align:center}
+.mml{font-size:10px;color:#7A9AB5;font-weight:500;margin-bottom:3px}
+.mmv{font-size:17px;font-weight:700}
+.analysis{background:linear-gradient(135deg,#0A2540,#1A3A5C);border-radius:12px;padding:18px;margin-top:14px;color:white}
+.analysis-t{font-size:13px;font-weight:700;color:#7FEAD9;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em}
+.ai{display:flex;gap:8px;padding:6px 0;font-size:13px;line-height:1.5;border-bottom:1px solid rgba(255,255,255,0.08)}
+.ai:last-child{border-bottom:none}
+.ai-icon{flex-shrink:0;font-size:14px;margin-top:1px}
+.cortisol-timeline{display:flex;align-items:center;gap:0;margin:14px 0;overflow-x:auto}
+.ct-step{display:flex;flex-direction:column;align-items:center;min-width:100px}
+.ct-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0}
+.ct-line{flex:1;height:3px;min-width:20px}
+.ct-val{font-size:14px;font-weight:700;margin-top:5px}
+.ct-lbl{font-size:10px;color:#7A9AB5;margin-top:2px}
+hr.d{border:none;border-top:1px solid #DCE6EE;margin:8px 0}
+@media(max-width:640px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}.content{padding:12px 14px}.ch-big{font-size:36px}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="patient-name">王榮富・健康看板 v3</div>
+    <div class="patient-meta">男・79歲（民國36/02/20生）・病歷號 22566822（長庚）/ 91597608（聖保祿）</div>
+  </div>
+  <span class="update-badge">更新 2026/07/02</span>
+</div>
+
+<div class="status-bar">
+  <div><span class="sdot"></span>大腸癌：無復發</div>
+  <div><span class="sdot"></span>主動脈支架：穩定</div>
+  <div><span class="sdot"></span>CEA 4.03 正常</div>
+  <div><span class="sdot"></span>腎上腺：已恢復</div>
+  <div><span class="sdot warn"></span>尿液異常未追蹤</div>
+  <div style="margin-left:auto;color:#FFEDB0;font-weight:600">⚡ 今日 2026/07/02 抽血送檢中</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="ST('ov')">📊 總覽</div>
+  <div class="tab" onclick="ST('ca')">🎗 腫瘤科</div>
+  <div class="tab" onclick="ST('cd')">🫀 心臟內外科</div>
+  <div class="tab" onclick="ST('ne')">🧠 神經內科</div>
+  <div class="tab" onclick="ST('bl')">🩸 血液檢查</div>
+  <div class="tab" onclick="ST('sc')">📅 時程提醒</div>
+</div>
+
+<div class="content">
+
+<!-- ===== 總覽 ===== -->
+<div id="tab-ov" class="tp active">
+  <div class="cea-hero">
+    <div class="ch-t">CEA 腫瘤指標（最重要）術前 307.98 → 目前 4.03</div>
+    <div class="ch-n">
+      <div class="ch-big">4.03</div>
+      <div style="color:#7FB5D0;font-size:13px;line-height:1.8">ng/mL・2026/06/25<br><span style="color:#7FEAD9;font-size:18px;font-weight:700">▼ 下降 98.7%</span></div>
+    </div>
+    <span class="ch-badge">連續 3 次低於正常上限 5.0 ✓</span>
+    <div class="cw"><canvas id="ceaMini"></canvas></div>
+  </div>
+
+  <div class="g4">
+    <div class="stat g"><div class="sl">CEA</div><div class="sv">4.03<span class="su">ng/mL</span></div><div class="sn">2026/06 ✓ 正常</div></div>
+    <div class="stat w"><div class="sl">血色素 Hb</div><div class="sv">12.4<span class="su">g/dL</span></div><div class="sn">輕度偏低（男標準14+）</div></div>
+    <div class="stat w"><div class="sl">血小板 PLT</div><div class="sv">118<span class="su">K</span></div><div class="sn">偏低，化療後持續</div></div>
+    <div class="stat g"><div class="sl">白蛋白 Alb</div><div class="sv">4.25<span class="su">g/dL</span></div><div class="sn">2026/06 ↑↑ 歷史最佳</div></div>
+  </div>
+  <div class="g4">
+    <div class="stat w"><div class="sl">HbA1c</div><div class="sv">6.1<span class="su">%</span></div><div class="sn">糖尿病前期（停皮質素後改善）</div></div>
+    <div class="stat w"><div class="sl">血鉀 K⁺</div><div class="sv">3.4<span class="su">mmol/L</span></div><div class="sn">2025/07 偏低，需追蹤</div></div>
+    <div class="stat g"><div class="sl">LDL 膽固醇</div><div class="sv">72<span class="su">mg/dL</span></div><div class="sn">2025/07 ✓ 心血管風險低</div></div>
+    <div class="stat g"><div class="sl">eGFR 腎功能</div><div class="sv">75.9</div><div class="sn">2025/07 正常</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ct">整體病況摘要</div>
+      <div style="font-size:13px;line-height:2.0">
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #F0F4F8"><span>🎗 大腸癌三期（化療後）</span><span class="badge b-ok">追蹤中・無復發</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #F0F4F8"><span>🫀 腹主動脈瘤支架</span><span class="badge b-stable">穩定 ✓</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #F0F4F8"><span>🫀 胸主動脈瘤</span><span class="badge b-stable">監測中</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #F0F4F8"><span>🩹 腹部疝氣</span><span class="badge b-watch">保守觀察</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #F0F4F8"><span>🫁 肺部 GGO</span><span class="badge b-pending">待評估</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #F0F4F8"><span>🧠 腎上腺危機</span><span class="badge b-ok">已完全恢復 ✓</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #F0F4F8"><span>🔬 甲狀腺</span><span class="badge b-ok">正常 ✓</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0"><span>⚠ 尿液異常（2025/07）</span><span class="badge b-alert">未追蹤！</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">近期重要事件</div>
+      <div class="sr"><div class="sd">2026/04/30<small>⭐ 里程碑</small></div><div style="flex:1;font-size:13px"><strong style="color:#2A7D46">CTA：主動脈穩定 + NED（無癌症跡象）</strong></div></div>
+      <div class="sr"><div class="sd">2025/08/13<small>神經內科</small></div><div style="flex:1;font-size:13px"><strong style="color:#2A7D46">皮質素恢復正常（14.5）✓ 腎上腺危機解除</strong></div></div>
+      <div class="sr"><div class="sd">2025/10/27<small>腫瘤科</small></div><div style="flex:1;font-size:13px">第 12 次化療完成，所有副作用 G1 以下</div></div>
+      <div class="sr"><div class="sd" style="color:#C23A3A">2025/07/02<small>⚠ 未追蹤</small></div><div style="flex:1;font-size:13px;color:#C23A3A"><strong>尿液：蛋白++、尿糖+++、潛血+、RBC 5-7</strong></div></div>
+      <div class="sr"><div class="sd">2026/07/02<small>今天</small></div><div style="flex:1;font-size:13px">Port-A 沖洗 ＋ 抽血送檢（結果待出）</div></div>
+    </div>
+  </div>
+
+  <div class="alert-box er">
+    <span>🚨</span><div><strong>最優先待辦：尿液異常未追蹤</strong><br>2025/03/05 尿液完全正常 → 2025/07/02 突然出現蛋白++、尿糖+++、潛血+、RBC 5-7/HPF。至今逾 12 個月未複驗！需立即安排腎臟科評估或尿液複查。</div>
+  </div>
+  <div class="alert-box ok">
+    <span>✅</span><div><strong>腎上腺危機重大好消息：</strong>2025/04/28 皮質素危急低值（&lt;1.0），開始類固醇補充，2025/08/13 皮質素恢復正常（14.5），ACTH 42.2 正常，腎上腺功能完全恢復，已停藥。</div>
+  </div>
+</div>
+
+<!-- ===== 腫瘤科 ===== -->
+<div id="tab-ca" class="tp">
+  <div class="cea-hero" style="margin-bottom:14px">
+    <div class="ch-t">CEA 腫瘤標記完整趨勢</div>
+    <div class="ch-n">
+      <div class="ch-big">4.03</div>
+      <div style="color:#7FB5D0;font-size:13px;line-height:1.8">最新（2026/06/25）<br>術前 <span style="color:#E07070;font-size:20px;font-weight:700">307.98</span> → 下降 98.7%</div>
+    </div>
+    <span class="ch-badge">連續 3 次（2025/10, 2025/12, 2026/03, 2026/06）低於 5.0 ✓</span>
+  </div>
+
+  <div class="card">
+    <div class="ct">CEA 完整趨勢圖（術後，正常上限 5.0）</div>
+    <div class="cw-tall"><canvas id="ceaFull"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">病理報告（屏基，2025/02/28）</div>
+    <div class="pr"><div class="pl">診斷</div><div class="pv">盲腸黏液腺癌（Cecal Mucinous Adenocarcinoma）</div></div>
+    <div class="pr"><div class="pl">腫瘤大小</div><div class="pv">4.5 × 4.0 cm</div></div>
+    <div class="pr"><div class="pl">分化程度</div><div class="pv">低度惡性，中度分化（G2）</div></div>
+    <div class="pr"><div class="pl">淋巴血管侵犯</div><div class="pv">無</div></div>
+    <div class="pr"><div class="pl">神經侵犯</div><div class="pv">有（腸壁內）</div></div>
+    <div class="pr"><div class="pl">切除邊界</div><div class="pv">乾淨（距遠端切緣 10 cm）</div></div>
+    <div class="pr"><div class="pl">淋巴結轉移</div><div class="pv">2/22 顆（有腸外延伸）</div></div>
+    <div class="pr"><div class="pl">AJCC 分期</div><div class="pv">Stage IIIB・pT4aN1bcM0</div></div>
+    <div class="pr"><div class="pl">MMR / 微衛星</div><div class="pv"><strong>MSI-H（dMMR，MLH1 & PMS2 缺失）</strong>→ 免疫治療敏感、預後較佳</div></div>
+    <div class="pr"><div class="pl">EGFR</div><div class="pv">3+（陽性）</div></div>
+    <div class="pr"><div class="pl">PSA</div><div class="pv">2.61（2025/03）→ 0.678（2025/12）✓ 持續改善</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">FOLFOX6 化療紀錄（共 12 次，2025/03-10）</div>
+    <div class="g4" style="margin-bottom:12px">
+      <div class="mm"><div class="mml">總次數</div><div class="mmv" style="color:#2A7D46">12</div></div>
+      <div class="mm"><div class="mml">開始</div><div class="mmv" style="color:#1A5F8A;font-size:14px">2025/03/24</div></div>
+      <div class="mm"><div class="mml">完成</div><div class="mmv" style="color:#1A5F8A;font-size:14px">2025/10/27</div></div>
+      <div class="mm"><div class="mml">副作用</div><div class="mmv" style="color:#2A7D46;font-size:14px">G1 以下</div></div>
+    </div>
+    <div style="margin-bottom:8px">
+      <span class="ctag">✓ 03/24 第1次</span><span class="ctag">✓ 04/07 第2次</span><span class="ctag">✓ 04/21 第3次</span>
+      <span class="ctag">✓ 05/05 第4次</span><span class="ctag">✓ 05/26 第5次</span><span class="ctag">✓ 06/16 第6次</span>
+      <span class="ctag">✓ 07/07 第7次</span><span class="ctag">✓ 07/28 第8次</span><span class="ctag">✓ 08/18 第9次</span>
+      <span class="ctag">✓ 09/08 第10次</span><span class="ctag">✓ 10/01 第11次</span><span class="ctag">✓ 10/27 第12次</span>
+    </div>
+    <div style="font-size:12px;color:#5A7A95">CTCAE：疲倦G1・口腔炎G1・腹瀉G0・神經毒G0・皮疹G0・嘔吐G0</div>
+  </div>
+
+  <div class="card">
+    <div class="ct">影像追蹤記錄</div>
+    <div class="tl-item"><div class="tl-dot n">CT</div><div><div class="tl-date">2025/07/01</div><div class="tl-text">腹部 CT — <span style="color:#2A7D46;font-weight:600">無局部復發 ✓</span></div><div class="tl-detail">吻合口通暢・右下腹腹膜增厚（術後變化）・主動脈瘤穩定・雙側下肺胸膜下網紋</div></div></div>
+    <div class="tl-item"><div class="tl-dot n">CT</div><div><div class="tl-date">2025/12/31</div><div class="tl-text">腹部 CT — <span style="color:#2A7D46;font-weight:600">無確定腫瘤復發 ✓</span></div><div class="tl-detail">腹膜增厚穩定・腎下型 AAA 62→67mm 擴大 → 轉介心外科</div></div></div>
+    <div class="tl-item"><div class="tl-dot t">超</div><div><div class="tl-date">2026/04/09</div><div class="tl-text">上腹部超音波 — <span style="color:#2A7D46;font-weight:600">上腹無腫瘤 ✓</span></div><div class="tl-detail">肝脾胰腎正常・無腹水・AAA 支架最大徑 4.8 cm</div></div></div>
+    <div class="tl-item" style="padding-bottom:0"><div class="tl-dot g">CTA</div><div><div class="tl-date">2026/04/30 ⭐</div><div class="tl-text"><strong style="color:#2A7D46">主動脈瘤 Stationary + NED（無癌症跡象）✓✓</strong></div><div class="tl-detail">目前最重要里程碑。心外科 + 腫瘤科雙確認。</div></div></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Port-A 維護紀錄</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <div style="background:#E4F4EA;border-radius:8px;padding:8px 12px;font-size:13px;color:#2A7D46;font-weight:500">✓ 2026/01/19</div>
+      <div style="background:#E4F4EA;border-radius:8px;padding:8px 12px;font-size:13px;color:#2A7D46;font-weight:500">✓ 2026/04/09</div>
+      <div style="background:#E4F4EA;border-radius:8px;padding:8px 12px;font-size:13px;color:#2A7D46;font-weight:500">✓ 2026/07/02（今日）</div>
+      <div style="background:#FEF3E2;border-radius:8px;padding:8px 12px;font-size:13px;color:#C17A1A;font-weight:500">⏳ 約 2026/10（下次）</div>
+    </div>
+    <div style="font-size:12px;color:#7A9AB5">每 3 個月維護一次・在化療停止後 Port-A 仍保留以備追蹤使用</div>
+  </div>
+
+  <div class="analysis">
+    <div class="analysis-t">📋 腫瘤科分析報告（2026/07/02）</div>
+    <div class="ai"><span class="ai-icon">✅</span><div><strong>CEA 持續穩定：</strong>從術前 307.98 下降至 4.03（-98.7%），連續 4 次（2025/10、12、2026/03、06）維持 5.0 以下，顯示腫瘤控制良好。</div></div>
+    <div class="ai"><span class="ai-icon">✅</span><div><strong>影像確認無復發：</strong>2026/04/30 CTA 確認 NED（No Evidence of Disease），為目前最有力的好消息。</div></div>
+    <div class="ai"><span class="ai-icon">✅</span><div><strong>化療耐受性優秀：</strong>12 次 FOLFOX 完成，副作用全程 G1 以下，代表爸爸的整體體能儲備相當不錯。</div></div>
+    <div class="ai"><span class="ai-icon">✅</span><div><strong>MSI-H 特性有利：</strong>此腫瘤分型對免疫治療敏感，且文獻顯示整體預後較 MSS 型更好，如復發時有免疫治療選項。</div></div>
+    <div class="ai"><span class="ai-icon">⚠️</span><div><strong>持續追蹤重要：</strong>Stage IIIB 大腸癌術後 5 年仍有復發風險。請勿因目前良好結果而鬆懈，約 2026/10 回診必須按時。</div></div>
+    <div class="ai"><span class="ai-icon">📋</span><div><strong>建議行動：</strong>下次回診（約 2026/10）確認影像安排；血鉀偏低需在回診時順帶補查；今日抽血結果出來後立即更新看板。</div></div>
+  </div>
+</div>
+
+<!-- ===== 心臟內外科 ===== -->
+<div id="tab-cd" class="tp">
+  <div class="g2">
+    <div class="card">
+      <div class="ct">🫀 腹主動脈瘤支架（EVAR）</div>
+      <div class="pr"><div class="pl">手術日期</div><div class="pv">2025/02/04（林口長庚）</div></div>
+      <div class="pr"><div class="pl">主治醫師</div><div class="pv">心外科 劉國聖醫師</div></div>
+      <div class="pr"><div class="pl">支架設計</div><div class="pv">A支架 + B支架套接 + 鉚釘固定</div></div>
+      <div class="pr"><div class="pl">Type Ia 側漏</div><div class="pv">術後微量，50% 可自然密合</div></div>
+      <div class="pr"><div class="pl">2026/04/30 CTA</div><div class="pv" style="color:#2A7D46;font-weight:600">Stationary（穩定）✓</div></div>
+      <div class="pr"><div class="pl">超音波最大徑</div><div class="pv">4.8 cm（2026/04/09）</div></div>
+      <div class="pr"><div class="pl">下次追蹤</div><div class="pv">約 2026/10（與腫瘤科合併回診）</div></div>
+      <div class="alert-box er" style="margin-top:10px">
+        <span>🚨</span><div style="font-size:12px"><strong>立即急診：</strong>大腿/腳冰冷・鼠蹊腫脹・腹腰劇痛・高燒・尿量下降</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">🫀 胸主動脈瘤</div>
+      <div class="pr"><div class="pl">2025/07/01 CT</div><div class="pv">主動脈弓 OD 41.7mm・有壁血栓</div></div>
+      <div class="pr"><div class="pl">2026/04/30 CTA</div><div class="pv" style="color:#2A7D46;font-weight:600">穩定 Stationary ✓</div></div>
+      <div class="pr"><div class="pl">處置</div><div class="pv">持續 CT 影像監測（劉醫師）</div></div>
+      <hr class="d">
+      <div class="ct" style="margin-top:8px">🩹 腹部疝氣</div>
+      <div class="pr"><div class="pl">評估醫師</div><div class="pv">游明晉醫師（2026/04/09）</div></div>
+      <div class="pr"><div class="pl">決策</div><div class="pv">不手術（血管支架風險＞效益）</div></div>
+      <div class="pr"><div class="pl">日常</div><div class="pv">白天佩戴束腹帶</div></div>
+      <div class="pr"><div class="pl">下次回診</div><div class="pv">約 2026/10（半年後）</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">💊 用藥紀錄</div>
+    <div class="pr"><div class="pl">Bisoprolol（心得靜）</div><div class="pv">1.25mg・每日一次・控制心率與血壓</div></div>
+    <div class="pr"><div class="pl">原 Nebivolol（奈必洛）</div><div class="pv">2025/04/07 改換為 Bisoprolol（姿態性低血壓，改為較低劑量）</div></div>
+    <div class="pr"><div class="pl">降血脂（聖保祿）</div><div class="pv">周小燕醫師開立・持續服用</div></div>
+    <div class="pr"><div class="pl">Donepezil（憶思能）</div><div class="pv">黃嘉苓醫師（神經內科）開立</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">❤️ 血脂檢查（2025/07/02，德安）</div>
+    <div class="g4" style="margin-bottom:4px">
+      <div class="mm"><div class="mml">TG 中性脂肪</div><div class="mmv" style="color:#2A7D46">116</div><div style="font-size:10px;color:#7A9AB5">正常 &lt;150</div></div>
+      <div class="mm"><div class="mml">TC 總膽固醇</div><div class="mmv" style="color:#2A7D46">154</div><div style="font-size:10px;color:#7A9AB5">正常 &lt;200</div></div>
+      <div class="mm"><div class="mml">HDL 好膽固醇</div><div class="mmv" style="color:#2A7D46">58.8</div><div style="font-size:10px;color:#7A9AB5">優秀 &gt;40</div></div>
+      <div class="mm"><div class="mml">LDL 壞膽固醇</div><div class="mmv" style="color:#2A7D46">72</div><div style="font-size:10px;color:#7A9AB5">優秀 &lt;130</div></div>
+    </div>
+    <div style="font-size:12px;color:#2A7D46;margin-top:8px">✅ 四項血脂指標全部優秀！心血管風險控制非常好。LDL 72 遠低於心臟病患建議的 70 mg/dL 標準。</div>
+    <hr class="d">
+    <div style="font-size:12px;color:#5A7A95;margin-top:4px">2025/12/05 聖保祿：TC 123・HDL 52・LDL 44・TG 未記錄（同樣優秀）</div>
+  </div>
+
+  <div class="card">
+    <div class="ct">🫁 肺部 GGO（需評估）</div>
+    <div class="pr"><div class="pl">2025/02/24 胸 X 光</div><div class="pv">雙側下肺浸潤・邊緣性心臟肥大</div></div>
+    <div class="pr"><div class="pl">2025/03/19 胸 X 光</div><div class="pv">GGO 持續・右 CP 角模糊（新增）</div></div>
+    <div class="pr"><div class="pl">2025/07/01 CT</div><div class="pv">Subpleural reticulation in BLLs（雙側下肺胸膜下網紋）</div></div>
+    <div class="pr"><div class="pl">臨床症狀</div><div class="pv">多年白痰（每 5-10 分鐘一口）・咳不出・無發燒</div></div>
+    <div class="pr"><div class="pl">宋醫師建議</div><div class="pv" style="color:#C17A1A;font-weight:600">懷疑肺氣腫→ 建議胸腔內科評估</div></div>
+    <div class="alert-box wn" style="margin-top:8px">
+      <span>⚠️</span><div style="font-size:12px">建議下次回診時請劉醫師或周醫師轉介<strong>胸腔內科</strong>，安排肺功能測試（Spirometry）。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">🩺 血壓記錄（來自各次回診）</div>
+    <div class="g3">
+      <div class="mm"><div class="mml">2025/10/27</div><div class="mmv" style="color:#2A7D46;font-size:14px">119/70</div><div style="font-size:10px;color:#7A9AB5">mmHg・脈搏86</div></div>
+      <div class="mm"><div class="mml">2026/01/19</div><div class="mmv" style="color:#C17A1A;font-size:14px">149/77</div><div style="font-size:10px;color:#7A9AB5">mmHg・偏高</div></div>
+      <div class="mm"><div class="mml">2026/04/09</div><div class="mmv" style="color:#2A7D46;font-size:14px">128/71</div><div style="font-size:10px;color:#7A9AB5">mmHg・脈搏84</div></div>
+    </div>
+    <div style="font-size:12px;color:#5A7A95;margin-top:8px">1月血壓較高（149/77），4月改善（128/71）。建議持續追蹤，Bisoprolol 繼續服用。</div>
+  </div>
+
+  <div class="analysis">
+    <div class="analysis-t">📋 心臟內外科分析報告（2026/07/02）</div>
+    <div class="ai"><span class="ai-icon">✅</span><div><strong>主動脈支架穩定（最大安心點）：</strong>2026/04/30 CTA 確認腹主動脈瘤支架 Stationary，胸主動脈瘤亦穩定，手術效果維持良好。</div></div>
+    <div class="ai"><span class="ai-icon">✅</span><div><strong>血脂指標優秀：</strong>LDL 72、TC 154、HDL 58.8、TG 116 全部達標，心血管風險控制非常好，目前藥物效果理想。</div></div>
+    <div class="ai"><span class="ai-icon">✅</span><div><strong>疝氣穩定無症狀：</strong>保守治療決策正確，白天束腹帶有助於減少不適，目前無需介入。</div></div>
+    <div class="ai"><span class="ai-icon">⚠️</span><div><strong>血鉀偏低（K⁺ 3.4，2025/07）：</strong>正常值 3.5-5.5。低血鉀會增加心律不整風險，建議複查。飲食上多補充香蕉、橘子、馬鈴薯等高鉀食物。</div></div>
+    <div class="ai"><span class="ai-icon">⚠️</span><div><strong>肺部 GGO 仍未評估：</strong>持續白痰症狀配合影像異常，需安排胸腔內科。若確認 COPD，可大幅改善爸爸的生活品質（痰多的問題）。</div></div>
+    <div class="ai"><span class="ai-icon">📋</span><div><strong>建議行動：</strong>① 複查血鉀 ② 安排胸腔內科（肺功能測試）③ 繼續 Bisoprolol ④ 2026/10 心外科影像追蹤</div></div>
+  </div>
+</div>
+
+<!-- ===== 神經內科 ===== -->
+<div id="tab-ne" class="tp">
+  <div class="card">
+    <div class="ct">🚨 腎上腺危機完整紀錄（已恢復）</div>
+    <div class="alert-box ok" style="margin-bottom:12px"><span>✅</span><div><strong>已完全恢復！</strong>2025/04 爆發腎上腺危機，2025/08 確認完全恢復。皮質素、ACTH 均正常，類固醇已停用。</div></div>
+    <div style="display:flex;align-items:center;gap:0;margin:16px 0;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;align-items:center;min-width:110px">
+        <div style="width:48px;height:48px;border-radius:50%;background:#C23A3A;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;text-align:center">危急</div>
+        <div style="font-size:16px;font-weight:700;color:#C23A3A;margin-top:6px">&lt;1.0</div>
+        <div style="font-size:11px;color:#7A9AB5">2025/04/28</div>
+        <div style="font-size:10px;color:#C23A3A;font-weight:500">ug/dL・危急</div>
+      </div>
+      <div style="flex:1;min-width:30px;height:3px;background:linear-gradient(to right,#C23A3A,#C17A1A);margin-bottom:20px"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;min-width:110px">
+        <div style="width:48px;height:48px;border-radius:50%;background:#C23A3A;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;text-align:center">更低</div>
+        <div style="font-size:16px;font-weight:700;color:#C23A3A;margin-top:6px">&lt;0.1</div>
+        <div style="font-size:11px;color:#7A9AB5">2025/05/26</div>
+        <div style="font-size:10px;color:#C23A3A;font-weight:500">↓ 最低點</div>
+      </div>
+      <div style="flex:1;min-width:30px;height:3px;background:linear-gradient(to right,#C17A1A,#2A7D46);margin-bottom:20px"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;min-width:110px">
+        <div style="width:48px;height:48px;border-radius:50%;background:#2A7D46;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;text-align:center">正常✓</div>
+        <div style="font-size:16px;font-weight:700;color:#2A7D46;margin-top:6px">14.5</div>
+        <div style="font-size:11px;color:#7A9AB5">2025/08/13</div>
+        <div style="font-size:10px;color:#2A7D46;font-weight:500">ug/dL・完全恢復</div>
+      </div>
+    </div>
+    <div class="pr"><div class="pl">ACTH（2025/08/13）</div><div class="pv" style="color:#2A7D46;font-weight:600">42.20 pg/mL ✓（正常 ≤46）</div></div>
+    <div class="pr"><div class="pl">Cortisone 補充</div><div class="pv">2025/05/26 開始 → 2025/08 停藥（恢復後）</div></div>
+    <div class="pr" style="border:none"><div class="pl">症狀期間</div><div class="pv">倦怠、間歇性下肢水腫、血糖偏高（皮質素效應）</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">🔬 神經內科相關檢查結果</div>
+    <div class="g3">
+      <div style="background:#E4F4EA;border-radius:8px;padding:12px">
+        <div style="font-size:10px;color:#2A7D46;font-weight:500;margin-bottom:4px">Free T4 游離甲狀腺素</div>
+        <div style="font-size:20px;font-weight:700;color:#2A7D46">1.27</div>
+        <div style="font-size:11px;color:#2A7D46">正常（0.70-1.48）</div>
+        <div style="font-size:10px;color:#7A9AB5;margin-top:3px">2025/04/28</div>
+      </div>
+      <div style="background:#E4F4EA;border-radius:8px;padding:12px">
+        <div style="font-size:10px;color:#2A7D46;font-weight:500;margin-bottom:4px">TSH 促甲狀腺激素</div>
+        <div style="font-size:20px;font-weight:700;color:#2A7D46">2.3007</div>
+        <div style="font-size:11px;color:#2A7D46">正常（0.35-4.94）</div>
+        <div style="font-size:10px;color:#7A9AB5;margin-top:3px">2025/04/28</div>
+      </div>
+      <div style="background:#E4F4EA;border-radius:8px;padding:12px">
+        <div style="font-size:10px;color:#2A7D46;font-weight:500;margin-bottom:4px">ANA 抗細胞核抗體</div>
+        <div style="font-size:20px;font-weight:700;color:#2A7D46">Negative</div>
+        <div style="font-size:11px;color:#2A7D46">陰性，無自體免疫疾病</div>
+        <div style="font-size:10px;color:#7A9AB5;margin-top:3px">2025/04/28</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">🩸 血糖追蹤（糖尿病前期）</div>
+    <div class="g4">
+      <div class="mm"><div class="mml">空腹血糖 2025/07</div><div class="mmv" style="color:#C23A3A">154</div><div style="font-size:10px;color:#C23A3A">偏高（皮質素期間）</div></div>
+      <div class="mm"><div class="mml">HbA1c 2025/07</div><div class="mmv" style="color:#C17A1A">6.1%</div><div style="font-size:10px;color:#C17A1A">糖尿病前期</div></div>
+      <div class="mm"><div class="mml">空腹血糖 2025/12</div><div class="mmv" style="color:#C17A1A">112</div><div style="font-size:10px;color:#2A7D46">改善（停皮質素後）</div></div>
+      <div class="mm"><div class="mml">HbA1c 2025/12</div><div class="mmv" style="color:#C17A1A">6.1%</div><div style="font-size:10px;color:#5A7A95">持平，待下次複查</div></div>
+    </div>
+    <div style="font-size:12px;color:#5A7A95;margin-top:8px">空腹血糖 154（2025/07）主要受皮質素（Cortisone）影響，停藥後改善至 112（2025/12），HbA1c 仍維持 6.1%（糖尿病前期邊緣）。需下次複查確認趨勢。</div>
+  </div>
+
+  <div class="card">
+    <div class="ct">🔬 其他特殊檢查</div>
+    <div class="pr"><div class="pl">VIT B12（2025/12）</div><div class="pv"><span style="color:#C23A3A;font-weight:600">&gt;6000 pg/mL ↑↑↑</span>（正常 187-883）補充量過高，需調整</div></div>
+    <div class="pr"><div class="pl">Folate 葉酸（2025/12）</div><div class="pv">13.50 ng/mL ✓（正常 3.1-20.5）</div></div>
+    <div class="pr"><div class="pl">Ferritin（2025/04/28）</div><div class="pv"><span style="color:#C23A3A;font-weight:600">2974.37 ng/mL ↑↑</span>（正常 21-274）→ 化療炎症性升高，需複查確認恢復</div></div>
+    <div class="pr"><div class="pl">血清鐵 FE（2025/04）</div><div class="pv">121 ug/dL ✓（正常 65-175）</div></div>
+    <div class="pr"><div class="pl">TIBC 總鐵結合能力</div><div class="pv">348 ug/dL ✓（正常 250-400）</div></div>
+    <div class="pr"><div class="pl">血鈣 Ca（2025/04）</div><div class="pv">8.7 mg/dL ✓（正常 8.4-10.2）</div></div>
+    <div class="pr"><div class="pl">PSA（2025/12/15）</div><div class="pv">0.678 ng/mL ✓（正常 &lt;4.0）</div></div>
+    <div class="pr"><div class="pl">Donepezil（憶思能）</div><div class="pv">神經內科開立，認知功能追蹤中</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ct" style="color:#C23A3A;border-bottom-color:#C23A3A">🚨 尿液異常（2025/07/02，至今未追蹤！）</div>
+    <div class="alert-box er" style="margin-bottom:12px"><span>🚨</span><div><strong>最優先事項：</strong>2025/03/05 尿液完全正常 → 2025/07/02 突然異常。至今已過 12 個月，從未複查！</div></div>
+    <div style="overflow-x:auto">
+      <table class="bt">
+        <thead><tr><th>項目</th><th>2025/03/05（正常）</th><th>2025/07/02（異常）</th><th>臨床意義</th></tr></thead>
+        <tbody>
+          <tr><td>蛋白尿</td><td class="vg">(-) 正常</td><td class="vl">(++) 異常</td><td class="vn">腎臟損傷？糖尿病腎病？</td></tr>
+          <tr><td>尿糖</td><td class="vg">(-) 正常</td><td class="vl">(+++) 異常</td><td class="vn">血糖高（皮質素相關）→ 停藥後可能改善</td></tr>
+          <tr><td>潛血反應</td><td class="vg">(-) 正常</td><td class="vl">(+) 異常</td><td class="vn">微血尿</td></tr>
+          <tr><td>尿紅血球 RBC</td><td class="vg">0-2 正常</td><td class="vl">5-7/HPF ↑</td><td class="vn">超出正常值，微血尿確認</td></tr>
+          <tr><td>尿白血球 WBC</td><td class="vg">1-2 正常</td><td class="vn">2-4 正常</td><td class="vn">無明顯發炎</td></tr>
+          <tr><td>尿液細菌</td><td class="vg">NOT FOUND</td><td class="vg">NOT FOUND</td><td class="vn">非泌尿道感染</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;padding:10px;background:#FDE8E8;border-radius:8px;font-size:12px;color:#7A1A1A">
+      <strong>阿碧分析：</strong>尿糖+++可能是皮質素造成血糖高的暫時反應（停藥後應改善）。但蛋白尿++與微血尿是獨立問題，需區分是否為早期糖尿病腎病、高血壓腎病、或化療相關腎毒性。<br>停藥已超過 1 年，需立即複驗尿液確認現況是否改善。
+    </div>
+  </div>
+
+  <div class="analysis">
+    <div class="analysis-t">📋 神經內科分析報告（2026/07/02）</div>
+    <div class="ai"><span class="ai-icon">✅</span><div><strong>腎上腺危機完全恢復（最大好消息）：</strong>皮質素從 &lt;0.1 回升至 14.5 ug/dL，ACTH 42.2 正常。代表下視丘-腦下垂體-腎上腺軸功能已恢復，類固醇成功停用。</div></div>
+    <div class="ai"><span class="ai-icon">✅</span><div><strong>甲狀腺功能正常：</strong>Free T4 1.27 + TSH 2.3007，排除甲狀腺問題。</div></div>
+    <div class="ai"><span class="ai-icon">✅</span><div><strong>ANA 陰性：</strong>排除常見的自體免疫疾病（如紅斑性狼瘡、類風濕性關節炎等）。</div></div>
+    <div class="ai"><span class="ai-icon">⚠️</span><div><strong>尿液異常（最優先）：</strong>蛋白++、RBC 5-7，已超過 12 個月未複查。建議立即安排腎臟科或複驗尿液。若蛋白尿持續，需做 24 小時尿蛋白定量。</div></div>
+    <div class="ai"><span class="ai-icon">⚠️</span><div><strong>B12 嚴重超量：</strong>&gt;6000 pg/mL（正常上限 883），超量達 7 倍以上。雖然 B12 毒性低，但建議暫停補充 3-6 個月再複查，避免不必要的負擔。</div></div>
+    <div class="ai"><span class="ai-icon">⚠️</span><div><strong>Ferritin 2974 需複查：</strong>化療期間炎症性升高，現化療已結束 &gt;8 個月，應複查確認是否已恢復正常（若仍高，需評估是否有其他原因）。</div></div>
+    <div class="ai"><span class="ai-icon">⚠️</span><div><strong>血糖管理：</strong>HbA1c 6.1% 維持糖尿病前期，即使停皮質素後空腹血糖仍偏高（112）。需持續飲食控制，並在下次抽血時複查 HbA1c。</div></div>
+    <div class="ai"><span class="ai-icon">📋</span><div><strong>建議行動優先序：</strong>① 立即複驗尿液（或安排腎臟科）② 複查 Ferritin ③ 暫停 B12 補充 ④ 複查 HbA1c</div></div>
+  </div>
+</div>
+
+<!-- ===== 血液檢查 ===== -->
+<div id="tab-bl" class="tp">
+  <div class="card">
+    <div class="ct">血色素・白血球・白蛋白趨勢圖</div>
+    <div class="cw-tall"><canvas id="bloodChart"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">完整血液數值歷史表</div>
+    <div style="overflow-x:auto">
+      <table class="bt">
+        <thead>
+          <tr><th>日期</th><th>CEA</th><th>Hb</th><th>WBC</th><th>PLT</th><th>MCV</th><th>Alb</th><th>Cr</th><th>AST</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2025/03/05<small style="display:block;color:#7A9AB5">德安・術後</small></td><td class="vn">—</td><td class="vl">11.2↓</td><td class="vh">12.9↑</td><td class="vh">450↑</td><td class="vn">83.5</td><td class="vn">—</td><td class="vn">—</td><td class="vn">—</td></tr>
+          <tr><td>2025/03/19<small style="display:block;color:#7A9AB5">長庚・第1次回診</small></td><td class="vh">8.68↑</td><td class="vl">10.1↓</td><td class="vh">11.1↑</td><td class="vh">483↑</td><td class="vn">86.7</td><td class="vl">3.13↓</td><td class="vn">0.94</td><td class="vh">97↑</td></tr>
+          <tr><td>2025/04/07<small style="display:block;color:#7A9AB5">長庚</small></td><td class="vn">—</td><td class="vl">11.5↓</td><td class="vn">7.8</td><td class="vn">152</td><td class="vn">90.1</td><td class="vn">—</td><td class="vn">—</td><td class="vn">—</td></tr>
+          <tr><td>2025/05/05<small style="display:block;color:#7A9AB5">長庚</small></td><td class="vh">6.81↑</td><td class="vl">9.8↓</td><td class="vn">4.9</td><td class="vl">107↓</td><td class="vn">98.6</td><td class="vn">—</td><td class="vn">1.01</td><td class="vn">22</td></tr>
+          <tr><td>2025/05/26<small style="display:block;color:#7A9AB5">長庚</small></td><td class="vn">—</td><td class="vl">11.4↓</td><td class="vn">5.3</td><td class="vn">177</td><td class="vh">105.4↑</td><td class="vn">—</td><td class="vn">—</td><td class="vn">—</td></tr>
+          <tr><td>2025/06/16<small style="display:block;color:#7A9AB5">長庚</small></td><td class="vh">6.80↑</td><td class="vl">11.5↓</td><td class="vn">5.0</td><td class="vl">104↓</td><td class="vh">111.4↑</td><td class="vn">3.48</td><td class="vn">1.01</td><td class="vn">25</td></tr>
+          <tr><td>2025/07/02<small style="display:block;color:#7A9AB5">德安・含生化</small></td><td class="vn">—</td><td class="vl">11.2↓</td><td class="vn">4.45</td><td class="vn">144</td><td class="vh">108.8↑</td><td class="vn">3.5</td><td class="vn">1.01</td><td class="vh">44↑</td></tr>
+          <tr><td>2025/07/28<small style="display:block;color:#7A9AB5">長庚</small></td><td class="vh">6.84↑</td><td class="vn">12.4</td><td class="vn">4.4</td><td class="vl">147↓</td><td class="vh">108.6↑</td><td class="vn">3.51</td><td class="vn">0.95</td><td class="vn">35</td></tr>
+          <tr><td>2025/08/11<small style="display:block;color:#C23A3A">德安・PLT最低</small></td><td class="vn">—</td><td class="vn">12.5</td><td class="vn">4.13</td><td class="vl" style="color:#C23A3A">89↓↓</td><td class="vh">107.4↑</td><td class="vn">—</td><td class="vn">—</td><td class="vn">—</td></tr>
+          <tr><td>2025/08/18<small style="display:block;color:#7A9AB5">長庚</small></td><td class="vn">—</td><td class="vn">12.0</td><td class="vl">3.3↓</td><td class="vl">118↓</td><td class="vh">110.1↑</td><td class="vn">—</td><td class="vn">—</td><td class="vn">—</td></tr>
+          <tr><td>2025/10/01<small style="display:block;color:#7A9AB5">長庚</small></td><td class="vg">4.5✓</td><td class="vn">12.7</td><td class="vn">4.0</td><td class="vl">129↓</td><td class="vh">105.4↑</td><td class="vn">—</td><td class="vn">1.07</td><td class="vn">39</td></tr>
+          <tr><td>2025/10/20<small style="display:block;color:#7A9AB5">德安</small></td><td class="vn">—</td><td class="vn">12.7</td><td class="vl">3.52↓</td><td class="vl">122↓</td><td class="vh">103.5↑</td><td class="vn">—</td><td class="vn">—</td><td class="vn">—</td></tr>
+          <tr><td>2025/12/31<small style="display:block;color:#7A9AB5">長庚</small></td><td class="vg">4.46✓</td><td class="vn">12.3</td><td class="vn">—</td><td class="vn">—</td><td class="vn">—</td><td class="vg">4.05✓</td><td class="vn">1.05</td><td class="vn">41</td></tr>
+          <tr><td>2026/03/24<small style="display:block;color:#7A9AB5">長庚</small></td><td class="vg">4.04✓</td><td class="vn">12.1</td><td class="vn">7.1</td><td class="vl">127↓</td><td class="vn">—</td><td class="vn">3.92</td><td class="vn">—</td><td class="vn">35</td></tr>
+          <tr class="rlt"><td><strong>2026/06/25</strong><small style="display:block;color:#2A7D46">最新・長庚</small></td><td class="vg">4.03✓</td><td class="vg">12.4</td><td class="vg">7.3✓</td><td class="vl">118↓</td><td class="vn">—</td><td class="vg">4.25✓</td><td class="vn">—</td><td class="vg">23✓</td></tr>
+          <tr class="rty"><td><strong>2026/07/02</strong><small style="display:block;color:#C17A1A">今日送檢</small></td><td colspan="8" style="color:#C17A1A;font-style:italic;text-align:center">⏳ 待出：CEA、Alb、Cr、AST、ALK-P、CBC</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ct">血小板趨勢（化療前後）</div>
+      <div style="position:relative;height:180px"><canvas id="pltChart"></canvas></div>
+      <div style="font-size:12px;color:#5A7A95;margin-top:8px">最低點 89（2025/08/11），化療停止後緩慢恢復，目前 118 仍低於正常值但穩定</div>
+    </div>
+    <div class="card">
+      <div class="ct">MCV 大球性貧血觀察</div>
+      <div class="g3" style="gap:6px;margin-bottom:8px">
+        <div class="mm"><div class="mml">03/05</div><div class="mmv" style="color:#2A7D46;font-size:16px">83.5</div></div>
+        <div class="mm" style="background:#FEF3E2"><div class="mml">05/26</div><div class="mmv" style="color:#C17A1A;font-size:16px">105↑</div></div>
+        <div class="mm" style="background:#FDE8E8"><div class="mml">06/16</div><div class="mmv" style="color:#C23A3A;font-size:16px">111↑</div></div>
+        <div class="mm" style="background:#FDE8E8"><div class="mml">08/11</div><div class="mmv" style="color:#C23A3A;font-size:16px">107↑</div></div>
+        <div class="mm" style="background:#FEF3E2"><div class="mml">10/20</div><div class="mmv" style="color:#C17A1A;font-size:16px">104↑</div></div>
+        <div class="mm"><div class="mml">最新待查</div><div class="mmv" style="color:#5A7A95;font-size:14px">?</div></div>
+      </div>
+      <div style="font-size:12px;color:#5A7A95">FOLFOX（5-Fu）抑制葉酸代謝 → MCV 從 83.5 升至 111。化療停止後緩降，需今日抽血確認。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">2025/10/01 白血球分類（特殊發現）</div>
+    <div class="g4" style="margin-bottom:4px">
+      <div class="mm"><div class="mml">Segment（中性球）</div><div class="mmv" style="color:#C23A3A">21.2%</div><div style="font-size:10px;color:#C23A3A">正常 42-74%</div></div>
+      <div class="mm"><div class="mml">Lymphocyte（淋巴球）</div><div class="mmv" style="color:#C17A1A">58.8%</div><div style="font-size:10px;color:#C17A1A">正常 20-56%</div></div>
+      <div class="mm"><div class="mml">Monocyte（單核球）</div><div class="mmv" style="color:#C17A1A">14.5%</div><div style="font-size:10px;color:#C17A1A">正常 0-12%</div></div>
+      <div class="mm"><div class="mml">WBC 總值</div><div class="mmv" style="color:#2A7D46">4.0</div><div style="font-size:10px;color:#7A9AB5">正常範圍</div></div>
+    </div>
+    <div style="font-size:12px;color:#5A7A95;margin-top:6px">絕對中性球 = 4000 × 21.2% = 848/µL（低於1000，輕度中性球低下）。這是化療壓制骨髓典型表現（第11次化療當天），後續已恢復。</div>
+  </div>
+</div>
+
+<!-- ===== 時程提醒 ===== -->
+<div id="tab-sc" class="tp">
+  <div class="alert-box ok"><span>✅</span><div><strong>今日完成（2026/07/02）：</strong>腫瘤科 #24 回診・Port-A 沖洗・抽血送檢（CEA、Alb、Cr、AST、ALK-P、CBC）</div></div>
+
+  <div class="card">
+    <div class="ct">⚠ 最優先待辦（已延誤）</div>
+    <div class="sr"><div class="sd" style="color:#C23A3A">立即<small>12個月未查</small></div><div style="flex:1;font-size:13px;color:#C23A3A"><strong>複驗尿液 / 安排腎臟科：</strong>2025/07 蛋白++、RBC 5-7 至今未追蹤。請在下一次任何科別回診時請醫師開單。</div></div>
+    <div class="sr" style="border:none"><div class="sd" style="color:#C17A1A">近期<small>待補查</small></div><div style="flex:1;font-size:13px;color:#C17A1A"><strong>複查 Ferritin：</strong>2025/04 為 2974（高10倍），化療結束已 &gt;8 個月，需確認是否恢復。同時複查 HbA1c 確認血糖趨勢。</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">📅 近期時程</div>
+    <div class="sr"><div class="sd" style="color:#C17A1A">7月中<small>結果</small></div><div style="flex:1;font-size:13px">今日抽血結果出爐 → 更新看板 CEA / Hb / PLT / Alb</div><div class="st" style="background:#FEF3E2;color:#B06210">待更新</div></div>
+    <div class="sr"><div class="sd">約 2026/10<small>4個月後</small></div><div style="flex:1;font-size:13px">腫瘤科回診（周文其醫師，RTC 4 months）</div><div class="st">腫瘤科</div></div>
+    <div class="sr"><div class="sd">約 2026/10<small>半年後</small></div><div style="flex:1;font-size:13px">一般外科疝氣半年追蹤（游明晉醫師）</div><div class="st">一般外科</div></div>
+    <div class="sr"><div class="sd">約 2026/10<small>3個月後</small></div><div style="flex:1;font-size:13px">Port-A 下次沖洗</div><div class="st">腫瘤科</div></div>
+    <div class="sr"><div class="sd" style="color:#C23A3A">待安排</div><div style="flex:1;font-size:13px;color:#C23A3A"><strong>胸腔內科評估</strong>（GGO + 白痰症狀）；腎臟科 / 尿液複查</div><div class="st" style="background:#FDE8E8;color:#C23A3A">未排定</div></div>
+    <div class="sr" style="border:none"><div class="sd">下次抽血<small>建議加驗</small></div><div style="flex:1;font-size:13px">Ferritin（確認恢復）・Folate（MCV高原因）・HbA1c（血糖追蹤）・尿液（複驗）</div><div class="st" style="background:#FEF3E2;color:#B06210">提醒醫師</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">🚨 緊急就醫警訊</div>
+    <div class="g2">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#C23A3A;margin-bottom:6px">🫀 主動脈支架</div>
+        <div style="font-size:13px;color:#5A7A95;line-height:2.1">▸ 大腿/腳冰冷變色<br>▸ 鼠蹊腫脹<br>▸ 腹腰劇烈疼痛<br>▸ 高燒 38.5°C 以上<br>▸ 尿量明顯下降</div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#C17A1A;margin-bottom:6px">🩹 疝氣・其他</div>
+        <div style="font-size:13px;color:#5A7A95;line-height:2.1">▸ 突出推不回去<br>▸ 腹部突發劇痛<br>▸ 嘔吐吃不下<br>▸ 大量鮮血便<br>▸ 突然昏迷/呼吸困難</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:10px;background:#FDE8E8;border-radius:8px;font-size:13px;color:#A02020;text-align:center;font-weight:700">以上任一症狀 → 立刻急診，不等待！</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// Tab switch
+function ST(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='ca'&&!window._ca){IC();window._ca=1}
+  if(id==='bl'&&!window._bl){IB();IP();window._bl=1}
+}
+
+// Mini CEA chart
+new Chart(document.getElementById('ceaMini'),{
+  type:'line',
+  data:{
+    labels:['03/05','03/19','05','06','07','10','12','03','06'],
+    datasets:[{data:[16.72,8.68,6.81,6.80,6.84,4.5,4.46,4.04,4.03],borderColor:'#7FEAD9',backgroundColor:'rgba(127,234,217,0.15)',borderWidth:2,pointRadius:3,pointBackgroundColor:'#7FEAD9',fill:true,tension:0.4}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false,min:3,max:18}}}
+});
+
+window._ca=0;window._bl=0;
+
+function IC(){
+  new Chart(document.getElementById('ceaFull'),{
+    type:'line',
+    data:{
+      labels:['2025/03/05','2025/03/19','2025/05','2025/06','2025/07','2025/10','2025/12','2026/03','2026/06'],
+      datasets:[
+        {label:'CEA (ng/mL)',data:[16.72,8.68,6.81,6.80,6.84,4.5,4.46,4.04,4.03],borderColor:'#0E8F7F',backgroundColor:'rgba(14,143,127,0.08)',borderWidth:2.5,pointRadius:5,pointBackgroundColor:(c)=>c.parsed.y<=5?'#2A7D46':'#C17A1A',pointBorderColor:'white',pointBorderWidth:2,fill:true,tension:0.3},
+        {label:'正常上限 5.0',data:[5,5,5,5,5,5,5,5,5],borderColor:'#DCE6EE',borderDash:[5,5],borderWidth:1.5,pointRadius:0,fill:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#5A7A95',font:{size:11},boxWidth:16,padding:14}}},scales:{x:{grid:{color:'#F0F4F8'},ticks:{color:'#7A9AB5',font:{size:10}}},y:{min:0,max:18,grid:{color:'#F0F4F8'},ticks:{color:'#7A9AB5',font:{size:11}},title:{display:true,text:'ng/mL',color:'#7A9AB5',font:{size:11}}}}}
+  });
+}
+
+function IB(){
+  new Chart(document.getElementById('bloodChart'),{
+    type:'line',
+    data:{
+      labels:['25/03','25/04','25/05','25/06','25/07','25/07','25/08','25/08','25/10','25/10','25/12','26/03','26/06'],
+      datasets:[
+        {label:'Hb 血色素 (g/dL)',data:[10.1,11.5,9.8,11.5,11.2,12.4,12.5,12.0,12.7,12.7,12.3,12.1,12.4],borderColor:'#E05A5A',backgroundColor:'rgba(224,90,90,0.06)',borderWidth:2,pointRadius:3,tension:0.3,yAxisID:'y'},
+        {label:'WBC 白血球 (K/µL)',data:[11.1,7.8,4.9,5.0,4.45,4.4,4.13,3.3,4.0,3.52,null,7.1,7.3],borderColor:'#2980B9',backgroundColor:'rgba(41,128,185,0.06)',borderWidth:2,pointRadius:3,tension:0.3,spanGaps:true,yAxisID:'y'},
+        {label:'Alb 白蛋白 (g/dL)',data:[3.13,null,null,3.48,3.5,3.51,null,null,null,null,4.05,3.92,4.25],borderColor:'#27AE60',backgroundColor:'rgba(39,174,96,0.06)',borderWidth:2,pointRadius:3,tension:0.3,spanGaps:true,yAxisID:'y'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#5A7A95',font:{size:11},boxWidth:14,padding:12}},tooltip:{mode:'index',intersect:false}},scales:{x:{grid:{color:'#F0F4F8'},ticks:{color:'#7A9AB5',font:{size:10}}},y:{min:0,max:14,grid:{color:'#F0F4F8'},ticks:{color:'#7A9AB5',font:{size:11}}}}}
+  });
+}
+
+function IP(){
+  new Chart(document.getElementById('pltChart'),{
+    type:'line',
+    data:{
+      labels:['03','04','05','05','06','07','07','08/11','08','10','10','12','03','06'],
+      datasets:[{
+        label:'血小板 PLT (K)',
+        data:[450,152,107,177,104,144,147,89,118,129,122,null,127,118],
+        borderColor:'#9B59B6',backgroundColor:'rgba(155,89,182,0.08)',borderWidth:2,pointRadius:(c)=>c.parsed.y===89?7:4,
+        pointBackgroundColor:(c)=>c.parsed.y===89?'#C23A3A':'#9B59B6',
+        pointBorderColor:'white',pointBorderWidth:1,fill:true,tension:0.3,spanGaps:true
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>'PLT: '+c.parsed.y+' K'}}},scales:{x:{grid:{color:'#F0F4F8'},ticks:{color:'#7A9AB5',font:{size:9}}},y:{min:0,max:500,grid:{color:'#F0F4F8'},ticks:{color:'#7A9AB5',font:{size:10}}}}}
+  });
+}
+</script>
+</body>
+</html>
