@@ -394,6 +394,10 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
         <select id="lineSel" class="fselect" style="width:auto;padding:3px 24px 3px 7px;font-size:11px" onchange="renderLine()">
           <option value="total">總資產</option>
         </select>
+        <div class="ptabs" id="lineModeTabs" style="margin-right:6px">
+          <button class="ptab active" onclick="setLineMode('amount',this)">金額</button>
+          <button class="ptab" onclick="setLineMode('return',this)">報酬率</button>
+        </div>
         <div class="ptabs" id="linePtabs">
           <button class="ptab active" onclick="setLP('1M',this)">1M</button>
           <button class="ptab" onclick="setLP('3M',this)">3M</button>
@@ -809,6 +813,7 @@ try{
 }catch(e){}
 var charts = {};
 var linePeriod = '1M';
+var lineMode = 'amount'; // 'amount' 金額 | 'return' 報酬率(扣除加碼本金)
 var _editTargetPortId = null;
 
 // ── STORAGE ──────────────────────────────────────────────────
@@ -2996,6 +3001,11 @@ function setLP(p,btn){
   document.querySelectorAll('#linePtabs .ptab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');renderLine();
 }
+function setLineMode(m,btn){
+  lineMode=m;
+  document.querySelectorAll('#lineModeTabs .ptab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderLine();
+}
 function renderLine(){
   dc('line');
   const sel=document.getElementById('lineSel').value;
@@ -3011,14 +3021,46 @@ function renderLine(){
   const cutStr=cut.toISOString().slice(0,10);
   const entries=Object.entries(hist).filter(([d])=>d>=cutStr).sort(([a],[b])=>a<b?-1:1);
   const labels=entries.map(([d])=>d.slice(5));
-  const data=entries.map(([,v])=>v);
+  const dates=entries.map(([d])=>d);
   const p=DB.portfolios.find(x=>x.id===sel);
   const color=sel==='total'?'#5b8ff9':p?.color||'#5b8ff9';
   const ctx=document.getElementById('lineC').getContext('2d');
+
+  let data, yCallback, datasetLabel;
+  if(lineMode==='return'){
+    // 報酬率模式：以區間首日為基準，扣除期間內的加碼本金
+    // 報酬率(t) = (當日淨值 - 首日淨值 - 期間累積淨加碼) / 首日淨值 × 100
+    datasetLabel='報酬率';
+    const baseVal=entries.length?entries[0][1]:0;
+    const firstDate=dates.length?dates[0]:cutStr;
+    // 決定要納入哪些組合的交易（total = 計入總資產的組合）
+    const inclIds = sel==='total'
+      ? DB.portfolios.filter(pp=>pp.included).map(pp=>pp.id)
+      : [sel];
+    data=entries.map(([d,v])=>{
+      if(baseVal<=0) return 0;
+      // 首日之後(不含首日) 到 當日(含) 的淨加碼本金 = 買入成本 - 賣出金額
+      const netCapital=DB.trades
+        .filter(t=>inclIds.includes(t.portfolio) && t.date>firstDate && t.date<=d)
+        .reduce((s,t)=>{
+          const fx=t.currency==='USD'?getRate('USD'):1;
+          const amt=t.shares*t.price*fx;
+          return s + (t.action==='BUY'? amt : -amt);
+        },0);
+      // 扣掉加碼本金後的「純投資變化」
+      return ((v - baseVal - netCapital) / baseVal) * 100;
+    });
+    yCallback=v=>(v>=0?'+':'')+v.toFixed(1)+'%';
+  }else{
+    datasetLabel='淨值';
+    data=entries.map(([,v])=>v);
+    yCallback=v=>fm(v);
+  }
+
   charts['line']=new Chart(ctx,{
     type:'line',
-    data:{labels,datasets:[{label:'淨值',data,borderColor:color,backgroundColor:color+'18',fill:true,tension:.4,pointRadius:2,pointHoverRadius:5,borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7e87b8',maxTicksLimit:8,font:{size:10}}},y:{ticks:{color:'#7e87b8',callback:v=>fm(v),font:{size:10}}}}}
+    data:{labels,datasets:[{label:datasetLabel,data,borderColor:color,backgroundColor:color+'18',fill:true,tension:.4,pointRadius:2,pointHoverRadius:5,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>lineMode==='return'?` ${datasetLabel}: ${(c.raw>=0?'+':'')+c.raw.toFixed(2)}%`:` ${datasetLabel}: ${fm(c.raw)}`}}},scales:{x:{ticks:{color:'#7e87b8',maxTicksLimit:8,font:{size:10}}},y:{ticks:{color:'#7e87b8',callback:yCallback,font:{size:10}}}}}
   });
 }
 
