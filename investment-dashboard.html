@@ -1079,6 +1079,13 @@ async function refreshAll(){
     // 匯率
     const fxRate = await fetchUsdTwd();
     if(fxRate){
+      const today = new Date().toISOString().slice(0,10);
+      // 記錄「今日基準匯率」：每天第一次更新時，把更新前的舊匯率存為當日基準
+      // 這樣同一天內反覆更新，今日匯率損益的比較基準都是「今天開盤前的匯率」
+      if(!DB.settings.fxBaseDate || DB.settings.fxBaseDate !== today){
+        DB.settings.fxBaseRate = DB.settings.usdRate || fxRate; // 更新前的舊匯率
+        DB.settings.fxBaseDate = today;
+      }
       DB.settings.usdRate = parseFloat(fxRate.toFixed(3));
       const srEl = document.getElementById('sRate');
       if(srEl) srEl.value = DB.settings.usdRate;
@@ -1143,17 +1150,26 @@ function updateFxBadge(rate){
 
 // ── CALC ──────────────────────────────────────────────────────
 function getRate(c){return c==='USD'?DB.settings.usdRate||32:1;}
+function getBaseRate(c){return c==='USD'?(DB.settings.fxBaseRate||DB.settings.usdRate||32):1;}
 function calcHV(h){
   const p=prices[h.ticker];
   const rate=getRate(h.currency);
   const costTwd=h.totalCost*rate;
-  if(!p)return{mktVal:costTwd,cost:costTwd,pnl:0,pnlPct:0,curPrice:h.cost,change:0,changePct:0};
-  const pRate=getRate(p.currency||h.currency);
+  if(!p)return{mktVal:costTwd,cost:costTwd,pnl:0,pnlPct:0,curPrice:h.cost,change:0,changePct:0,dayPnl:0};
+  const isUSD=(p.currency||h.currency)==='USD';
+  const pRate=getRate(p.currency||h.currency);       // 今日匯率
+  const pBaseRate=getBaseRate(p.currency||h.currency); // 今日基準匯率(開盤前)
   const mktVal=p.price*h.shares*pRate;
   const pnl=mktVal-costTwd;
   const pnlPct=costTwd>0?(pnl/costTwd)*100:0;
-  const dayPnl=p.change*h.shares*pRate;
-  return{mktVal,cost:costTwd,pnl,pnlPct,curPrice:p.price,change:p.change,changePct:p.changePct,dayPnl};
+  // 今日損益 = 股價漲跌換台幣 + 匯率變動造成的台幣市值增減(僅美股)
+  //   股價部分：p.change × 股數 × 今日匯率
+  //   匯率部分：昨收價 × 股數 × (今日匯率 − 基準匯率)  ← 美股才有，台股 pRate=pBaseRate=1 自動為0
+  const dayPnlPrice = p.change*h.shares*pRate;
+  const prevClosePrice = (p.prevClose!=null ? p.prevClose : p.price);
+  const dayPnlFx = isUSD ? prevClosePrice*h.shares*(pRate-pBaseRate) : 0;
+  const dayPnl = dayPnlPrice + dayPnlFx;
+  return{mktVal,cost:costTwd,pnl,pnlPct,curPrice:p.price,change:p.change,changePct:p.changePct,dayPnl,dayPnlFx};
 }
 function calcPortSnap(pid){
   const hs=getHoldings(pid);
@@ -2632,17 +2648,17 @@ function renderBanner(){
   document.getElementById('totalVal').textContent=fmPrivate(s.total);
   document.getElementById('totalSub').innerHTML=_privacyOn?`成本 ****　損益 <span style="color:${s.pnl>=0?'var(--gain)':'var(--loss)'}">**** (${fp(s.pnlPct)})</span>`:`成本 ${fm(s.cost)}　損益 <span style="color:${s.pnl>=0?'var(--gain)':'var(--loss)'}">${s.pnl>=0?'+':''}${fm(s.pnl)} (${fp(s.pnlPct)})</span>`;
   document.getElementById('bmDay').innerHTML=`<span style="color:${s.dayPnl>=0?'var(--gain)':'var(--loss)'}">${ _privacyOn?'****':(s.dayPnl>=0?'+':'')+fm(s.dayPnl)}</span>`;
-  // 總資產今日%：用計入總資產組合的個股加權漲跌%
+  // 總資產今日%：用今日損益金額(已含匯率變動) ÷ 今日開盤前市值
   const inclPortIds = DB.portfolios.filter(p=>p.included).map(p=>p.id);
   const allInclHs = inclPortIds.flatMap(pid=>getHoldings(pid));
-  const allInclMkt = allInclHs.reduce((s,h)=>s+calcHV(h).mktVal,0);
-  let dayPnlPct = 0;
-  if(allInclMkt>0){
-    allInclHs.forEach(h=>{
-      const hv=calcHV(h); const pr=prices[h.ticker];
-      if(pr&&pr.changePct!=null) dayPnlPct += (hv.mktVal/allInclMkt)*pr.changePct;
-    });
-  }
+  let totalDayPnl = 0, basisMkt = 0;
+  allInclHs.forEach(h=>{
+    const hv = calcHV(h);
+    totalDayPnl += hv.dayPnl || 0;
+    // 今日開盤前市值 = 現市值 − 今日損益（把今天的變動扣掉，還原到開盤前）
+    basisMkt += (hv.mktVal - (hv.dayPnl||0));
+  });
+  const dayPnlPct = basisMkt>0 ? (totalDayPnl/basisMkt*100) : 0;
   document.getElementById('bmTotal').innerHTML=`<span style="color:${dayPnlPct>=0?'var(--gain)':'var(--loss)'}">${fp(dayPnlPct)}</span>`;
   document.getElementById('bmRealized').innerHTML=`<span style="color:${s.realizedTotal>=0?'var(--gain)':'var(--loss)'}">${_privacyOn?'****':fm(s.realizedTotal)}</span>`;
   document.getElementById('bmPortCount').textContent=`${DB.portfolios.filter(p=>p.included).length}/${DB.portfolios.length}`;
@@ -2692,7 +2708,7 @@ function buildPortCard(p){
         <div style="margin-top:6px;color:var(--text3);font-size:10px">${hs.length} 檔</div>
         <div class="card-today-pnl" style="color:${v.dayPnl>=0?'var(--gain)':'var(--loss)'}">
           ${_privacyOn?'****':(v.dayPnl>=0?'+':'')+fm(v.dayPnl)}
-          <span style="font-size:13px;font-weight:700;margin-left:4px">(${fp(calcPeriodReturn(p.id,1)??0)})</span>
+          <span style="font-size:13px;font-weight:700;margin-left:4px">(${fp((v.total-v.dayPnl)>0?(v.dayPnl/(v.total-v.dayPnl)*100):0)})</span>
         </div>
       </div>
       <div>
