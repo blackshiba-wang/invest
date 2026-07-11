@@ -767,6 +767,11 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
     <div class="frow"><label class="flbl">Firebase Database URL</label><input class="finput" id="sFbUrl" placeholder="https://xxx-default-rtdb.firebaseio.com"></div>
     <div class="half-grid">
       <div class="frow"><label class="flbl">USD/TWD 匯率</label><input type="number" class="finput" id="sRate" placeholder="32" step="0.01"></div>
+      <div class="frow" style="flex-direction:column;align-items:stretch;gap:6px">
+        <label class="flbl">颱風假 / 臨時休市</label>
+        <button class="btn btn-ghost btn-sm" id="holidayToggleBtn" onclick="toggleManualHoliday()" style="text-align:left">📅 標記今日台股休市</button>
+        <div style="font-size:10px;color:var(--text3);line-height:1.5">颱風假等平日臨時休市時，點一下讓台股今日漲跌歸零（週末會自動歸零，不需手動）。只對當天有效，隔天自動失效。</div>
+      </div>
       <div class="frow"><label class="flbl">顯示幣別</label><select class="fselect" id="sCur"><option value="TWD">台幣 TWD</option><option value="USD">美元 USD</option></select></div>
     </div>
     <hr style="border-color:var(--border);margin:14px 0">
@@ -1151,11 +1156,15 @@ function updateFxBadge(rate){
 // ── CALC ──────────────────────────────────────────────────────
 function getRate(c){return c==='USD'?DB.settings.usdRate||32:1;}
 function getBaseRate(c){return c==='USD'?(DB.settings.fxBaseRate||DB.settings.usdRate||32):1;}
-// 判斷某標的今天是否「未開盤」：即時價 == 昨收價（一毛沒差）→ 視為休市，漲跌殘留應歸零
-function isMarketClosed(p){
-  if(!p || p.prevClose==null) return false;
-  // 價格與昨收完全相同（容許極小浮點誤差），代表今天沒有成交、市場沒動
-  return Math.abs(p.price - p.prevClose) < 0.0001;
+// 判斷「台股今日是否休市」：週末，或使用者手動標記颱風假(當天)
+function isTwMarketClosedToday(){
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun, 6=Sat
+  if(day===0 || day===6) return true; // 週末
+  // 手動標記的颱風假(存當天日期，只對當天有效)
+  const today = now.toISOString().slice(0,10);
+  if(DB.settings.manualHolidayDate === today) return true;
+  return false;
 }
 function calcHV(h){
   const p=prices[h.ticker];
@@ -1163,15 +1172,16 @@ function calcHV(h){
   const costTwd=h.totalCost*rate;
   if(!p)return{mktVal:costTwd,cost:costTwd,pnl:0,pnlPct:0,curPrice:h.cost,change:0,changePct:0,dayPnl:0};
   const isUSD=(p.currency||h.currency)==='USD';
+  const isTW=!isUSD; // 台股(含上市上櫃)
   const pRate=getRate(p.currency||h.currency);       // 今日匯率
   const pBaseRate=getBaseRate(p.currency||h.currency); // 今日基準匯率(開盤前)
   const mktVal=p.price*h.shares*pRate;
   const pnl=mktVal-costTwd;
   const pnlPct=costTwd>0?(pnl/costTwd)*100:0;
-  // 非交易日（颱風假/週末等）：股價未動 → 今日漲跌強制歸零，避免殘留舊數字
-  const closed = isMarketClosed(p);
-  const effChange   = closed ? 0 : p.change;
-  const effChangePct= closed ? 0 : p.changePct;
+  // 台股非交易日(週末/颱風假)：今日漲跌強制歸零，避免 GOOGLEFINANCE 殘留舊數字
+  const twClosed = isTW && isTwMarketClosedToday();
+  const effChange   = twClosed ? 0 : p.change;
+  const effChangePct= twClosed ? 0 : p.changePct;
   // 今日損益 = 股價漲跌換台幣 + 匯率變動造成的台幣市值增減(僅美股)
   const dayPnlPrice = effChange*h.shares*pRate;
   const prevClosePrice = (p.prevClose!=null ? p.prevClose : p.price);
@@ -2030,13 +2040,33 @@ function renderCalendarHeatmap(){
 }
 
 
-// ── 非交易日偵測（週末提示）──────────────────────────────────
+// ── 手動標記今日颱風假 ────────────────────────────────────────
+function toggleManualHoliday(){
+  const today = new Date().toISOString().slice(0,10);
+  if(DB.settings.manualHolidayDate === today){
+    DB.settings.manualHolidayDate = null; // 取消
+  } else {
+    DB.settings.manualHolidayDate = today; // 標記今日
+  }
+  saveDB();
+  updateHolidayBtn();
+  checkNonTradingDay();
+  renderAll();
+}
+function updateHolidayBtn(){
+  const btn = document.getElementById('holidayToggleBtn');
+  if(!btn) return;
+  const today = new Date().toISOString().slice(0,10);
+  const on = DB.settings.manualHolidayDate === today;
+  btn.textContent = on ? '✅ 今日已標記休市（點此取消）' : '📅 標記今日台股休市';
+  btn.style.color = on ? 'var(--green)' : '';
+}
+
+// ── 非交易日偵測（週末 + 手動颱風假）────────────────────────────
 function checkNonTradingDay(){
-  const now = new Date();
-  const day = now.getDay(); // 0=Sun, 6=Sat
   const badge = document.getElementById('nonTradingBadge');
   if(!badge) return;
-  badge.style.display = (day===0 || day===6) ? 'inline-block' : 'none';
+  badge.style.display = isTwMarketClosedToday() ? 'inline-block' : 'none';
 }
 
 // ── 月份報酬圖 ────────────────────────────────────────────────
@@ -3378,6 +3408,7 @@ function openSettings(){
   document.getElementById('sFbUrl').value=DB.settings.firebaseUrl||'';
   document.getElementById('sRate').value=DB.settings.usdRate||32;
   document.getElementById('sCur').value=DB.settings.displayCurrency||'TWD';
+  updateHolidayBtn();
   populateHistDateSelect();
   openModal('settingsModal');
 }
