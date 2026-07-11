@@ -1151,6 +1151,12 @@ function updateFxBadge(rate){
 // ── CALC ──────────────────────────────────────────────────────
 function getRate(c){return c==='USD'?DB.settings.usdRate||32:1;}
 function getBaseRate(c){return c==='USD'?(DB.settings.fxBaseRate||DB.settings.usdRate||32):1;}
+// 判斷某標的今天是否「未開盤」：即時價 == 昨收價（一毛沒差）→ 視為休市，漲跌殘留應歸零
+function isMarketClosed(p){
+  if(!p || p.prevClose==null) return false;
+  // 價格與昨收完全相同（容許極小浮點誤差），代表今天沒有成交、市場沒動
+  return Math.abs(p.price - p.prevClose) < 0.0001;
+}
 function calcHV(h){
   const p=prices[h.ticker];
   const rate=getRate(h.currency);
@@ -1162,14 +1168,16 @@ function calcHV(h){
   const mktVal=p.price*h.shares*pRate;
   const pnl=mktVal-costTwd;
   const pnlPct=costTwd>0?(pnl/costTwd)*100:0;
+  // 非交易日（颱風假/週末等）：股價未動 → 今日漲跌強制歸零，避免殘留舊數字
+  const closed = isMarketClosed(p);
+  const effChange   = closed ? 0 : p.change;
+  const effChangePct= closed ? 0 : p.changePct;
   // 今日損益 = 股價漲跌換台幣 + 匯率變動造成的台幣市值增減(僅美股)
-  //   股價部分：p.change × 股數 × 今日匯率
-  //   匯率部分：昨收價 × 股數 × (今日匯率 − 基準匯率)  ← 美股才有，台股 pRate=pBaseRate=1 自動為0
-  const dayPnlPrice = p.change*h.shares*pRate;
+  const dayPnlPrice = effChange*h.shares*pRate;
   const prevClosePrice = (p.prevClose!=null ? p.prevClose : p.price);
   const dayPnlFx = isUSD ? prevClosePrice*h.shares*(pRate-pBaseRate) : 0;
   const dayPnl = dayPnlPrice + dayPnlFx;
-  return{mktVal,cost:costTwd,pnl,pnlPct,curPrice:p.price,change:p.change,changePct:p.changePct,dayPnl,dayPnlFx};
+  return{mktVal,cost:costTwd,pnl,pnlPct,curPrice:p.price,change:effChange,changePct:effChangePct,dayPnl,dayPnlFx};
 }
 function calcPortSnap(pid){
   const hs=getHoldings(pid);
