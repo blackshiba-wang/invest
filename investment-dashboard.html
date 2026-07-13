@@ -783,7 +783,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
       </div>
       <div style="font-size:10px;color:var(--text3);margin-top:4px">每天按「更新」會自動記錄當日總資產快照。若某天數字異常，可在此刪除該筆，圖表會自動跳過。</div>
     </div>
-    <div class="frow"><button class="btn btn-danger btn-sm" onclick="if(confirm('確定清除全部資料？'))clearAll()">清除全部資料</button></div>
+    
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeModal('settingsModal')">取消</button>
       <button class="btn btn-primary" onclick="saveSettings()">儲存</button>
@@ -3451,6 +3451,12 @@ function saveSettings(){
   showStatus('設定已儲存 ✓',2000);
 }
 function clearAll(){
+  // 雙重防護：必須手動輸入「刪除」兩字才會執行，避免誤觸
+  const ans = prompt('⚠️ 這會清空本機所有資料！\n\n若確定要清除，請在下方輸入「刪除」兩個字：');
+  if(ans !== '刪除'){
+    showStatus('已取消，資料未清除', 2000);
+    return;
+  }
   DB={portfolios:[{id:'A',name:'台股組合',market:'TW',included:true,color:'#00e5a0',targets:{}},{id:'B',name:'美股組合',market:'US',included:true,color:'#5b8ff9',targets:{}}],trades:[],history:{},realized:{},settings:{usdRate:32,displayCurrency:'TWD',firebaseUrl:''}};
   localStorage.removeItem('inv_dashboard');closeModal('settingsModal');renderAll();
   showStatus('已清除所有資料',2000);
@@ -3518,7 +3524,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   } else {
     renderAll();
   }
-  setInterval(()=>{ if(DB.trades.length) refreshAll(); }, 5*60*1000);
+  // 已移除「每5分鐘自動更新」：股價只在使用者手動按「更新」時抓取，
+  // 讓快照時間點完全由使用者掌控，維持每日基準一致。
 });
 </script>
 </body>
