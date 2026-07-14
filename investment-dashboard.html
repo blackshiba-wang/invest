@@ -1275,7 +1275,7 @@ const DEFAULT_COLS = ['ticker','shares','totalCost','price','dayPct','mktVal','p
 const ALL_COLS = [
   {id:'ticker',    label:'代號',      render:(h,t)=>`<td><span class="ticker">${h.ticker}</span><span class="age-pill">${ageLabel(h.lots?.[0]?.date||'')}</span><div style="font-size:9px;color:var(--text3)">${(prices[h.ticker]?.name||h.name||'')}</div></td>`},
   {id:'shares',    label:'股數',      render:(h)=>`<td>${h.shares.toFixed(2)}</td>`},
-  {id:'totalCost', label:'總成本',    render:(h)=>`<td>${fm(h.totalCost)}</td>`},
+  {id:'totalCost', label:'總成本',    render:(h)=>`<td>${fm(h.hv?h.hv.cost:h.totalCost)}</td>`},
   {id:'avgCost',   label:'均成本/股', render:(h)=>`<td>${h.cost.toFixed(2)}</td>`},
   {id:'price',     label:'現價',      render:(h)=>`<td>${prices[h.ticker]?prices[h.ticker].price.toFixed(2):'--'}</td>`},
   {id:'dayPct',    label:'今日%',     render:(h)=>`<td style="color:${h.hv.changePct>=0?'var(--gain)':'var(--loss)'}">${prices[h.ticker]?fp(h.hv.changePct):'--'}</td>`},
