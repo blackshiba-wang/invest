@@ -783,6 +783,16 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
       </div>
       <div style="font-size:10px;color:var(--text3);margin-top:4px">每天按「更新」會自動記錄當日總資產快照。若某天數字異常，可在此刪除該筆，圖表會自動跳過。</div>
     </div>
+
+    <div class="frow" style="flex-direction:column;align-items:stretch;gap:6px">
+      <label class="flbl">💾 資料備份與還原</label>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-primary" onclick="exportBackup()" style="flex:1">⬇️ 匯出備份</button>
+        <button class="btn btn-sm btn-ghost" onclick="document.getElementById('restoreFileInput').click()" style="flex:1">⬆️ 還原備份</button>
+      </div>
+      <input type="file" id="restoreFileInput" accept=".json" style="display:none" onchange="restoreBackup(event)">
+      <div style="font-size:10px;color:var(--text3);line-height:1.5">「匯出備份」會把全部資料（交易、組合、快照、設定）存成一個檔案下載到電腦，建議每週備份一次。萬一資料遺失，用「還原備份」選擇該檔即可完整救回。備份檔存在你自己電腦，是獨立的第三份保險。</div>
+    </div>
     
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeModal('settingsModal')">取消</button>
@@ -3411,6 +3421,62 @@ function openSettings(){
   updateHolidayBtn();
   populateHistDateSelect();
   openModal('settingsModal');
+}
+
+// ── 資料備份與還原 ────────────────────────────────────────────
+function exportBackup(){
+  try{
+    const backup = {
+      _backupVersion: 1,
+      _exportedAt: new Date().toISOString(),
+      data: DB
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `投資看板備份_${dateStr}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showStatus('✅ 備份已下載，請妥善保存', 3000);
+  }catch(e){
+    showStatus('備份失敗：' + e.message, 3000);
+  }
+}
+
+function restoreBackup(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const parsed = JSON.parse(e.target.result);
+      // 相容兩種格式：{_backupVersion,data:DB} 或直接就是 DB
+      const restored = parsed.data || parsed;
+      if(!restored.portfolios || !Array.isArray(restored.portfolios)){
+        showStatus('❌ 檔案格式不正確，不是有效的備份', 3000);
+        return;
+      }
+      const tradeCount = (restored.trades||[]).length;
+      const snapCount = Object.keys(restored.history?.total||{}).length;
+      const ok = confirm(`確定要還原這份備份嗎？\n\n備份內容：${restored.portfolios.length} 個組合、${tradeCount} 筆交易、${snapCount} 天快照\n\n這會覆蓋目前的所有資料。`);
+      if(!ok) return;
+      DB = restored;
+      // 補齊可能缺少的欄位，避免舊備份缺欄位出錯
+      if(!DB.history) DB.history = {};
+      if(!DB.histTickers) DB.histTickers = {};
+      if(!DB.settings) DB.settings = {usdRate:32, displayCurrency:'TWD', firebaseUrl:''};
+      saveDB();
+      closeModal('settingsModal');
+      renderAll();
+      showStatus('✅ 資料已還原成功', 3000);
+    }catch(err){
+      showStatus('❌ 還原失敗：檔案可能損壞或格式錯誤', 3000);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = ''; // 清空，允許同一檔案再次選擇
 }
 
 // ── 歷史快照管理 ──────────────────────────────────────────────
