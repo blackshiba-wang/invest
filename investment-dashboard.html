@@ -6,6 +6,7 @@
 <title>投資觀測面板</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   --bg:#0d0f1a;--bg2:#13162a;--bg3:#1a1e35;--card:#181c30;
@@ -782,6 +783,13 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
         <button class="btn btn-sm btn-danger" onclick="deleteHistorySnapshot()">刪除該日</button>
       </div>
       <div style="font-size:10px;color:var(--text3);margin-top:4px">每天按「更新」會自動記錄當日總資產快照。若某天數字異常，可在此刪除該筆，圖表會自動跳過。</div>
+    </div>
+
+    <div class="frow" style="flex-direction:column;align-items:stretch;gap:6px">
+      <label class="flbl">📥 補登歷史快照（Excel匯入）</label>
+      <button class="btn btn-sm btn-primary" onclick="document.getElementById('histImportFileInput').click()">📥 選擇Excel匯入</button>
+      <input type="file" id="histImportFileInput" accept=".xlsx,.xls" style="display:none" onchange="importHistorySnapshotExcel(event)">
+      <div style="font-size:10px;color:var(--text3);line-height:1.5">依範本Excel（分頁名稱需為「歷史快照」）匯入過去日期的各組合總市值。<b>只會新增資料、絕不刪除或覆蓋既有快照與組合</b>；若某日期某組合已有資料，會自動跳過該筆並在結果中列出，匯入前也會先給你看預覽再確認。</div>
     </div>
 
     <div class="frow" style="flex-direction:column;align-items:stretch;gap:6px">
@@ -3503,6 +3511,117 @@ function restoreBackup(event){
   };
   reader.readAsText(file);
   event.target.value = ''; // 清空，允許同一檔案再次選擇
+}
+
+// ── 補登歷史快照（Excel匯入）─────────────────────────────────
+// 【資料保護鐵律】此功能只允許「新增」DB.history 裡尚不存在的日期/組合資料，
+// 絕不覆蓋既有數字、絕不刪除任何資料、完全不觸碰 DB.portfolios（不會動到C/D組合本身）。
+const HIST_IMPORT_COL_MAP = { 'A_台股組合':'A', 'B_美股組合':'B', 'C_媽媽AI':'C', 'D_爸爸AI':'D' };
+const HIST_IMPORT_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function importHistorySnapshotExcel(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const sheetName = wb.SheetNames.includes('歷史快照') ? '歷史快照' : wb.SheetNames[wb.SheetNames.length-1];
+      const sheet = wb.Sheets[sheetName];
+      if(!sheet){ showStatus('❌ 找不到「歷史快照」分頁，請使用範本檔', 3500); event.target.value=''; return; }
+      const rows = XLSX.utils.sheet_to_json(sheet, {defval:null});
+
+      // 第一步：只解析、不寫入 DB，先組出「本次要新增」與「已存在故跳過」清單
+      const toAdd = {};      // {date: {pid: value}}
+      const skipped = [];    // 描述文字
+      const invalidRows = [];
+      let parsedDateCount = 0;
+
+      rows.forEach((row, idx)=>{
+        let dateVal = row['日期(YYYY-MM-DD)'] ?? row['日期'];
+        if(dateVal === null || dateVal === undefined || dateVal === '') return; // 空列跳過
+        // Excel 日期可能被讀成 Date 物件或序號，統一轉成 YYYY-MM-DD 字串
+        let dateStr = null;
+        if(dateVal instanceof Date){
+          dateStr = dateVal.toISOString().slice(0,10);
+        } else if(typeof dateVal === 'number'){
+          const d = XLSX.SSF.parse_date_code(dateVal);
+          if(d) dateStr = `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+        } else {
+          dateStr = String(dateVal).trim();
+        }
+        if(!dateStr || !HIST_IMPORT_DATE_RE.test(dateStr)){
+          invalidRows.push(`第${idx+2}列：日期格式不正確（${dateVal}）`);
+          return;
+        }
+        parsedDateCount++;
+        Object.keys(HIST_IMPORT_COL_MAP).forEach(col=>{
+          const pid = HIST_IMPORT_COL_MAP[col];
+          const raw = row[col];
+          if(raw === null || raw === undefined || raw === '') return; // 留空 = 不匯入該組合該日
+          const num = Number(raw);
+          if(isNaN(num)){ invalidRows.push(`第${idx+2}列：${col} 不是數字（${raw}）`); return; }
+          // 【只增不覆蓋】若該日該組合已有快照，一律跳過，絕不覆蓋
+          if(DB.history?.[pid]?.[dateStr] !== undefined){
+            skipped.push(`${dateStr} ${col}（已存在，未覆蓋）`);
+            return;
+          }
+          if(!toAdd[dateStr]) toAdd[dateStr] = {};
+          toAdd[dateStr][pid] = num;
+        });
+      });
+
+      const addDates = Object.keys(toAdd).sort();
+      if(addDates.length === 0){
+        let msg = '沒有可新增的資料。';
+        if(skipped.length) msg += `\n\n以下日期/組合已存在，未變動：\n${skipped.slice(0,15).join('\n')}${skipped.length>15?`\n...等共${skipped.length}筆`:''}`;
+        if(invalidRows.length) msg += `\n\n以下列有格式問題：\n${invalidRows.slice(0,10).join('\n')}`;
+        alert(msg);
+        event.target.value=''; return;
+      }
+
+      let addedTotalCount = 0;
+      const previewLines = addDates.map(d=>{
+        const cols = Object.keys(toAdd[d]).map(pid=>`${pid}=${toAdd[d][pid].toLocaleString()}`).join('、');
+        addedTotalCount += Object.keys(toAdd[d]).length;
+        return `${d}：${cols}`;
+      });
+      let confirmMsg = `即將新增 ${addDates.length} 個日期、共 ${addedTotalCount} 筆組合快照：\n\n${previewLines.slice(0,20).join('\n')}${previewLines.length>20?`\n...等共${previewLines.length}個日期`:''}`;
+      if(skipped.length) confirmMsg += `\n\n（另有 ${skipped.length} 筆日期/組合因已存在既有資料，將自動跳過不覆蓋）`;
+      if(invalidRows.length) confirmMsg += `\n\n（另有 ${invalidRows.length} 列格式有誤，已略過，不影響其他資料）`;
+      confirmMsg += `\n\n確定要匯入嗎？此動作只會新增，不會刪除或覆蓋任何既有資料。`;
+      const ok = confirm(confirmMsg);
+      if(!ok){ event.target.value=''; return; }
+
+      // 第二步：確認後才真正寫入 DB.history（絕不動 DB.portfolios）
+      if(!DB.history) DB.history = {};
+      addDates.forEach(d=>{
+        Object.keys(toAdd[d]).forEach(pid=>{
+          if(!DB.history[pid]) DB.history[pid] = {};
+          DB.history[pid][d] = toAdd[d][pid];
+        });
+        // 只有當 A、B（計入總資產的組合）當天都有值、且 total 尚未存在時，才補算 total
+        if(!DB.history.total) DB.history.total = {};
+        if(DB.history.total[d] === undefined){
+          const includedIds = DB.portfolios.filter(p=>p.included).map(p=>p.id);
+          const allHave = includedIds.every(pid => DB.history[pid]?.[d] !== undefined);
+          if(allHave){
+            DB.history.total[d] = includedIds.reduce((s,pid)=>s + DB.history[pid][d], 0);
+          }
+        }
+      });
+
+      saveDB();
+      populateHistDateSelect();
+      renderAll();
+      showStatus(`✅ 已新增 ${addDates.length} 個日期的歷史快照`, 3500);
+    }catch(err){
+      showStatus('❌ 匯入失敗：檔案可能損壞或格式不符範本', 3500);
+      console.warn('importHistorySnapshotExcel error', err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  event.target.value = '';
 }
 
 // ── 歷史快照管理 ──────────────────────────────────────────────
