@@ -1233,8 +1233,9 @@ function calcPeriodReturn(pid,days){
     hs.forEach(h=>{
       const hv=calcHV(h);
       const pr=prices[h.ticker];
-      if(pr&&pr.changePct!=null){
-        weighted += (hv.mktVal/totalMkt) * pr.changePct;
+      // 用 calcHV 回傳的 changePct（已做休市歸零判斷），不可直接用 prices 原始值
+      if(pr && hv.changePct!=null){
+        weighted += (hv.mktVal/totalMkt) * hv.changePct;
         hasPrice=true;
       }
     });
