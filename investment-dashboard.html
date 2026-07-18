@@ -833,10 +833,18 @@ var _editTargetPortId = null;
 
 // ── STORAGE ──────────────────────────────────────────────────
 var _fbLoading = false;
+// 【資料保護】只有「成功從 Firebase 讀取過」之後，才允許寫入雲端。
+// 避免本機空白/讀取失敗時，用錯誤資料覆蓋雲端正本。
+var _fbLoadedOk = false;
 
 function saveDB(){
   try{ localStorage.setItem('inv_dashboard', JSON.stringify(DB)); }catch(e){}
-  if(DB.settings.firebaseUrl) fbSave();
+  if(!DB.settings.firebaseUrl) return;          // 未設定雲端 → 只存本機
+  if(!_fbLoadedOk){                              // 【保護鎖】尚未成功讀取雲端 → 禁止寫入
+    console.warn('[資料保護] 尚未成功從 Firebase 讀取，暫不寫入雲端，避免覆蓋正本');
+    return;
+  }
+  fbSave();
 }
 
 function loadDB(){
@@ -851,7 +859,12 @@ function loadDB(){
         if(d.history) DB.history = d.history;
         if(d.histTickers) DB.histTickers = d.histTickers;
         if(d.realized) DB.realized = d.realized;
-        if(d.settings) DB.settings = Object.assign(DB.settings, d.settings);
+        if(d.settings){
+          // 【保護】Firebase 網址一律以本機為準，不可被雲端的空值洗掉
+          const _localUrl = DB.settings.firebaseUrl;
+          DB.settings = Object.assign(DB.settings, d.settings);
+          if(_localUrl) DB.settings.firebaseUrl = _localUrl;
+        }
         if(key !== 'inv_dashboard'){
           localStorage.setItem('inv_dashboard', JSON.stringify(DB));
           localStorage.removeItem(key);
@@ -903,6 +916,7 @@ async function fbLoad(){
   try{
     const r = await fetch(DB.settings.firebaseUrl+'/data.json');
     if(r.ok){
+      _fbLoadedOk = true;   // 【解鎖】確認能正常連上並讀取雲端，之後才允許寫入
       const raw = await r.json();
       // 支援新格式（包在 d 欄位）和舊格式（直接存）
       const d = raw?.d ? JSON.parse(raw.d) : raw;
@@ -935,7 +949,12 @@ async function fbLoad(){
         if(d.history) DB.history = d.history;
         if(d.histTickers) DB.histTickers = d.histTickers;
         if(d.realized) DB.realized = d.realized;
-        if(d.settings) DB.settings = Object.assign(DB.settings, d.settings);
+        if(d.settings){
+          // 【保護】Firebase 網址一律以本機為準，不可被雲端的空值洗掉
+          const _localUrl = DB.settings.firebaseUrl;
+          DB.settings = Object.assign(DB.settings, d.settings);
+          if(_localUrl) DB.settings.firebaseUrl = _localUrl;
+        }
         if(d.colConfig) DB.colConfig = d.colConfig;
         // 同步回 localStorage
         localStorage.setItem('inv_dashboard', JSON.stringify(DB));
@@ -1239,7 +1258,10 @@ function calcPeriodReturn(pid,days){
         hasPrice=true;
       }
     });
-    return hasPrice ? weighted : null;
+    if(hasPrice) return weighted;
+    // 台股休市日即使無即時報價，今日報酬本就是 0，顯示 0% 比 '--' 明確
+    if(isTwMarketClosedToday()) return 0;
+    return null;
   }
   // 其他期間：用歷史快照計算，並扣除期間新增買入成本
   const hist=DB.history?.[pid];
@@ -3463,11 +3485,14 @@ function restoreBackup(event){
       const snapCount = Object.keys(restored.history?.total||{}).length;
       const ok = confirm(`確定要還原這份備份嗎？\n\n備份內容：${restored.portfolios.length} 個組合、${tradeCount} 筆交易、${snapCount} 天快照\n\n這會覆蓋目前的所有資料。`);
       if(!ok) return;
+      // 【保護】保留目前正在使用的 Firebase 網址，不被備份檔的舊值/空值覆蓋
+      const _keepUrl = DB.settings?.firebaseUrl || '';
       DB = restored;
       // 補齊可能缺少的欄位，避免舊備份缺欄位出錯
       if(!DB.history) DB.history = {};
       if(!DB.histTickers) DB.histTickers = {};
       if(!DB.settings) DB.settings = {usdRate:32, displayCurrency:'TWD', firebaseUrl:''};
+      if(_keepUrl) DB.settings.firebaseUrl = _keepUrl;
       saveDB();
       closeModal('settingsModal');
       renderAll();
