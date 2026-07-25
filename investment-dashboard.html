@@ -826,7 +826,7 @@ var DB = {
   history: {},
   histTickers: {},
   realized: {},
-  settings: {usdRate:32, displayCurrency:'TWD', firebaseUrl:''}
+  settings: {usdRate:32, displayCurrency:'TWD', firebaseUrl:'https://invest-23f8e-default-rtdb.firebaseio.com'}
 };
 var prices = {};
 // 開啟時先載入上次快取的股價，避免顯示成本價（差距過大）
@@ -868,10 +868,11 @@ function loadDB(){
         if(d.histTickers) DB.histTickers = d.histTickers;
         if(d.realized) DB.realized = d.realized;
         if(d.settings){
-          // 【保護】Firebase 網址一律以本機為準，不可被雲端的空值洗掉
+          // 【保護】Firebase 網址：只有本機存的是空值時，才用目前的預設/舊值頂上；
+          // 若本機明確存了一個網址（不論是不是跟預設一樣），一律以本機實際存的為準。
           const _localUrl = DB.settings.firebaseUrl;
           DB.settings = Object.assign(DB.settings, d.settings);
-          if(_localUrl) DB.settings.firebaseUrl = _localUrl;
+          if(_localUrl && !DB.settings.firebaseUrl) DB.settings.firebaseUrl = _localUrl;
         }
         if(key !== 'inv_dashboard'){
           localStorage.setItem('inv_dashboard', JSON.stringify(DB));
@@ -958,10 +959,11 @@ async function fbLoad(){
         if(d.histTickers) DB.histTickers = d.histTickers;
         if(d.realized) DB.realized = d.realized;
         if(d.settings){
-          // 【保護】Firebase 網址一律以本機為準，不可被雲端的空值洗掉
+          // 【保護】Firebase 網址：只有雲端資料裡沒存網址（空值）時，才用目前連線的網址頂上，
+          // 避免被雲端的空值洗掉；若雲端明確存了網址，一律信任雲端這筆（代表使用者曾主動更換過）。
           const _localUrl = DB.settings.firebaseUrl;
           DB.settings = Object.assign(DB.settings, d.settings);
-          if(_localUrl) DB.settings.firebaseUrl = _localUrl;
+          if(_localUrl && !DB.settings.firebaseUrl) DB.settings.firebaseUrl = _localUrl;
         }
         if(d.colConfig) DB.colConfig = d.colConfig;
         // 同步回 localStorage
@@ -3668,7 +3670,7 @@ function clearAll(){
     showStatus('已取消，資料未清除', 2000);
     return;
   }
-  DB={portfolios:[{id:'A',name:'台股組合',market:'TW',included:true,color:'#00e5a0',targets:{}},{id:'B',name:'美股組合',market:'US',included:true,color:'#5b8ff9',targets:{}}],trades:[],history:{},realized:{},settings:{usdRate:32,displayCurrency:'TWD',firebaseUrl:''}};
+  DB={portfolios:[{id:'A',name:'台股組合',market:'TW',included:true,color:'#00e5a0',targets:{}},{id:'B',name:'美股組合',market:'US',included:true,color:'#5b8ff9',targets:{}}],trades:[],history:{},realized:{},settings:{usdRate:32,displayCurrency:'TWD',firebaseUrl:'https://invest-23f8e-default-rtdb.firebaseio.com'}};
   localStorage.removeItem('inv_dashboard');closeModal('settingsModal');renderAll();
   showStatus('已清除所有資料',2000);
 }
