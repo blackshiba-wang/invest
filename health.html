@@ -203,7 +203,8 @@ table.summary tr:hover td{background:#fafafa;}
 </div>
 
 <div class="year-nav">
-  <div class="year-tab sep active" onclick="showPage('summary',this)">📊 歷年總表</div>
+  <div class="year-tab sep active" onclick="showPage('highlights',this)">🧭 健康總結</div>
+  <div class="year-tab sep" onclick="showPage('summary',this)">📊 歷年總表</div>
   <div class="year-tab sep" onclick="showPage('trend',this)">📈 重要指標趨勢</div>
   <div class="year-tab sep" onclick="showPage('abdomen',this)">🫀 腹部超音波追蹤</div>
   <div class="year-tab sep" onclick="showPage('heart',this)">❤️ 心臟健康</div>
@@ -343,7 +344,53 @@ table.summary tr:hover td{background:#fafafa;}
 <!-- ══════════ SCREEN PAGES ══════════ -->
 
 <!-- 歷年總表 -->
-<div id="page-summary" class="page active">
+<!-- 健康總結 -->
+<div id="page-highlights" class="page active">
+<div class="container">
+
+  <div class="sec-title">最近三次健康檢查的變化</div>
+  <div style="background:#fff;border-radius:12px;padding:1.3rem 1.5rem;font-size:14px;line-height:2.1;margin-bottom:1.2rem;">
+    公子這一年的健康軌跡，可以用「先亮紅燈、再急速修正」來形容。<br><br>
+    <strong>2025年</strong>健檢時，LDL 135、總膽固醇 205，已經開始超標，但當時體重、腰圍都還沒認真處理，HbA1c也尚未列入追蹤。<br>
+    <strong>2026/05</strong>（敏盛健檢）情況一度惡化到今年的高點——LDL衝上 152、HbA1c 5.9%（糖尿病前期）、總膽固醇205、腰圍97cm、體重75.5kg，是這幾年數值最不理想的一次，同時也是輕中度脂肪肝、CAC冠狀動脈鈣化7分等多項發現首次浮現的一次。<br>
+    <strong>2026/08</strong>（長庚追蹤＋開始服用立普妥）情況大幅翻轉——LDL降到128、HbA1c回歸正常5.4%、總膽固醇回到196、HDL提升到64，同期體重也降到67.5kg、腰圍92cm。<br><br>
+    這半年不是線性進步，而是「先觸底、再靠生活習慣＋藥物雙管齊下拉回來」的過程，10/02回診會是驗收這波修正成果最關鍵的一次。
+  </div>
+
+  <div class="sec-title">關鍵指標三次對比</div>
+  <div class="summary-wrap" style="margin-bottom:1.2rem;">
+    <table class="summary">
+      <thead><tr><th style="min-width:140px;">項目</th><th>2025</th><th>2026/05</th><th>2026/08</th><th>變化</th></tr></thead>
+      <tbody>
+        <tr><td><strong>LDL</strong></td><td>135</td><td>152</td><td>128</td><td style="color:#1e8449;">▼ 已開始服藥</td></tr>
+        <tr><td><strong>總膽固醇</strong></td><td>205</td><td>205</td><td>196</td><td style="color:#1e8449;">▼ 回歸正常</td></tr>
+        <tr><td><strong>HDL</strong></td><td>55</td><td>51</td><td>64</td><td style="color:#1e8449;">▲ 保護力增強</td></tr>
+        <tr><td><strong>HbA1c</strong></td><td>—</td><td>5.9%</td><td>5.4%</td><td style="color:#1e8449;">▼ 脫離糖尿病前期</td></tr>
+        <tr><td><strong>三酸甘油脂</strong></td><td>68</td><td>47</td><td>60</td><td style="color:#888;">持平，皆優良</td></tr>
+        <tr><td><strong>體重(kg)</strong></td><td>—</td><td>75.5</td><td>67.5</td><td style="color:#1e8449;">▼ −8kg</td></tr>
+        <tr><td><strong>腰圍(cm)</strong></td><td>—</td><td>97</td><td>92</td><td style="color:#1e8449;">▼ −5cm</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sec-title">三次檢查對比圖</div>
+  <div class="charts-grid">
+    <div class="chart-box"><h3>血脂三次對比</h3><div style="position:relative;height:260px;"><canvas id="hl-lipid"></canvas></div></div>
+    <div class="chart-box"><h3>HbA1c／體重 三次對比</h3><div style="position:relative;height:260px;"><canvas id="hl-metabolic"></canvas></div></div>
+  </div>
+
+  <div class="sec-title">十年資料回顧：這幾項值得留意</div>
+  <div style="background:#fffaf0;border-left:5px solid #f39c12;border-radius:10px;padding:1.2rem 1.4rem;font-size:13px;line-height:2.3;">
+    📌 <strong>尿酸長年在門檻邊緣徘徊</strong>：2014年7.7、2023年7.6、2026年7.8，十年來反覆卡在正常上限(<7.7)附近，不是單一次的偶發偏高，是長期模式，痛風風險值得放在心上持續觀察，尤其配合現在的Statin用藥，肝腎代謝負擔要一併留意。<br><br>
+    📌 <strong>骨質密度曾經跌破正常線</strong>：2016年T-Score還是+0.4，2018年卻驟降到−1.07（進入骨質缺乏Osteopenia範圍），2026年回升到−0.8但仍未回到2016年的水準。這中間發生了什麼、有沒有做過檢討，值得下次健檢時多留意骨密度這條線的長期走勢。<br><br>
+    📌 <strong>收縮壓在30代末到40代初曾多次超標</strong>：2014年136、2015年135，當時已經踩在偏高邊緣，之後2023年一度到139，直到今年才透過生活習慣調整壓回106~119的健康區間——這條線的十年軌跡，正好說明現在的努力有多麼值得。<br><br>
+    📌 <strong>LDL的十年趨勢是持續攀升，直到今年才反轉</strong>：102(2013)→112(2014)→142(2023)→134(2024)→135(2025)→152(2026)，整整十三年呈現緩慢上升的長期趨勢，2026/08是十年來第一次出現明顯下降，這個轉折點的意義，比單看一次數字更重要。
+  </div>
+
+</div>
+</div>
+
+<div id="page-summary" class="page">
 <div class="container">
   <div class="sec-title">歷年數值對比（點擊項目名稱查看趨勢折線圖）</div>
   <div class="summary-wrap">
@@ -878,6 +925,40 @@ function closeModal(){document.getElementById('modal').classList.remove('open');
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
 
 // ── 頁切換 ──
+// ── 健康總結頁：三次對比圖 ──
+new Chart(document.getElementById('hl-lipid'),{
+  type:'bar',
+  data:{
+    labels:['2025','2026/05','2026/08'],
+    datasets:[
+      {label:'LDL',data:[135,152,128],backgroundColor:'#e74c3c'},
+      {label:'總膽固醇',data:[205,205,196],backgroundColor:'#f39c12'},
+      {label:'HDL',data:[55,51,64],backgroundColor:'#27ae60'}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:14,font:{size:11}}}},
+    scales:{y:{beginAtZero:true,title:{display:true,text:'mg/dL'}}}
+  }
+});
+new Chart(document.getElementById('hl-metabolic'),{
+  type:'bar',
+  data:{
+    labels:['2025','2026/05','2026/08'],
+    datasets:[
+      {label:'HbA1c(%)',data:[null,5.9,5.4],backgroundColor:'#8e44ad',yAxisID:'y1'},
+      {label:'體重(kg)',data:[null,75.5,67.5],backgroundColor:'#2980b9',yAxisID:'y2'}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:14,font:{size:11}}}},
+    scales:{
+      y1:{type:'linear',position:'left',title:{display:true,text:'HbA1c %'},min:4,max:7},
+      y2:{type:'linear',position:'right',title:{display:true,text:'體重 kg'},min:60,max:80,grid:{drawOnChartArea:false}}
+    }
+  }
+});
+
 function showPage(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.year-tab').forEach(t=>t.classList.remove('active'));
