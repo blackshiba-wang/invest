@@ -950,10 +950,10 @@ async function fbLoad(){
           });
         }
         if(d.trades){
-          // 合併 trades：以 Firebase 為主，本機有但 Firebase 沒有的也保留
-          const fbIds = new Set(d.trades.map(t=>t.id));
-          const localOnly = (DB.trades||[]).filter(t=>!fbIds.has(t.id));
-          DB.trades = [...d.trades, ...localOnly];
+          // 【鬼打牆根治】雲端 = 唯一真相，交易記錄完全以雲端為準，不再做「本機聯集」。
+          // 原本的聯集合併會讓任一裝置本機殘留的已刪除交易，在登入時被當成
+          // 「雲端沒有、要保留」而復活，導致刪除永遠刪不乾淨。改為直接信任雲端。
+          DB.trades = d.trades;
         }
         if(d.history) DB.history = d.history;
         if(d.histTickers) DB.histTickers = d.histTickers;
