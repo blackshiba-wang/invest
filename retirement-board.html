@@ -49,6 +49,21 @@ tr.key td{font-weight:800;background:#fef3c7}td.s{color:#1B3D6B;font-weight:700}
 #printArea h1{font-size:20px;font-weight:700;margin:0 0 6px}#printArea h2{font-size:15px;font-weight:700;margin:14px 0 6px}#printArea table{font-size:11px;margin-bottom:6px}
 #printArea th,#printArea td{border:1px solid #999;padding:3px 6px;color:#000;background:#fff}#printArea p,#printArea li{font-size:11px;white-space:pre-wrap}}
 @media(max-width:640px){table{font-size:12px}th,td{padding:5px}.sp{grid-template-columns:1fr 1fr 34px}.sp .n{grid-column:1/-1}.rec{grid-template-columns:1fr 90px 34px}.rec .n{grid-column:1/-1}}
+/* 字體放大、加粗 */
+body{font-size:16px;font-weight:500}
+.text-xs{font-size:14px!important;line-height:1.5!important}.text-sm{font-size:15.5px!important}.text-\[11px\]{font-size:13px!important}
+.text-base{font-size:17px!important}.sm\:text-lg{font-size:19px!important}
+input,select,textarea{font-size:15px;font-weight:500;min-height:38px}
+label.f{font-size:14.5px;grid-template-columns:minmax(0,1fr) 112px;color:#334155;font-weight:600}
+label.f em{font-size:12.5px;font-weight:500}
+.box h3{font-size:13.5px}
+.note{font-size:13.5px;font-weight:500}
+.btn{font-size:14px;min-height:38px}
+table{font-size:15px}td{font-weight:500}thead th{font-size:13.5px}
+.tab{font-size:15px;padding:11px 15px}
+.legend{font-size:13px}
+.row4{grid-template-columns:minmax(0,1.4fr) 70px 70px 38px}
+@media(max-width:640px){table{font-size:13.5px}}
 :root{--green:#16a34a;--teal:#1B3D6B;--amber:#d97706;--red:#dc2626}
 </style>
 </head>
@@ -473,13 +488,13 @@ function draw(){
   const vals=xs.flatMap(d=>[d.f,d.s*H]).concat(pts.map(d=>d.v)).concat(o.pj?[o.pj.A,...Object.values(o.pj.vals)]:[]);
   const lo=Math.floor(Math.min(...vals)/500)*500,hi=Math.ceil(Math.max(...vals)/500)*500;
   const m={l:W<520?42:54,r:14,t:12,b:26},x0=2026.8,x1=R+0.75,X=x=>m.l+(x-x0)/(x1-x0)*(W-m.l-m.r),Y=v=>m.t+(1-(v-lo)/(hi-lo||1))*(Hh-m.t-m.b);
-  let g='';for(let v=lo;v<=hi;v+=500)g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e2e8f0"/><text x="${m.l-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="#64748b">${fmt(v)}</text>`;
-  xs.forEach((d,i)=>{if(W>=520||i%2==0||i==xs.length-1)g+=`<text x="${X(d.x)}" y="${Hh-7}" text-anchor="middle" font-size="11" fill="#64748b">${d.l}</text>`});
+  let g='';for(let v=lo;v<=hi;v+=500)g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e2e8f0"/><text x="${m.l-6}" y="${Y(v)+4}" text-anchor="end" font-size="13" fill="#64748b">${fmt(v)}</text>`;
+  xs.forEach((d,i)=>{if(W>=520||i%2==0||i==xs.length-1)g+=`<text x="${X(d.x)}" y="${Hh-7}" text-anchor="middle" font-size="13" fill="#64748b">${d.l}</text>`});
   g+=`<polygon fill="#0B1D36" opacity=".08" points="${xs.map(d=>X(d.x)+','+Y(d.s)).join(' ')} ${xs.slice().reverse().map(d=>X(d.x)+','+Y(d.s*H)).join(' ')}"/>`;
   const line=(k,mul,c,w)=>`<polyline fill="none" stroke="${c}" stroke-width="${w}" points="${xs.map(d=>X(d.x)+','+Y(d[k]*mul)).join(' ')}"/>`;
   g+=line('f',1,'#94a3b8',2)+line('s',H,'#16a34a',2)+line('s',1,'#0B1D36',3);
   if(o.pj){const pp=Object.keys(o.pj.vals).map(y=>({x:+y+1,v:o.pj.vals[y]})).filter(d=>d.x<=R+0.01).concat([{x:R+7/12,v:o.pj.A}]);if(pp.length>1)g+=`<polyline fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 5" points="${pp.map(d=>X(d.x)+','+Y(d.v)).join(' ')}"/>`;}
-  pts.filter(d=>d.x>=x0&&d.x<=x1).forEach(d=>{g+=`<circle cx="${X(d.x)}" cy="${Y(d.v)}" r="${d.now?6:4.5}" fill="${d.now?'#f59e0b':'#334155'}"/>`;if(d.now)g+=`<text x="${X(d.x)+9}" y="${Y(d.v)+4}" font-size="12" fill="#f59e0b">${fmt(d.v)}</text>`});
+  pts.filter(d=>d.x>=x0&&d.x<=x1).forEach(d=>{g+=`<circle cx="${X(d.x)}" cy="${Y(d.v)}" r="${d.now?6:4.5}" fill="${d.now?'#f59e0b':'#334155'}"/>`;if(d.now)g+=`<text x="${X(d.x)+9}" y="${Y(d.v)+4}" font-size="14" fill="#f59e0b">${fmt(d.v)}</text>`});
   s.innerHTML=g;
 }
 const ro=new ResizeObserver(draw);ro.observe($('fig'));
@@ -649,7 +664,7 @@ function life(o,PJ){
   const labels=years.map(y=>`${y}（${y-1975}歲）`);
   const ds=[{label:'⭐ 建議線',data:sg,borderColor:'#0B1D36',borderWidth:3,pointRadius:0,tension:.2},{label:'🛡 地板線',data:fl,borderColor:'#94a3b8',borderWidth:2,pointRadius:0,tension:.2},{label:'😊 愉快線（退休前）',data:hp,borderColor:'#16a34a',borderWidth:2,pointRadius:0,tension:.2},{label:'📈 照目前進度',data:pj,borderColor:'#f59e0b',borderDash:[6,5],borderWidth:2,pointRadius:0,tension:.2},{label:'● 年度紀錄',data:recs,borderColor:'#be123c',backgroundColor:'#be123c',showLine:false,pointRadius:5}];
   if(lifeC){lifeC.data.labels=labels;lifeC.data.datasets.forEach((d,i)=>d.data=ds[i].data);lifeC.update('none');}
-  else lifeC=new Chart($('lifeChart'),{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:14,font:{size:11}}},tooltip:{callbacks:{label:c=>c.raw==null?null:`${c.dataset.label}：${fmt(c.raw)} 萬`}}},scales:{y:{ticks:{callback:v=>fmt(v)}},x:{ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:12}}}}});
+  else lifeC=new Chart($('lifeChart'),{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{boxWidth:14,font:{size:13,weight:'600'}}},tooltip:{callbacks:{label:c=>c.raw==null?null:`${c.dataset.label}：${fmt(c.raw)} 萬`}}},scales:{y:{ticks:{font:{size:13},callback:v=>fmt(v)}},x:{ticks:{font:{size:12},maxRotation:0,autoSkip:true,maxTicksLimit:12}}}}});
   const left=o.sg.end/o.I(o.endY+1)+ +P.moat;
   $('lifeNote').textContent=`${R} 年那一點跳上去，是因為一次金 ${P.lump} 萬入帳。建議線在 ${P.endAge} 歲後留下約 ${fmt(left)} 萬（今日價值，含護城河）。`;
 }
