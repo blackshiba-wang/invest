@@ -95,6 +95,16 @@ select{font:15px inherit;width:100%;padding:8px;border:1px solid var(--border2);
     <div class="box"><h3>目前位置</h3>
       <label class="f"><span>快照日期</span><input type="text" data-k="snapDate"></label>
       <label class="f"><span>目前淨資產（萬）<em>扣掉質押借款</em></span><input type="number" step="1" data-k="snapNet"></label></div>
+    <div class="box"><h3>花費模式</h3>
+      <label class="f"><span>模式</span><select id="mode"><option value="fixed">固定金額（每年花多少萬）</option><option value="pct">比例提領（每年提領核心資產 %）</option></select></label>
+      <div class="pctOnly">
+        <p class="note" style="margin:6px 0">每段在該年 1/1 提領「年初核心資產」的 %，年齡含頭含尾。能花的錢＝提領＋月退−房貸−長照基金不足。</p>
+        <div class="row4 note"><span>從幾歲</span><span>到幾歲</span><span>提領 %</span><span></span></div>
+        <div id="stages"></div><button class="btn" id="addStage" type="button">＋ 新增一段</button>
+        <label class="f"><span>從幾歲起自動花光<em>剩餘年數法：每年依剩下年數重算比例，最後剛好留下「100 歲想留下」；填 0 不使用</em></span><input type="number" step="1" data-k="autoFrom"></label>
+        <label class="f"><span>最低生活費（今日價值）<em>地板線：每一年能花的錢都不低於這個數字</em></span><input type="number" step="5" data-k="minSpend"></label>
+        <p class="note">比例模式下，「退休後每年總花費」三個金額代表各階段「平均每年至少想花多少」，用來算建議線。</p>
+      </div></div>
     <div class="box"><h3>退休後每年總花費（今日價值）</h3>
       <label class="f"><span>58～65 歲</span><input type="number" step="5" data-k="s1"></label>
       <label class="f"><span>66～75 歲</span><input type="number" step="5" data-k="s2"></label>
@@ -182,7 +192,7 @@ select{font:15px inherit;width:100%;padding:8px;border:1px solid var(--border2);
   <h2>檢核值</h2>
   <p class="note">拿這些數字對照其他 AI 的答案，差超過 5% 就要找原因。</p>
   <div class="scroll"><table id="chk"></table></div>
-  <h2 style="margin-top:20px">退休後逐年：我每年能花多少、帳戶怎麼變（建議線）</h2>
+  <h2 style="margin-top:20px" id="postTitle">退休後逐年</h2>
   <p class="note">每一行由左到右就是那一年的錢怎麼流：<b>年初帳戶總額</b>（＝上一年的 ⑩）→ ⑥＝②−③＋④＋⑤ 從核心資產提出來過生活 → ⑧ 一次性支出從預留款付 → 一年投資報酬 → <b>⑩ 年底帳戶總額＝⑦＋⑨</b>，也就是這一年花完以後剩多少。提領率＝⑥不含房貸÷①，超過警示線或參考值標紅色。⑤ 是長照基金用完後才出現的長照費（長照費填 0 時這欄隱藏；長照基金填 0 時最後一欄隱藏）。</p>
   <div class="bar" style="margin:6px 0 10px"><button class="btn" id="viewBtn" type="button">目前顯示：今日價值</button></div>
   <div class="scroll"><table id="post"></table></div>
@@ -211,7 +221,7 @@ select{font:15px inherit;width:100%;padding:8px;border:1px solid var(--border2);
 {
 const FB_DEFAULT='https://invest-23f8e-default-rtdb.firebaseio.com';
 const DEF_P={snapDate:'2026/11/25',snapNet:2303,s1:160,s2:120,s3:80,inf:2,ret:5.5,penAdj:0,retireYear:2033,lump:383.7,pension:28001,mort:35,mortEnd:2035,
-moat:300,ltcFund:200,ltcStart:2055,ltcCost:30,dca0:1,dca:1.5,exp:40,salary:110,cap:5,capAge:65,ref2:4,ref3:3,endAge:100,leftAt100:500,today:'',happy:1.2,gHi:1.5,gMid:1,gLo:0.75,gFl:0.5};
+moat:300,ltcFund:200,ltcStart:2055,ltcCost:30,dca0:1,dca:1.5,exp:40,salary:110,cap:5,capAge:65,ref2:4,ref3:3,endAge:100,leftAt100:500,today:'',mode:'fixed',autoFrom:76,minSpend:40,happy:1.2,gHi:1.5,gMid:1,gLo:0.75,gFl:0.5};
 const DEF_ITEMS=[{name:'換車',amt:150,year:2030},{name:'出國度假',amt:150,year:2034},{name:'老屋修繕',amt:200,year:2035},{name:'長輩後事',amt:100,year:2040}];
 const DEF_T={
 route:'路線 V：703 導師（115/8～118/7）→ 專任一年（118/8～119/7）→ 第二屆導師（119/8～122/7）→ 122/7/31（58 歲）和第二屆學生一起畢業退休。\n決策點：2029 春天申請專任；2030 春天決定接不接第二屆。\n安全閥（每年 3 月）：健檢紅燈／班級讓我撐不住／爸媽照護需要大量時間 → 當年 7/31 退休（最早 120/8/1）。',
@@ -225,7 +235,7 @@ const defState=()=>({p:clone(DEF_P),items:clone(DEF_ITEMS),t:clone(DEF_T),recs:[
 let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.p)S=defState();
 let FB;try{FB=localStorage.getItem(KEY+'-fb')}catch(e){} if(FB==null)FB=FB_DEFAULT;
-const norm=()=>{S.p={...DEF_P,...S.p};S.t={...DEF_T,...(S.t||{})};S.items=S.items||[];S.recs=S.recs||[];S.spends=S.spends||[];};norm();
+const norm=()=>{S.p={...DEF_P,...S.p};S.t={...DEF_T,...(S.t||{})};S.items=S.items||[];S.recs=S.recs||[];S.spends=S.spends||[];S.stages=S.stages||[{from:58,to:65,pct:7},{from:66,to:75,pct:5.5}];};norm();
 const $=id=>document.getElementById(id);
 const fmt=v=>isFinite(v)?Math.round(v).toLocaleString('en-US'):'—';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -241,6 +251,21 @@ function model(p){
   const ltcShort={}; let B=p.ltcFund*I(R); const bucket={},bucketEnd={};
   for(let y=R+1;y<=endY;y++){bucket[y]=B; let need=y>=p.ltcStart?p.ltcCost*I(y):0; const pay=Math.min(B,need); ltcShort[y]=need-pay; B=(B-pay)*(1+r); bucketEnd[y]=B;}
   const gap=y=>spendT(y-by)*I(y)-pen(y)+mort(y)+(ltcShort[y]||0);
+  const v=1/(1+r);
+  const stages=(p.stages||[]).map(s=>({from:+s.from,to:+s.to,pct:+s.pct}));
+  const pctAt=a=>{const s=stages.find(s=>a>=s.from&&a<=s.to);return s?s.pct/100:0;};
+  const tgtSg=Math.max(0,(p.leftAt100??500)-p.moat)*I(endY+1);
+  // generic path: returns bal, wd (withdraw from core), sp (能花的錢)
+  const pathOf=P0=>{let P=P0;const bal={},wd={},sp={};
+    for(let y=R+1;y<=endY;y++){const a=y-by;let w;
+      if(p.mode==='pct'){
+        if(+p.autoFrom>0&&a>=+p.autoFrom){const n=endY-y+1,ann=(1-v**n)/(1-v);w=Math.max(0,(P-tgtSg*v**n)/ann);}
+        else w=P*pctAt(a);
+        w=Math.min(Math.max(w,0),Math.max(P,0));
+        sp[y]=w+pen(y)-mort(y)-(ltcShort[y]||0);
+      }else{w=gap(y);sp[y]=spendT(a)*I(y);}
+      bal[y]=P;wd[y]=w;P=(P-w)*(1+r);}
+    return {end:P,bal,wd,sp};};
   const sim=(P0,check)=>{let P=P0,w=-1,bal={};for(let y=R+1;y<=endY;y++){const g=gap(y);if(check&&y-by<=p.capAge&&P>0)w=Math.max(w,(g-mort(y))/P-p.cap/100);if(check&&P<=0)w=9;bal[y]=P;P=(P-g)*(1+r);}return {end:P,w,bal};};
   const solve=tgt=>{let lo=0,hi=50000;for(let i=0;i<80;i++){const m=(lo+hi)/2,s=sim(m,false);if(s.end>=tgt)hi=m;else lo=m;}return hi;};
   const items=p.items.filter(it=>+it.amt>0&&+it.year>0);
@@ -248,8 +273,9 @@ function model(p){
   const inR=items.filter(it=>it.year==R).reduce((s,it)=>s+it.amt*I(R),0);
   const gap5=5/12*(spendT(R-by)*I(R)-pen(R))+5/12*mort(R);
   const moatN=p.moat*I(R), ltcN=p.ltcFund*I(R);
+  const solveCond=ok=>{let lo=0,hi=50000;for(let i=0;i<80;i++){const m=(lo+hi)/2;if(ok(pathOf(m)))hi=m;else lo=m;}return hi;};
   const line=tgt=>{
-    const core=solve(tgt),s=sim(core,false);
+    const core=p.mode==='pct'?solveCond(tgt):solve(tgt),s=pathOf(core);
     const T12=core+moatN+pvPost+ltcN;
     const A=T12/(1+r)**(5/12)-p.lump+inR+gap5;
     const mr=(1+r)**(1/12)-1;let X=A,vals={},y=R,m=7;
@@ -261,16 +287,21 @@ function model(p){
       for(const it of items)if(it.year<R&&+it.year==y&&m==6)X+=it.amt*I(y)/(1+mr);
       m--;if(m==0){y--;m=12;}
     }
-    return {core,T12,A,vals,bal:s.bal,end:s.end};
+    return {core,T12,A,vals,bal:s.bal,end:s.end,wd:s.wd,sp:s.sp};
   };
-  const tgtSg=Math.max(0,(p.leftAt100??500)-p.moat)*I(endY+1);
-  const fl=line(0),sg=line(tgtSg);
+  let fl,sg;
+  if(p.mode==='pct'){
+    const ms=(+p.minSpend||0);
+    const avg=(s,a0,a1)=>{let t=0,n=0;for(let y=R+1;y<=endY;y++){const a=y-by;if(a>=a0&&a<=a1){t+=s.sp[y]/I(y);n++;}}return n?t/n:Infinity;};
+    sg=line(s=>avg(s,0,65)>=p.s1-1e-6&&avg(s,66,75)>=p.s2-1e-6&&avg(s,76,999)>=p.s3-1e-6);
+    fl=line(s=>{for(let y=R+1;y<=endY;y++)if(s.sp[y]<ms*I(y)-1e-6)return false;return true;});
+  }else{fl=line(0);sg=line(tgtSg);}
   const oneY=y=>items.filter(it=>+it.year==y).reduce((s,it)=>s+it.amt*I(y),0);
   const resE={},resEEnd={};{let E=pvPost;for(let y=R+1;y<=endY;y++){resE[y]=E;E=Math.max(0,(E-oneY(y))*(1+r));resEEnd[y]=E;}}
   const moatY=y=>p.moat*I(y-1);
   const reserve=y=>(resE[y]||0)+moatY(y)+(bucket[y]||0);
   const reserveEnd=y=>(resEEnd[y]||0)+moatY(y+1)+(bucketEnd[y]||0);
-  return {R,by,endY,I,gap,oneY,resE,moatY,reserve,reserveEnd,bucketEnd,mort,pen,spendY:y=>spendT(y-by)*I(y),ltcS:y=>ltcShort[y]||0,fl,sg,moatN,pvPost,inR,gap5,ltcN,bucket};
+  return {R,by,endY,I,gap,pathOf,tgtSg,mode:p.mode,oneY,resE,moatY,reserve,reserveEnd,bucketEnd,mort,pen,spendY:y=>spendT(y-by)*I(y),ltcS:y=>ltcShort[y]||0,fl,sg,moatN,pvPost,inR,gap5,ltcN,bucket};
 }
 
 
@@ -331,6 +362,8 @@ function fill(){
   document.querySelectorAll('[data-t]').forEach(el=>{el.value=S.t[el.dataset.t]||''});
   $('items').innerHTML=S.items.map((it,i)=>`<div class="row4"><input type="text" data-i="${i}" data-f="name" value="${esc(it.name)}" aria-label="項目"><input type="number" data-i="${i}" data-f="amt" value="${esc(it.amt)}" aria-label="金額"><input type="number" data-i="${i}" data-f="year" value="${esc(it.year)}" aria-label="年份"><button class="btn" type="button" data-del="${i}" aria-label="刪除">✕</button></div>`).join('');
   $('recs').innerHTML=S.recs.map((r,i)=>`<div class="rec"><input type="text" data-r="${i}" data-g="date" value="${esc(r.date)}" aria-label="日期"><input type="number" data-r="${i}" data-g="net" value="${esc(r.net)}" aria-label="淨資產"><input class="n" type="text" data-r="${i}" data-g="note" value="${esc(r.note)}" aria-label="備註"><button class="btn" type="button" data-rdel="${i}" aria-label="刪除">✕</button></div>`).join('');
+  $('stages').innerHTML=S.stages.map((s,i)=>`<div class="row4"><input type="number" data-st="${i}" data-sf="from" value="${esc(s.from)}" aria-label="起始年齡"><input type="number" data-st="${i}" data-sf="to" value="${esc(s.to)}" aria-label="結束年齡"><input type="number" step="0.1" data-st="${i}" data-sf="pct" value="${esc(s.pct)}" aria-label="提領%"><button class="btn" type="button" data-stdel="${i}" aria-label="刪除">✕</button></div>`).join('');
+  $('mode').value=S.p.mode||'fixed';
   $('fbUrl').value=FB;
 }
 let O=null;
@@ -339,10 +372,15 @@ const zone=(net,y)=>{const o=O;if(!o||!net)return null;const R=o.R;
   if(net>=sg*H)return{t:'高於愉快線',c:'var(--green)',m:P.gHi,sg,fl};if(net>=sg)return{t:'建議線～愉快線',c:'var(--teal)',m:P.gMid,sg,fl};
   if(net>=fl)return{t:'地板線～建議線',c:'var(--amber)',m:P.gLo,sg,fl};return{t:'低於地板線',c:'var(--red)',m:P.gFl,sg,fl};};
 const yearOf=d=>parseInt(String(d).slice(0,4))||0;
+
+function mkPA(o,PJ){
+  if(S.p.mode==='pct'&&PJ){const c=Math.max(0,PJ.T12-(o.moatN+o.pvPost+o.ltcN)),s=o.pathOf(c);return {...s,label:'照目前進度（比例提領）',core:c};}
+  return {bal:o.sg.bal,wd:o.sg.wd,sp:o.sg.sp,end:o.sg.end,label:S.p.mode==='pct'?'建議線（比例提領）':'建議線（固定金額）',core:o.sg.core};}
+function prOf(o,PA,y){const b=PA.bal[y];if(!(b>0))return 0;return (S.p.mode==='pct'?PA.wd[y]:PA.wd[y]-o.mort(y))/b*100;}
 function calc(){
-  const P=S.p,p={};for(const k in P)p[k]=+P[k];p.birthYear=1975;if(!(p.cap>0))p.cap=999;
+  const P=S.p,p={};for(const k in P)p[k]=+P[k];p.birthYear=1975;if(!(p.cap>0))p.cap=999;p.mode=P.mode;p.stages=S.stages;
   p.items=planItems();
-  const o=model(p);O=o;const PJ=project(o);O.pj=PJ;const H=+P.happy||1.1,R=o.R;
+  const o=model(p);O=o;const PJ=project(o);O.pj=PJ;const PA=mkPA(o,PJ);O.PA=PA;const H=+P.happy||1.1,R=o.R;
   $('bigA').innerHTML=fmt(o.sg.A)+'<small> 萬</small>';$('flA').textContent=fmt(o.fl.A)+' 萬';$('hpA').textContent=fmt(o.sg.A*H)+' 萬';$('t12').textContent=fmt(o.sg.T12)+' 萬';
   const rows=[];for(let y=2026;y<R;y++)rows.push({lab:y+'/12',age:y-1975,f:o.fl.vals[y],s:o.sg.vals[y]});
   rows.push({lab:R+'/7/31',age:R-1975,f:o.fl.A,s:o.sg.A,key:1});
@@ -355,18 +393,20 @@ function calc(){
   // records table
   $('recTbl').innerHTML=S.recs.length?'<thead><tr><th>日期</th><th>淨資產</th><th>當年建議線</th><th>差距</th><th>區間</th><th>體驗金倍數</th></tr></thead><tbody>'+S.recs.map(r=>{const zz=zone(+r.net,yearOf(r.date));return `<tr><td>${esc(r.date)}</td><td>${fmt(+r.net)}</td><td>${zz?fmt(zz.sg):'—'}</td><td>${zz?(r.net>=zz.sg?'+':'−')+fmt(Math.abs(r.net-zz.sg)):'—'}</td><td>${zz?zz.t:'—'}</td><td>${zz?'×'+esc(zz.m):'—'}</td></tr>`}).join('')+'</tbody>':'';
   // checks
-  const y1=R+1,pr=y=>(o.gap(y)-o.mort(y))/o.sg.bal[y]*100;let capY=y1;for(let y=y1;y<=Math.min(o.endY,1975+p.capAge);y++)if(pr(y)>pr(capY))capY=y;
-  const chk=[[`${R} 年總花費（名目）`,fmt(p.s1*o.I(R))+' 萬'],[`${y1} 年生活缺口（含房貸）`,fmt(o.gap(y1))+' 萬'],[`${1975+66} 年生活缺口（進入 66 歲）`,fmt(o.gap(1975+66))+' 萬'],[`${1975+76} 年生活缺口（進入 76 歲）`,fmt(o.gap(1975+76))+' 萬'],
+  const y1=R+1,pr=y=>prOf(o,PA,y);let capY=y1;for(let y=y1;y<=Math.min(o.endY,1975+p.capAge);y++)if(pr(y)>pr(capY))capY=y;
+  const chk=[[`${R} 年總花費（名目）`,fmt(p.s1*o.I(R))+' 萬'],[`${y1} 年從投資提領`,fmt(PA.wd[y1])+' 萬'],[`${1975+66} 年從投資提領（進入 66 歲）`,fmt(PA.wd[1975+66])+' 萬'],[`${1975+76} 年從投資提領（進入 76 歲）`,fmt(PA.wd[1975+76])+' 萬'],
     [`建議線的生活核心資產（${y1} 年初）`,fmt(o.sg.core)+' 萬'],[`${y1} 年提領率`,pr(y1).toFixed(1)+'%'],[`${p.capAge} 歲以前提領率最高的一年（${capY}）`,pr(capY).toFixed(1)+'%'],
     [`護城河（${R} 名目）`,fmt(o.moatN)+' 萬'],[`長照基金（${R} 名目）`,fmt(o.ltcN)+' 萬'],[`退休後一次性支出（折現到 ${y1} 年初）`,fmt(o.pvPost)+' 萬'],
-    ['退休當年的一次性支出＋8～12 月缺口',fmt(o.inR)+' ＋ '+fmt(o.gap5)+' 萬'],[`建議線 ${p.endAge} 歲時的生活核心資產`,fmt(o.sg.bal[o.endY])+' 萬（約今日 '+fmt(o.sg.bal[o.endY]/o.I(o.endY))+' 萬）'],
-    ['地板線 2026/12','約 '+fmt(o.fl.vals[2026])+' 萬'],[`建議線 ${p.endAge} 歲後留下（含護城河）`,(()=>{const t=o.sg.end/o.I(o.endY+1)+ +P.moat;return fmt(t)+' 萬（今日價值）≈ '+fmt(t*o.I(o.endY+1))+` 萬（${o.endY+1} 年帳面）`})()]];
+    ['退休當年的一次性支出＋8～12 月缺口',fmt(o.inR)+' ＋ '+fmt(o.gap5)+' 萬'],[`${PA.label}：${p.endAge} 歲時的生活核心資產`,fmt(PA.bal[o.endY])+' 萬（約今日 '+fmt(PA.bal[o.endY]/o.I(o.endY))+' 萬）'],
+    ['地板線 2026/12','約 '+fmt(o.fl.vals[2026])+' 萬'],[`${PA.label}：${p.endAge} 歲後留下（含護城河）`,(()=>{const t=PA.end/o.I(o.endY+1)+ +P.moat;return fmt(t)+' 萬（今日價值）≈ '+fmt(t*o.I(o.endY+1))+` 萬（${o.endY+1} 年帳面）`})()]];
   $('chk').innerHTML='<tbody>'+chk.map(c=>`<tr><td>${c[0]}</td><td>${c[1]}</td></tr>`).join('')+'</tbody>';
+  $('postTitle').textContent='退休後逐年：我每年能花多少、帳戶怎麼變（'+PA.label+'）';
+  document.querySelectorAll('.pctOnly').forEach(e=>e.style.display=S.p.mode==='pct'?'':'none');
   const tv=S.p.view!=='nom',dv=y=>tv?o.I(y):1;
   $('viewBtn').textContent=tv?'目前顯示：今日價值（點一下改看名目）':'目前顯示：名目金額（點一下改看今日價值）';
   const showL=+P.ltcFund>0,showC=+P.ltcCost>0;
-  let rowsP='';for(let y=R+1;y<=o.endY;y++){const a=y-1975,ref=a<=p.capAge?(+P.cap>0?P.cap:0):(a<=75?P.ref2:P.ref3),r=pr(y),hot=ref&&r>ref,ce=(o.sg.bal[y]-o.gap(y))*(1+p.ret/100),re=o.reserveEnd(y);
-    rowsP+=`<tr><td>${a}</td><td>${y}</td><td>${fmt((o.sg.bal[y]+o.reserve(y))/dv(y))}</td><td>${fmt(o.sg.bal[y]/dv(y))}</td><td class="s">${fmt(o.spendY(y)/dv(y))}</td><td>${fmt(o.pen(y)/dv(y))}</td><td>${fmt(o.mort(y)/dv(y))}</td>${showC?`<td>${fmt(o.ltcS(y)/dv(y))}</td>`:''}<td>${fmt(o.gap(y)/dv(y))}</td><td style="${hot?'color:var(--red);font-weight:700':''}">${r.toFixed(1)}%</td><td>${fmt(ce/dv(y))}</td><td>${o.oneY(y)?fmt(o.oneY(y)/dv(y)):'—'}</td><td>${fmt(re/dv(y))}</td><td class="s">${fmt((ce+re)/dv(y))}</td>${showL?`<td>${fmt((o.bucketEnd[y]||0)/dv(y))}</td>`:''}</tr>`;}
+  let rowsP='';for(let y=R+1;y<=o.endY;y++){const a=y-1975,ref=a<=p.capAge?(+P.cap>0?P.cap:0):(a<=75?P.ref2:P.ref3),r=pr(y),hot=ref&&r>ref,ce=(PA.bal[y]-PA.wd[y])*(1+p.ret/100),re=o.reserveEnd(y);
+    rowsP+=`<tr><td>${a}</td><td>${y}</td><td>${fmt((PA.bal[y]+o.reserve(y))/dv(y))}</td><td>${fmt(PA.bal[y]/dv(y))}</td><td class="s">${fmt(PA.sp[y]/dv(y))}</td><td>${fmt(o.pen(y)/dv(y))}</td><td>${fmt(o.mort(y)/dv(y))}</td>${showC?`<td>${fmt(o.ltcS(y)/dv(y))}</td>`:''}<td>${fmt(PA.wd[y]/dv(y))}</td><td style="${hot?'color:var(--red);font-weight:700':''}">${r.toFixed(1)}%</td><td>${fmt(ce/dv(y))}</td><td>${o.oneY(y)?fmt(o.oneY(y)/dv(y)):'—'}</td><td>${fmt(re/dv(y))}</td><td class="s">${fmt((ce+re)/dv(y))}</td>${showL?`<td>${fmt((o.bucketEnd[y]||0)/dv(y))}</td>`:''}</tr>`;}
   $('post').innerHTML='<thead><tr><th>年齡</th><th>年份</th><th>年初<br>帳戶總額</th><th>①年初<br>核心資產</th><th>②當年<br>能花的錢</th><th>③月退</th><th>④房貸</th>'+(showC?'<th>⑤長照<br>基金不足</th>':'')+'<th>⑥從投資<br>提領</th><th>提領率</th><th>⑦年底<br>核心資產</th><th>⑧一次性<br>支出</th><th>⑨年底<br>預留款</th><th>⑩年底<br>帳戶總額</th>'+(showL?'<th>年底<br>長照基金</th>':'')+'</tr></thead><tbody>'+rowsP+'</tbody>';
   draw();
 }
@@ -421,6 +461,7 @@ document.addEventListener('input',e=>{const t=e.target,d=t.dataset;
   if(d.k){if(t.type=='number'){if(t.value==='')return;S.p[d.k]=+t.value}else S.p[d.k]=t.value;}
   else if(d.t){S.t[d.t]=t.value;}
   else if(d.f){S.items[+d.i][d.f]=d.f=='name'?t.value:+t.value;}
+  else if(d.st!==undefined){S.stages[+d.st][d.sf]=+t.value;}
   else if(d.g){S.recs[+d.r][d.g]=d.g=='net'?+t.value:t.value;}
   else if(d.h){if(d.h==='cat')return;S.spends[+d.s][d.h]=d.h=='amt'?+t.value:t.value;window.__keepSp=1;}
   else if(d.done!==undefined){S.items[+d.done].done=t.checked;}
@@ -429,8 +470,11 @@ document.addEventListener('input',e=>{const t=e.target,d=t.dataset;
 document.addEventListener('click',e=>{const d=e.target.dataset;
   if(d.del!==undefined){S.items.splice(+d.del,1);fill();calc();touch();}
   if(d.rdel!==undefined){S.recs.splice(+d.rdel,1);fill();calc();touch();}
+  if(d.stdel!==undefined){S.stages.splice(+d.stdel,1);fill();calc();touch();}
   if(d.sdel!==undefined){S.spends.splice(+d.sdel,1);calc();touch();}});
 $('addItem').onclick=()=>{S.items.push({name:'新項目',amt:0,year:+S.p.retireYear+1});fill();calc();touch();};
+$('addStage').onclick=()=>{const l=S.stages[S.stages.length-1];const f=l?(+l.to+1):58;S.stages.push({from:f,to:f+9,pct:5});fill();calc();touch();};
+$('mode').onchange=e=>{S.p.mode=e.target.value;calc();touch();};
 $('addSp').onclick=()=>{S.spends.push({date:ymd(todayD()),cat:'體驗金',amt:0,note:''});calc();touch();};
 document.addEventListener('change',e=>{const t=e.target;if(t.dataset.done!==undefined){S.items[+t.dataset.done].done=t.checked;calc();touch();}if(t.tagName==='SELECT'&&t.dataset.h){S.spends[+t.dataset.s].cat=t.value;calc();touch();}});
 $('addRec').onclick=()=>{const d=new Date();S.recs.push({date:`${d.getFullYear()}/12/31`,net:0,note:''});fill();calc();touch();};
@@ -445,23 +489,24 @@ $('reset').onclick=()=>{S.p={...clone(DEF_P),snapDate:S.p.snapDate,snapNet:S.p.s
 $('imp').onclick=()=>{try{const c=JSON.parse($('impTxt').value);if(!c.p)throw 0;S=c;norm();fill();calc();touch();$('msg2').textContent='已還原';}catch(e){$('msg2').textContent='JSON 格式不對';}};
 // ---------- export ----------
 function rep(){
-  const o=O,P=S.p,H=+P.happy||1.1,R=o.R,y1=R+1;
-  const pr=y=>(o.gap(y)-o.mort(y))/o.sg.bal[y]*100;
+  const o=O,PA=O.PA,P=S.p,H=+P.happy||1.1,R=o.R,y1=R+1;
+  const pr=y=>prOf(o,PA,y);
   const params=[['A','退休生效日',`${P.retireYear}/7/31（${P.retireYear-1975} 歲）`],['A','一次金',`${P.lump} 萬，退休當年 8 月入帳，全數投入投資帳戶`],['A','月退',`每月 ${P.pension} 元（每年 ${(P.pension*12/1e4).toFixed(1)} 萬），每年調整 ${P.penAdj}%`],
    ['A','退休後房貸',`每年 ${P.mort} 萬（名目），到 ${P.mortEnd} 年底`],['A','退休前生活費與房貸','由薪水支付，不動用投資帳戶'],['A','目前位置',`${P.snapDate} 淨資產 ${P.snapNet} 萬`],
    ['B','58～65 歲每年總花費',`${P.s1} 萬（今日價值）`],['B','66～75 歲每年總花費',`${P.s2} 萬（今日價值）`],['B',`76～${P.endAge} 歲每年總花費`,`${P.s3} 萬（今日價值）`],
    ['B','通膨',`每年 ${P.inf}%，從 2026 年起算`],['B','投資報酬（名目）',`每年 ${P.ret}%`],['B','護城河',`${P.moat} 萬（今日價值），一直不動`],
    ['B','長照基金',`${P.ltcFund} 萬（今日價值），${P.ltcStart} 年起每年支付 ${P.ltcCost} 萬（今日價值），不足由生活核心資產支付`],
    ['B','定投',`2026/12 每月 ${P.dca0} 萬；2027 起每月 ${P.dca} 萬`],['B','體驗金',`每年 1 月從投資帳戶撥 ${P.exp} 萬（今日價值）`],['B','月薪實收',`每年 ${P.salary} 萬（只做紀錄）`],
+   ['B','花費模式',P.mode==='pct'?`比例提領：${S.stages.map(s=>`${s.from}～${s.to} 歲每年 1/1 提領核心資產 ${s.pct}%`).join('；')}${+P.autoFrom>0?`；${P.autoFrom} 歲起自動花光（剩餘年數法）`:''}；能花的錢＝提領＋月退−房貸−長照基金不足；建議線＝各階段平均每年能花不低於 ${P.s1}／${P.s2}／${P.s3} 萬；地板線＝每年能花不低於 ${P.minSpend} 萬（今日價值）`:'固定金額：每年花費由下方三階段金額決定'],
    ['B','100 歲想留下',`${P.leftAt100} 萬（今日價值，含護城河）`],['B','提領率警示',`${P.capAge} 歲以前警示線 ${+P.cap>0?P.cap+'%':'不設'}；66～75 歲參考 ${P.ref2}%；76 歲以後參考 ${P.ref3}%；試算到 ${P.endAge} 歲（只做警示，不影響目標）`],
    ['B','愉快線',`建議線 × ${P.happy}`],['B','年度護欄',`愉快線以上 ×${P.gHi}；建議～愉快 ×${P.gMid}；地板～建議 ×${P.gLo}；地板以下 ×${P.gFl}（乘在下一年體驗金）`]];
   const items=S.items.map(i=>[i.name,+i.amt,String(i.year)]);
   const pj=o.pj,pv=v=>v==null?'—':v;const lines=[];for(let y=2026;y<R;y++)lines.push([y+'/12',y-1975,o.fl.vals[y],o.sg.vals[y],o.sg.vals[y]*H,pv(pj&&pj.vals[y])]);
   lines.push([R+'/7/31',R-1975,o.fl.A,o.sg.A,o.sg.A*H,pv(pj&&pj.A)]);lines.push([R+'/12 含一次金',R-1975,o.fl.T12,o.sg.T12,o.sg.T12*H,pv(pj&&pj.T12)]);
-  const post=[];for(let y=y1;y<=o.endY;y++){const d=o.I(y);const ce=(o.sg.bal[y]-o.gap(y))*(1+p1r()),re=o.reserveEnd(y);post.push([y-1975,y,o.sg.bal[y],o.spendY(y),o.pen(y),o.mort(y),o.ltcS(y),o.gap(y),pr(y),o.bucketEnd[y]||0,ce,o.sg.bal[y]/d,o.spendY(y)/d,o.oneY(y),re,ce+re,o.sg.bal[y]+o.reserve(y)]);}
-  const chk=[[`${R} 年總花費（名目）`,p1(P.s1*o.I(R))],[`${y1} 年生活缺口（含房貸）`,p1(o.gap(y1))],[`${1975+66} 年生活缺口`,p1(o.gap(1975+66))],[`${1975+76} 年生活缺口`,p1(o.gap(1975+76))],
+  const post=[];for(let y=y1;y<=o.endY;y++){const d=o.I(y);const ce=(PA.bal[y]-PA.wd[y])*(1+p1r()),re=o.reserveEnd(y);post.push([y-1975,y,PA.bal[y],PA.sp[y],o.pen(y),o.mort(y),o.ltcS(y),PA.wd[y],pr(y),o.bucketEnd[y]||0,ce,PA.bal[y]/d,PA.sp[y]/d,o.oneY(y),re,ce+re,PA.bal[y]+o.reserve(y)]);}
+  const chk=[[`${R} 年總花費（名目）`,p1(P.s1*o.I(R))],[`${y1} 年從投資提領`,p1(PA.wd[y1])],[`${1975+66} 年從投資提領`,p1(PA.wd[1975+66])],[`${1975+76} 年從投資提領`,p1(PA.wd[1975+76])],
    [`建議線生活核心資產（${y1} 年初）`,p1(o.sg.core)],[`${y1} 年提領率`,pr(y1).toFixed(1)+'%'],[`護城河（${R} 名目）`,p1(o.moatN)],[`長照基金（${R} 名目）`,p1(o.ltcN)],
-   [`退休後一次性支出（折現到 ${y1} 年初）`,p1(o.pvPost)],['退休當年一次性支出',p1(o.inR)],['退休當年 8～12 月缺口',p1(o.gap5)],[`建議線 ${P.endAge} 歲時生活核心資產`,p1(o.sg.bal[o.endY])],[`建議線 ${P.endAge} 歲後留下（含護城河）`,(()=>{const t=o.sg.end/o.I(o.endY+1)+ +P.moat;return fmt(t)+' 萬（今日價值）≈ '+fmt(t*o.I(o.endY+1))+` 萬（${o.endY+1} 年帳面）`})()]];
+   [`退休後一次性支出（折現到 ${y1} 年初）`,p1(o.pvPost)],['退休當年一次性支出',p1(o.inR)],['退休當年 8～12 月缺口',p1(o.gap5)],[`建議線 ${P.endAge} 歲時生活核心資產`,p1(PA.bal[o.endY])],[`建議線 ${P.endAge} 歲後留下（含護城河）`,(()=>{const t=PA.end/o.I(o.endY+1)+ +P.moat;return fmt(t)+' 萬（今日價值）≈ '+fmt(t*o.I(o.endY+1))+` 萬（${o.endY+1} 年帳面）`})()]];
   const recs=S.recs.map(r=>{const z=zone(+r.net,yearOf(r.date));return [r.date,+r.net,z?z.sg:'',z?z.t:'',z?'×'+z.m:'',r.note||'']});
   const texts=[['退休路線與決策點',S.t.route],['Die with Zero 原則',S.t.dwz],['提領與帳戶分工',S.t.accounts],['想定與假設說明',S.t.assume],['其他備註',S.t.memo]].filter(t=>t[1]);
   const spends=S.spends.map(s=>[s.date,s.cat,+s.amt,s.note||'']);const prog=S.items.map(it=>[it.name,String(it.year),+it.amt,spentNom(it.name),it.done?0:Math.max(0,+it.amt-spentOf(it.name)),it.done?'已完成':spentNom(it.name)>0?'進行中':'未開始']);
