@@ -117,9 +117,10 @@ pre{background:var(--bg2);padding:10px;border-radius:6px;font-size:12px;white-sp
       <label class="f"><span>2027 起定投（萬／月）</span><input type="number" step="0.1" data-k="dca"></label>
       <label class="f"><span>每年 1 月體驗金（今日價值）</span><input type="number" step="5" data-k="exp"></label>
       <label class="f"><span>月薪實收（萬／年）<em>只做紀錄</em></span><input type="number" step="1" data-k="salary"></label></div>
-    <div class="box"><h3>提領規則</h3>
-      <label class="f"><span>提領率硬性上限 %<em>填 0 代表不設上限</em></span><input type="number" step="0.5" data-k="cap"></label>
-      <label class="f"><span>上限適用到幾歲</span><input type="number" step="1" data-k="capAge"></label>
+    <div class="box"><h3>目標與提領規則</h3>
+      <label class="f"><span>100 歲想留下（今日價值）<em>含護城河；建議線就是剛好留下這個數字</em></span><input type="number" step="50" data-k="leftAt100"></label>
+      <label class="f"><span>提領率警示線 %<em>只標紅提醒，不影響目標；填 0 不警示</em></span><input type="number" step="0.5" data-k="cap"></label>
+      <label class="f"><span>警示線適用到幾歲</span><input type="number" step="1" data-k="capAge"></label>
       <label class="f"><span>66～75 歲參考提領率 %</span><input type="number" step="0.5" data-k="ref2"></label>
       <label class="f"><span>76 歲以後參考提領率 %</span><input type="number" step="0.5" data-k="ref3"></label>
       <label class="f"><span>試算到幾歲</span><input type="number" step="1" data-k="endAge"></label>
@@ -163,7 +164,7 @@ pre{background:var(--bg2);padding:10px;border-radius:6px;font-size:12px;white-sp
   <div class="bar" style="margin:6px 0 10px"><button class="btn" id="viewBtn" type="button">目前顯示：今日價值</button></div>
   <div class="scroll"><table id="post"></table></div>
   <h2 style="margin-top:20px">計算規則</h2>
-  <p class="note">① 退休後每年 1 月 1 日先提出當年缺口（花費 × 通膨 − 月退 ＋ 房貸 ＋ 長照基金不足的部分），剩下的錢乘上（1＋報酬率）。② 地板線：試算終點時生活核心資產剛好 ≥ 0 的最小金額。③ 建議線：再加上「上限年齡以前，每年提領率（不含房貸）≤ 上限」的最小金額。④ 退休當年 12 月總額＝生活核心資產＋護城河＋退休後一次性支出的折現值＋長照基金。⑤ 往回推 5 個月，扣掉一次金，加回退休當年的一次性支出與 8～12 月缺口，就是退休日的自有資產。⑥ 再逐月往回推到 2026/12：每月加定投、每年 1 月扣體驗金、退休前的一次性支出在當年 6 月扣。</p>
+  <p class="note">① 退休後每年 1 月 1 日先提出當年缺口（花費 × 通膨 − 月退 ＋ 房貸 ＋ 長照基金不足的部分），剩下的錢乘上（1＋報酬率）。② 地板線：試算終點時生活核心資產剛好用完、只剩護城河的最小金額。③ 建議線：試算終點時，生活核心資產＋護城河剛好等於「100 歲想留下」（今日價值）的金額。提領率只做警示，不影響目標。④ 退休當年 12 月總額＝生活核心資產＋護城河＋退休後一次性支出的折現值＋長照基金。⑤ 往回推 5 個月，扣掉一次金，加回退休當年的一次性支出與 8～12 月缺口，就是退休日的自有資產。⑥ 再逐月往回推到 2026/12：每月加定投、每年 1 月扣體驗金、退休前的一次性支出在當年 6 月扣。</p>
   <h2 style="margin-top:20px">匯出</h2>
   <p class="note">匯出內容包含：全部參數、策略與原則、計算規則、三條線、退休後逐年資產、檢核值、年度紀錄。md 檔可以直接貼給其他 AI 驗算（已附上給 AI 的指令）。</p>
   <div class="bar"><button class="btn p" id="dlMd" type="button">⬇ 下載 md 檔</button><button class="btn p" id="dlXlsx" type="button">⬇ 下載試算表（Excel）</button><button class="btn" id="copyMd" type="button">複製 md 全文</button><button class="btn" id="prt" type="button">🖨 列印報告</button><span class="note" id="msg" aria-live="polite"></span></div>
@@ -187,7 +188,7 @@ pre{background:var(--bg2);padding:10px;border-radius:6px;font-size:12px;white-sp
 {
 const FB_DEFAULT='https://invest-23f8e-default-rtdb.firebaseio.com';
 const DEF_P={snapDate:'2026/11/25',snapNet:2303,s1:160,s2:120,s3:80,inf:2,ret:5.5,penAdj:0,retireYear:2033,lump:383.7,pension:28001,mort:35,mortEnd:2035,
-moat:300,ltcFund:200,ltcStart:2055,ltcCost:30,dca0:1,dca:1.5,exp:40,salary:110,cap:5,capAge:65,ref2:4,ref3:3,endAge:100,happy:1.2,gHi:1.5,gMid:1,gLo:0.75,gFl:0.5};
+moat:300,ltcFund:200,ltcStart:2055,ltcCost:30,dca0:1,dca:1.5,exp:40,salary:110,cap:5,capAge:65,ref2:4,ref3:3,endAge:100,leftAt100:500,happy:1.2,gHi:1.5,gMid:1,gLo:0.75,gFl:0.5};
 const DEF_ITEMS=[{name:'換車',amt:150,year:2030},{name:'出國度假',amt:150,year:2034},{name:'老屋修繕',amt:200,year:2035},{name:'長輩後事',amt:100,year:2040}];
 const DEF_T={
 route:'路線 V：703 導師（115/8～118/7）→ 專任一年（118/8～119/7）→ 第二屆導師（119/8～122/7）→ 122/7/31（58 歲）和第二屆學生一起畢業退休。\n決策點：2029 春天申請專任；2030 春天決定接不接第二屆。\n安全閥（每年 3 月）：健檢紅燈／班級讓我撐不住／爸媽照護需要大量時間 → 當年 7/31 退休（最早 120/8/1）。',
@@ -218,14 +219,14 @@ function model(p){
   for(let y=R+1;y<=endY;y++){bucket[y]=B; let need=y>=p.ltcStart?p.ltcCost*I(y):0; const pay=Math.min(B,need); ltcShort[y]=need-pay; B=(B-pay)*(1+r);}
   const gap=y=>spendT(y-by)*I(y)-pen(y)+mort(y)+(ltcShort[y]||0);
   const sim=(P0,check)=>{let P=P0,w=-1,bal={};for(let y=R+1;y<=endY;y++){const g=gap(y);if(check&&y-by<=p.capAge&&P>0)w=Math.max(w,(g-mort(y))/P-p.cap/100);if(check&&P<=0)w=9;bal[y]=P;P=(P-g)*(1+r);}return {end:P,w,bal};};
-  const solve=check=>{let lo=0,hi=50000;for(let i=0;i<80;i++){const m=(lo+hi)/2,s=sim(m,check);if(s.end>=0&&s.w<=1e-12)hi=m;else lo=m;}return hi;};
+  const solve=tgt=>{let lo=0,hi=50000;for(let i=0;i<80;i++){const m=(lo+hi)/2,s=sim(m,false);if(s.end>=tgt)hi=m;else lo=m;}return hi;};
   const items=p.items.filter(it=>+it.amt>0&&+it.year>0);
   const pvPost=items.filter(it=>it.year>R).reduce((s,it)=>s+it.amt*I(it.year)/(1+r)**(it.year-(R+1)),0);
   const inR=items.filter(it=>it.year==R).reduce((s,it)=>s+it.amt*I(R),0);
   const gap5=5/12*(spendT(R-by)*I(R)-pen(R))+5/12*mort(R);
   const moatN=p.moat*I(R), ltcN=p.ltcFund*I(R);
-  const line=check=>{
-    const core=solve(check),s=sim(core,check);
+  const line=tgt=>{
+    const core=solve(tgt),s=sim(core,false);
     const T12=core+moatN+pvPost+ltcN;
     const A=T12/(1+r)**(5/12)-p.lump+inR+gap5;
     const mr=(1+r)**(1/12)-1;let X=A,vals={},y=R,m=7;
@@ -239,7 +240,8 @@ function model(p){
     }
     return {core,T12,A,vals,bal:s.bal,end:s.end};
   };
-  const fl=line(false),sg=line(true);
+  const tgtSg=Math.max(0,(p.leftAt100??500)-p.moat)*I(endY+1);
+  const fl=line(0),sg=line(tgtSg);
   return {R,by,endY,I,gap,mort,pen,spendY:y=>spendT(y-by)*I(y),ltcS:y=>ltcShort[y]||0,fl,sg,moatN,pvPost,inR,gap5,ltcN,bucket};
 }
 
@@ -303,10 +305,10 @@ function calc(){
   // checks
   const y1=R+1,pr=y=>(o.gap(y)-o.mort(y))/o.sg.bal[y]*100;let capY=y1;for(let y=y1;y<=Math.min(o.endY,1975+p.capAge);y++)if(pr(y)>pr(capY))capY=y;
   const chk=[[`${R} 年總花費（名目）`,fmt(p.s1*o.I(R))+' 萬'],[`${y1} 年生活缺口（含房貸）`,fmt(o.gap(y1))+' 萬'],[`${1975+66} 年生活缺口（進入 66 歲）`,fmt(o.gap(1975+66))+' 萬'],[`${1975+76} 年生活缺口（進入 76 歲）`,fmt(o.gap(1975+76))+' 萬'],
-    [`建議線的生活核心資產（${y1} 年初）`,fmt(o.sg.core)+' 萬'],[`${y1} 年提領率`,pr(y1).toFixed(1)+'%'],[`上限期間提領率最高的一年（${capY}）`,pr(capY).toFixed(1)+'%'],
+    [`建議線的生活核心資產（${y1} 年初）`,fmt(o.sg.core)+' 萬'],[`${y1} 年提領率`,pr(y1).toFixed(1)+'%'],[`${p.capAge} 歲以前提領率最高的一年（${capY}）`,pr(capY).toFixed(1)+'%'],
     [`護城河（${R} 名目）`,fmt(o.moatN)+' 萬'],[`長照基金（${R} 名目）`,fmt(o.ltcN)+' 萬'],[`退休後一次性支出（折現到 ${y1} 年初）`,fmt(o.pvPost)+' 萬'],
     ['退休當年的一次性支出＋8～12 月缺口',fmt(o.inR)+' ＋ '+fmt(o.gap5)+' 萬'],[`建議線 ${p.endAge} 歲時的生活核心資產`,fmt(o.sg.bal[o.endY])+' 萬（約今日 '+fmt(o.sg.bal[o.endY]/o.I(o.endY))+' 萬）'],
-    ['地板線 2026/12','約 '+fmt(o.fl.vals[2026])+' 萬']];
+    ['地板線 2026/12','約 '+fmt(o.fl.vals[2026])+' 萬'],[`建議線 ${p.endAge} 歲後留下（含護城河，今日價值）`,fmt(o.sg.end/o.I(o.endY+1)+ +P.moat)+' 萬']];
   $('chk').innerHTML='<tbody>'+chk.map(c=>`<tr><td>${c[0]}</td><td>${c[1]}</td></tr>`).join('')+'</tbody>';
   const tv=S.p.view!=='nom',dv=y=>tv?o.I(y):1;
   $('viewBtn').textContent=tv?'目前顯示：今日價值（點一下改看名目）':'目前顯示：名目金額（點一下改看今日價值）';
@@ -367,7 +369,7 @@ function rep(){
    ['B','通膨',`每年 ${P.inf}%，從 2026 年起算`],['B','投資報酬（名目）',`每年 ${P.ret}%`],['B','護城河',`${P.moat} 萬（今日價值），一直不動`],
    ['B','長照基金',`${P.ltcFund} 萬（今日價值），${P.ltcStart} 年起每年支付 ${P.ltcCost} 萬（今日價值），不足由生活核心資產支付`],
    ['B','定投',`2026/12 每月 ${P.dca0} 萬；2027 起每月 ${P.dca} 萬`],['B','體驗金',`每年 1 月從投資帳戶撥 ${P.exp} 萬（今日價值）`],['B','月薪實收',`每年 ${P.salary} 萬（只做紀錄）`],
-   ['B','提領率規則',`${P.capAge} 歲以前硬性上限 ${+P.cap>0?P.cap+'%':'不設'}；66～75 歲參考 ${P.ref2}%；76 歲以後參考 ${P.ref3}%；試算到 ${P.endAge} 歲`],
+   ['B','100 歲想留下',`${P.leftAt100} 萬（今日價值，含護城河）`],['B','提領率警示',`${P.capAge} 歲以前警示線 ${+P.cap>0?P.cap+'%':'不設'}；66～75 歲參考 ${P.ref2}%；76 歲以後參考 ${P.ref3}%；試算到 ${P.endAge} 歲（只做警示，不影響目標）`],
    ['B','愉快線',`建議線 × ${P.happy}`],['B','年度護欄',`愉快線以上 ×${P.gHi}；建議～愉快 ×${P.gMid}；地板～建議 ×${P.gLo}；地板以下 ×${P.gFl}（乘在下一年體驗金）`]];
   const items=S.items.map(i=>[i.name,+i.amt,String(i.year)]);
   const lines=[];for(let y=2026;y<R;y++)lines.push([y+'/12',y-1975,o.fl.vals[y],o.sg.vals[y],o.sg.vals[y]*H]);
@@ -375,15 +377,15 @@ function rep(){
   const post=[];for(let y=y1;y<=o.endY;y++){const d=o.I(y);post.push([y-1975,y,o.sg.bal[y],o.spendY(y),o.pen(y),o.mort(y),o.ltcS(y),o.gap(y),pr(y),o.bucket[y]||0,(o.sg.bal[y]-o.gap(y))*(1+p1r()),o.sg.bal[y]/d,o.spendY(y)/d]);}
   const chk=[[`${R} 年總花費（名目）`,p1(P.s1*o.I(R))],[`${y1} 年生活缺口（含房貸）`,p1(o.gap(y1))],[`${1975+66} 年生活缺口`,p1(o.gap(1975+66))],[`${1975+76} 年生活缺口`,p1(o.gap(1975+76))],
    [`建議線生活核心資產（${y1} 年初）`,p1(o.sg.core)],[`${y1} 年提領率`,pr(y1).toFixed(1)+'%'],[`護城河（${R} 名目）`,p1(o.moatN)],[`長照基金（${R} 名目）`,p1(o.ltcN)],
-   [`退休後一次性支出（折現到 ${y1} 年初）`,p1(o.pvPost)],['退休當年一次性支出',p1(o.inR)],['退休當年 8～12 月缺口',p1(o.gap5)],[`建議線 ${P.endAge} 歲時生活核心資產`,p1(o.sg.bal[o.endY])]];
+   [`退休後一次性支出（折現到 ${y1} 年初）`,p1(o.pvPost)],['退休當年一次性支出',p1(o.inR)],['退休當年 8～12 月缺口',p1(o.gap5)],[`建議線 ${P.endAge} 歲時生活核心資產`,p1(o.sg.bal[o.endY])],[`建議線 ${P.endAge} 歲後留下（含護城河，今日價值）`,p1(o.sg.end/o.I(o.endY+1)+ +P.moat)]];
   const recs=S.recs.map(r=>{const z=zone(+r.net,yearOf(r.date));return [r.date,+r.net,z?z.sg:'',z?z.t:'',z?'×'+z.m:'',r.note||'']});
   const texts=[['退休路線與決策點',S.t.route],['Die with Zero 原則',S.t.dwz],['提領與帳戶分工',S.t.accounts],['想定與假設說明',S.t.assume],['其他備註',S.t.memo]].filter(t=>t[1]);
   return {params,items,lines,post,chk,recs,texts,R};
 }
 const p1=v=>Math.round(v*10)/10;const p1r=()=>(+S.p.ret)/100;
 const RULES=['退休後每年 1 月 1 日先從生活核心資產提出當年缺口：花費（今日價值 × (1+通膨)^(年份−2026)）− 月退 ＋ 房貸 ＋ 長照基金不足的部分；剩下的錢 × (1＋報酬率)。花費必須逐年算通膨，不可凍結。',
-'地板線：試算終點時生活核心資產剛好 ≥ 0 的最小金額（護城河另外保留不動）。',
-'建議線：再加上「上限年齡以前，每年提領率（缺口不含房貸 ÷ 年初生活核心資產）≤ 上限」的最小金額。愉快線＝建議線 × 倍數。',
+'地板線：試算終點時生活核心資產剛好用完、只剩護城河的最小金額。',
+'建議線：試算終點時，生活核心資產＋護城河剛好等於「100 歲想留下」（今日價值）的最小金額。提領率（缺口不含房貸 ÷ 年初生活核心資產）只做警示，不影響目標。愉快線＝建議線 × 倍數。',
 '退休當年 12 月總額＝生活核心資產＋護城河（今日價值 × 通膨）＋退休後一次性支出折現值（用報酬率折現）＋長照基金。',
 '退休日自有資產＝ 12 月總額 ÷ (1＋報酬率)^(5/12) − 一次金 ＋ 退休當年一次性支出 ＋ 8～12 月缺口。',
 '再逐月往回推到 2026/12：月報酬＝(1＋報酬率)^(1/12)−1；每月月底加定投；每年 1 月初扣體驗金；退休前的一次性支出在當年 6 月扣。自有資產不含一次金。'];
