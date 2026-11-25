@@ -1,0 +1,2532 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><script data-bard-client-injected="true">(function(firebaseConfig, initialAuthToken, appId) {
+        window.__firebase_config = firebaseConfig;
+        window.__initial_auth_token = initialAuthToken;
+        window.__app_id = appId;
+            })("\n{\n  \"apiKey\": \"AIzaSyCqyCcs2R2e7AegGjvFAwG98wlamtbHvZY\",\n  \"authDomain\": \"bard-frontend.firebaseapp.com\",\n  \"projectId\": \"bard-frontend\",\n  \"storageBucket\": \"bard-frontend.firebasestorage.app\",\n  \"messagingSenderId\": \"175205271074\",\n  \"appId\": \"1:175205271074:web:2b7bd4d34d33bf38e6ec7b\"\n}\n","eyJhbGciOiJSUzI1NiIsImtpZCI6IjExNjRiNzdiNDMzZDdhMDAyMWI4NjE4YjhjYTU3ZTMyZGI5MWUxMTMiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJmaXJlYmFzZS1hZG1pbnNkay1mYnN2Y0BiYXJkLWZyb250ZW5kLmlhbS5nc2VydmljZWFjY291bnQuY29tIiwiYXVkIjoiaHR0cHM6Ly9pZGVudGl0eXRvb2xraXQuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLmlkZW50aXR5LmlkZW50aXR5dG9vbGtpdC52MS5JZGVudGl0eVRvb2xraXQiLCJ1aWQiOiIxNjQ0MDA2Nzk2MzQyMzMxNzU4MSIsImlzcyI6ImZpcmViYXNlLWFkbWluc2RrLWZic3ZjQGJhcmQtZnJvbnRlbmQuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJjbGFpbXMiOnsiYXBwSWQiOiJjXzBmNDVkNjgzODliMmI2MjJfaW5kZXguaHRtbC0xMDUifSwiZXhwIjoxNzk1NjE2OTgxLCJpYXQiOjE3OTU2MTMzODEsImFsZyI6IlJTMjU2In0.j4Re7UriIibJzgNRGEKmmyN5OTKmQDnL76WJDUdiSXKjEubDw0FOfV8Y1GAIZhvvmsXWQhQPU1AQ9pzRun77cCkXG5jX3KEsLuWIHPqSOtE0jr5wPL-84tgvOj3Zygbrv1z3Z3-VKE17Yg8EnvhwT_JhEBD2uYh83V5NP5mO8_wubYRr8u20WF8VBV6ip3GzPhxrZEjNbY0Ue7YCHBtW7PWf8iRBzMqR31vWOS4szdoZI83EQcO456sU51BQNXkUTSANK1cZQaCNKwfm6mbSwvW4wGtkcSLCXNg6hlstib1SsXZrvx8A1NV2QfLZJAdyWmbN6Tz6gNY2AW4gAwhPkQ","c_0f45d68389b2b622_index.html-105")</script><script data-bard-client-injected="true">
+  document.addEventListener('input', (event) => {
+    if (event.target && (event.target.isContentEditable || event.target.hasAttribute('contenteditable'))) {
+      const clonedDoc = document.cloneNode(true);
+      const injectedScripts = clonedDoc.querySelectorAll('[data-bard-client-injected="true"]');
+      injectedScripts.forEach(el => el.remove());
+      window.parent.postMessage({
+        type: 'inlineEdit',
+        html: '<!DOCTYPE html>\n' + clonedDoc.documentElement.outerHTML
+      }, '*');
+    }
+  });
+</script><script data-bard-client-injected="true">(function(){'use strict';window.addEventListener("message",a=>{a.data&&a.data.type==="SUPPLEMENTAL_DATA_UPDATE"&&window.dispatchEvent(new CustomEvent("supplementaldataupdate",{detail:a.data.data}))});}).call(this);
+</script><script data-bard-client-injected="true">(function() {
+  const SCROLL_KEYS = new Set([
+    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+    ' ', 'Spacebar', 'PageUp', 'PageDown', 'Home', 'End',
+  ]);
+  const HORIZONTAL_KEYS = new Set(['ArrowLeft', 'ArrowRight']);
+
+  function isTextEntryTarget(target) {
+    if (!target) return false;
+    const tagName = target.tagName;
+    return tagName === 'INPUT' || tagName === 'TEXTAREA' ||
+        tagName === 'SELECT' || target.isContentEditable === true;
+  }
+
+  // An element absorbs the key only if it both overflows on the axis being
+  // scrolled and is configured to scroll on that axis. The cheap dimension
+  // test runs first because getComputedStyle forces a style recalc, and this
+  // runs on every keypress. Each axis is read from its own longhand: the
+  // 'overflow' shorthand serializes as two values when the axes differ, which
+  // is the common 'overflow-x: hidden; overflow-y: auto' pane.
+  function canScroll(node, horizontal) {
+    const overflows = horizontal ? node.scrollWidth > node.clientWidth
+                                 : node.scrollHeight > node.clientHeight;
+    if (!overflows) return false;
+    const style = window.getComputedStyle(node);
+    const overflow = horizontal ? style.overflowX : style.overflowY;
+    return overflow === 'auto' || overflow === 'scroll';
+  }
+
+  // Walks up from the event target so nested scrollers keep their behavior.
+  // <body> is included because pages that pin the root height make it the
+  // scroll container.
+  function hasScrollableAncestor(target, horizontal) {
+    let node = target;
+    while (node && node !== document.documentElement) {
+      if (canScroll(node, horizontal)) return true;
+      node = node.parentElement;
+    }
+    return false;
+  }
+
+  function rootCanScroll(horizontal) {
+    const scroller = document.scrollingElement || document.documentElement;
+    if (!scroller) return false;
+    // Tolerate a pixel of rounding so subpixel layouts do not look scrollable.
+    return horizontal ? scroller.scrollWidth > window.innerWidth + 1
+                      : scroller.scrollHeight > window.innerHeight + 1;
+  }
+
+  window.addEventListener('keydown', function(event) {
+    if (!SCROLL_KEYS.has(event.key)) return;
+    if (event.defaultPrevented) return;
+    // Alt and Meta turn arrows into browser history navigation, and Ctrl is
+    // reserved for shortcuts, so none of them are scroll intent.
+    if (event.altKey || event.metaKey || event.ctrlKey) return;
+
+    const target = event.target;
+    if (isTextEntryTarget(target)) return;
+
+    // Anything that can still absorb the scroll gets to keep it.
+    const horizontal = HORIZONTAL_KEYS.has(event.key);
+    if (rootCanScroll(horizontal)) return;
+    if (hasScrollableAncestor(target, horizontal)) return;
+
+    event.preventDefault();
+  }, {capture: true, passive: false});
+})();</script><script data-bard-client-injected="true">(function() {
+  // Ensure this script is executed only once
+  if (window.firebaseAuthBridgeScriptLoaded) {
+    return;
+  }
+  window.firebaseAuthBridgeScriptLoaded = true;
+
+  let nextTokenPromiseId = 0;
+
+  // Stores { resolve, reject } for ongoing token requests
+  const pendingTokenPromises = {};
+
+  // Listen for messages from the Host Application
+  window.addEventListener('message', function(event) {
+
+    const messageData = event.data;
+
+  if (messageData && messageData.type === 'RESOLVE_NEW_FIREBASE_TOKEN') {
+      const { success, token, error, promiseId } = messageData ?? {};
+      if (pendingTokenPromises[promiseId]) {
+        if (success) {
+          pendingTokenPromises[promiseId].resolve(token);
+        } else {
+          pendingTokenPromises[promiseId].reject(new Error(error || 'Token refresh failed from host.'));
+        }
+        delete pendingTokenPromises[promiseId];
+      }
+    }
+  });
+
+  // Expose a function for the Generated App to request a new Firebase token
+  window.requestNewFirebaseToken = function() {
+    const currentPromiseId = nextTokenPromiseId++;
+    const promise = new Promise((resolve, reject) => {
+      pendingTokenPromises[currentPromiseId] = { resolve, reject };
+    });
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({
+        type: 'REQUEST_NEW_FIREBASE_TOKEN',
+        promiseId: currentPromiseId
+      }, '*');
+    } else {
+      pendingTokenPromises[currentPromiseId].reject(new Error('No parent window to request token from.'));
+      delete pendingTokenPromises[currentPromiseId];
+    }
+    return promise;
+  };
+})();</script><script data-bard-client-injected="true">
+let realOriginalGetUserMedia = null;
+if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+  realOriginalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+}
+
+(function() {
+  if (navigator.mediaDevices && navigator.mediaDevices.__proto__) {
+    try {
+      Object.defineProperty(navigator.mediaDevices.__proto__, 'getUserMedia', {
+        get: function() {
+          return undefined; // Or throw an error
+        },
+        configurable: false
+      });
+    } catch (error) {
+      console.error("Error defining prototype getter:", error);
+    }
+  }
+})();
+
+(function() {
+  const pendingMediaResolvers = {};
+  let nextMediaPromiseId = 0;
+
+  function requestMediaPermissions(constraints) {
+    const mediaPromiseId = nextMediaPromiseId++;
+    const promise = new Promise((resolve, reject) => {
+      pendingMediaResolvers[mediaPromiseId] = (granted) => {
+        delete pendingMediaResolvers[mediaPromiseId];
+        resolve(granted);
+      };
+    });
+
+    window.parent.postMessage({
+      type: 'requestMediaPermission',
+      constraints: constraints,
+      promiseId: mediaPromiseId,
+    }, '*');
+
+    return promise;
+  }
+
+  let originalGetUserMedia = realOriginalGetUserMedia;
+
+  function interceptGetUserMedia() {
+    if (navigator.mediaDevices) {
+      Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
+        value: function(constraints) {
+          return requestMediaPermissions(constraints).then((granted) => {
+            if (granted) {
+              if (originalGetUserMedia) {
+                return originalGetUserMedia(constraints);
+              } else {
+                throw new Error("Original getUserMedia not available.");
+              }
+            } else {
+              throw new DOMException('Permission denied', 'NotAllowedError');
+            }
+          });
+        },
+        writable: false,
+        configurable: false
+      });
+    }
+  }
+
+  interceptGetUserMedia();
+
+  const observer = new MutationObserver(function(mutationsList, observer) {
+    for (const mutation of mutationsList) {
+      if (mutation.type === 'reconfigured' && mutation.name === 'getUserMedia' && mutation.object === navigator.mediaDevices) {
+        interceptGetUserMedia();
+      } else if (mutation.type === 'attributes' && mutation.attributeName === 'getUserMedia' && mutation.target === navigator.mediaDevices) {
+        interceptGetUserMedia();
+      } else if (mutation.type === 'childList' && mutation.addedNodes) {
+        mutation.addedNodes.forEach(node => {
+          if (node === navigator.mediaDevices) {
+            interceptGetUserMedia();
+          }
+        });
+      }
+    }
+  });
+
+  function interceptSpeechRecognition() {
+    if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+      return;
+    }
+
+    const OriginalSpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    const SpeechRecognitionWrapper = function(...args) {
+      const recognizer = new OriginalSpeechRecognition(...args);
+      const originalStart = recognizer.start.bind(recognizer);
+
+      recognizer.start = function() {
+        requestMediaPermissions({ audio: true }).then(granted => {
+          if (granted) {
+            originalStart();
+          } else {
+            const errorEvent = new SpeechRecognitionErrorEvent('error');
+            errorEvent.error = 'not-allowed'; // This is the standard error for permission denial.
+            recognizer.dispatchEvent(errorEvent);
+          }
+        });
+      };
+
+      return recognizer;
+    };
+
+    SpeechRecognitionWrapper.prototype = OriginalSpeechRecognition.prototype;
+    SpeechRecognitionWrapper.prototype.constructor = SpeechRecognitionWrapper;
+
+    if (window.SpeechRecognition) {
+      window.SpeechRecognition = SpeechRecognitionWrapper;
+    }
+    if (window.webkitSpeechRecognition) {
+      window.webkitSpeechRecognition = SpeechRecognitionWrapper;
+    }
+  }
+
+  interceptSpeechRecognition();
+
+  window.addEventListener('message', function(event) {
+    if (event.data) {
+      if (event.data.type === 'resolveMediaPermission') {
+        const { promiseId, granted } = event.data;
+        if (pendingMediaResolvers[promiseId]) {
+          pendingMediaResolvers[promiseId](granted);
+        }
+      }
+    }
+  });
+
+})();</script><script ws-interception-config="{&quot;parentOrigin&quot;:&quot;https://gemini.google.com&quot;,&quot;proxiedDomains&quot;:[]}" data-bard-client-injected="true">(function(){'use strict';var u=typeof Object.defineProperties=="function"?Object.defineProperty:function(b,d,e){if(b==Array.prototype||b==Object.prototype)return b;b[d]=e.value;return b};function v(b){b=["object"==typeof globalThis&&globalThis,b,"object"==typeof window&&window,"object"==typeof self&&self,"object"==typeof global&&global];for(var d=0;d<b.length;++d){var e=b[d];if(e&&e.Math==Math)return e}throw Error("Cannot find global object");}var w=v(this);
+function y(b,d){if(d)a:{var e=w;b=b.split(".");for(var h=0;h<b.length-1;h++){var k=b[h];if(!(k in e))break a;e=e[k]}b=b[b.length-1];h=e[b];d=d(h);d!=h&&d!=null&&u(e,b,{configurable:!0,writable:!0,value:d})}}function z(b){function d(h){return b.next(h)}function e(h){return b.throw(h)}return new Promise(function(h,k){function m(n){n.done?h(n.value):Promise.resolve(n.value).then(d,e).then(m,k)}m(b.next())})}y("globalThis",function(b){return b||w});/*
+
+ Copyright The Closure Library Authors.
+ SPDX-License-Identifier: Apache-2.0
+*/
+function A(b,d){function e(){}e.prototype=d.prototype;b.i=d.prototype;b.prototype=new e;b.prototype.constructor=b;b.h=function(h,k,m){for(var n=Array(arguments.length-2),p=2;p<arguments.length;p++)n[p-2]=arguments[p];return d.prototype[k].apply(h,n)}};function B(b,d,e="*"){function h(a){if(typeof a==="string")return F.encode(a).buffer;if(a instanceof ArrayBuffer)return a.slice(0);if(ArrayBuffer.isView(a))return a.buffer.slice(a.byteOffset,a.byteOffset+a.byteLength);throw Error("Invalid data type");}function k(a){a=h(a);var f={type:"send",data:new Uint8Array(a)},g;(g=r)==null||g.postMessage(f,[a])}function m(){if(!r)throw Error("Data port not captured yet.");r.onmessage=a=>{if(a.data.type==="message"){a=new MessageEvent("message",{data:G.decode(a.data.data)});
+let f;(f=c.onmessage)==null||f.call(c,a);c.dispatchEvent(a)}}}function n(){if(!t)throw Error("Control port not captured yet.");t.onmessage=a=>{switch(a.data.type){case "open":l=1;var f=new Event("open"),g;(g=c.onopen)==null||g.call(c,f);c.dispatchEvent(f);q.forEach(H=>{k(H)});q=[];break;case "close":g=a.data;l=3;g=new CloseEvent("close",{code:g.code,reason:g.reason,wasClean:g.wasClean});(f=c.onclose)==null||f.call(c,g);c.dispatchEvent(g);break;case "error":l=3;f=new Event("error");let x;(x=c.onerror)==
+null||x.call(c,f);c.dispatchEvent(f)}}}function p(a){return z(function*(){var f=new MessageChannel;t=f.port1;var g=new MessageChannel;r=g.port1;n();m();window.parent.postMessage({type:"websocket_open",portOrdering:["control","data"],url:b,protocols:a||[],connectionId:I},e,[f.port2,g.port2])}())}var c=Reflect.construct(EventTarget,[],new.target);c.CONNECTING=0;c.OPEN=1;c.CLOSING=2;c.CLOSED=3;c.url=b;c.binaryType="arraybuffer";c.protocol="";c.extensions="";var l=0,t=null,r=null,q=[],F=new TextEncoder,
+G=new TextDecoder;c.onopen=null;c.onmessage=null;c.onclose=null;c.onerror=null;Object.defineProperty(c,"readyState",{get:()=>l,enumerable:!0,configurable:!0});Object.defineProperty(c,"bufferedAmount",{get:()=>{var a=0;q.forEach(f=>{a+=typeof f==="string"?f.length:f.byteLength});return a},enumerable:!0,configurable:!0});var I=function(){var a;return((a=globalThis.crypto)==null?0:a.randomUUID)?globalThis.crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,f=>{var g=Math.random()*
+16|0;return(f==="x"?g:g&3|8).toString(16)})}();c.send=a=>{if(l===1)a instanceof Blob?a.arrayBuffer().then(f=>{k(f)}):k(a);else if(l===0)if(typeof a==="string")q.push(a);else if(a instanceof ArrayBuffer||ArrayBuffer.isView(a))q.push(h(a));else throw Error("Sending Blob is not supported before the connection is open.");else console.debug("WebSocket send called in CLOSING or CLOSED state; ignored.")};c.close=(a=1E3,f="")=>{if(l!==2&&l!==3){l=2;a={type:"close",code:a,reason:f,wasClean:a===1E3};var g;
+(g=t)==null||g.postMessage(a)}};Promise.resolve().then(()=>p(d));return c}A(B,EventTarget);var C=document.currentScript,D=C==null?void 0:C.getAttribute("ws-interception-config");if(!D)throw Error("WebSocket Interceptor: Missing ws-interception-config attribute in the script tag.");var E=JSON.parse(D);if(!E.parentOrigin||typeof E.parentOrigin!=="string")throw Error("WebSocket Interceptor: Invalid parentOrigin in ws-interception-config");
+(function(b){var d=Object.getOwnPropertyDescriptor(window,"WebSocket");if(!d||d.writable||d.configurable)d=Object.assign(function(e,h){try{let k=(new URL(e)).hostname;if(b.proxiedDomains.some(m=>k===m||k.endsWith(`.${m}`)))return new B(e,h,b.parentOrigin)}catch(k){throw window.parent.postMessage({type:"websocket_blocked",url:e,reason:"blocked_invalid_url"},b.parentOrigin),new DOMException(`WebSocket connection to '${e}' is not allowed in Canvas.`,"SecurityError");}window.parent.postMessage({type:"websocket_blocked",
+url:e,reason:"blocked_domain_not_allowlisted"},b.parentOrigin);throw new DOMException(`WebSocket connection to '${e}' is not allowed in Canvas.`,"SecurityError");},{CONNECTING:0,OPEN:1,CLOSING:2,CLOSED:3}),Object.defineProperty(window,"WebSocket",{value:d,writable:!1,configurable:!1})})({proxiedDomains:E.proxiedDomains||[],parentOrigin:E.parentOrigin});}).call(this);
+</script><script data-bard-client-injected="true">((function(modelInformation) {
+  const originalFetch = window.fetch;
+  // TODO: b/421908508 - Move these out of the script and match all generative AI model calls.
+  let googleLlmBaseApiUrls = [
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.textModelName + ':streamGenerateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.textModelName + ':generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageModelName + ':predict',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageModelName + ':predictLongRunning',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageEditModelName + ':generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageTransformModelName + ':generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.videoModelName + ':predict',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.videoModelName + ':predictLongRunning',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.ttsModelName + ':generateContent',
+  ];
+  modelInformation.deprecatedTextModelNames.forEach((modelName) => {
+    googleLlmBaseApiUrls.push(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+    );
+  });
+  modelInformation.deprecatedImageModelNames.forEach((modelName) => {
+    googleLlmBaseApiUrls.push(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':predict',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':predictLongRunning',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+    );
+  });
+  modelInformation.deprecatedGenerateImageModelNames.forEach((modelName) => {
+    googleLlmBaseApiUrls.push(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+    );
+  });
+  modelInformation.deprecatedImageTransformModelNames.forEach((modelName) => {
+    googleLlmBaseApiUrls.push(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+    );
+  });
+
+  const pendingFetchResolvers = {};
+  let nextPromiseId = 0;
+
+  function handleStringInput(input, optionsArgument) {
+    const actualUrl = input;
+    const fetchCallArgs = [actualUrl, optionsArgument];
+    const effectiveOptions = optionsArgument || {};
+    const bodyForApiKeyCheck = effectiveOptions.body;
+    const bodyForPostMessage = effectiveOptions.body;
+    return { actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage };
+  }
+
+  function handleRequestInput(input, optionsArgument) {
+    const actualUrl = input.url;
+    const fetchCallArgs = [input, optionsArgument];
+    const effectiveOptions = { method: input.method, headers: new Headers(input.headers) };
+    let bodyForApiKeyCheck;
+    let bodyForPostMessage;
+
+    if (optionsArgument) {
+      if (optionsArgument.method) effectiveOptions.method = optionsArgument.method;
+      if (optionsArgument.headers) effectiveOptions.headers = new Headers(optionsArgument.headers);
+      if ('body' in optionsArgument) {
+        bodyForApiKeyCheck = optionsArgument.body;
+        bodyForPostMessage = optionsArgument.body;
+      } else {
+        bodyForApiKeyCheck = undefined;
+        bodyForPostMessage = input.body;
+      }
+    } else {
+      bodyForApiKeyCheck = undefined;
+      bodyForPostMessage = input.body;
+    }
+    return { actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage };
+  }
+
+  window.fetch = function(input, optionsArgument) {
+    let actualUrl;
+    let fetchCallArgs;
+    let effectiveOptions = {};
+    let bodyForApiKeyCheck;
+    let bodyForPostMessage;
+
+    if (typeof input === 'string') {
+      ({actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage} = handleStringInput(input, optionsArgument));
+    } else if (input instanceof Request) {
+      ({actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage} = handleRequestInput(input, optionsArgument));
+    } else {
+      return originalFetch.apply(window, [input, optionsArgument]);
+    }
+
+    effectiveOptions.method = effectiveOptions.method || 'GET';
+    if (!effectiveOptions.headers) {
+      effectiveOptions.headers = new Headers();
+    }
+
+
+    if (typeof actualUrl === 'string' && googleLlmBaseApiUrls.some((url) => actualUrl.startsWith(url))) {
+      let apiKeyIsNull = true;
+
+      const regex = new RegExp("models/([^:]+)");
+      const modelNameMatch = actualUrl.match(regex);
+      const modelName = modelNameMatch ? modelNameMatch[1] : 'unspecified';
+
+
+      try {
+        const urlObject = new URL(actualUrl);  // Use URL object for robust parsing
+        const apiKeyParam = urlObject.searchParams.get('key');
+        if (apiKeyParam) {
+          apiKeyIsNull = false;
+        }
+      } catch (e) {
+        // Continue checks even if URL parsing fails
+      }
+
+      if (apiKeyIsNull && effectiveOptions.headers) {
+        const h = new Headers(effectiveOptions.headers);
+        const apiKeyHeaderValue = h.get('X-API-Key') || h.get('x-api-key');
+        if (apiKeyHeaderValue) {
+          apiKeyIsNull = false;
+          return originalFetch.apply(window, fetchCallArgs);
+        }
+      }
+
+      if (apiKeyIsNull && effectiveOptions.method && ['POST', 'PUT', 'PATCH'].includes(effectiveOptions.method.toUpperCase()) && typeof bodyForApiKeyCheck === 'string') {
+        try {
+          const bodyData = JSON.parse(bodyForApiKeyCheck);
+          if (bodyData && bodyData.apiKey) {
+            apiKeyIsNull = false;
+            return originalFetch.apply(window, fetchCallArgs);
+          }
+        } catch (e) {
+          // Ignore JSON parsing errors
+        }
+      }
+
+      if(apiKeyIsNull) {
+        const promiseId = nextPromiseId++;
+        const promise = new Promise((resolve) => {
+          pendingFetchResolvers[promiseId] = (resolvedResponse) => {
+            delete pendingFetchResolvers[promiseId];
+            resolve(resolvedResponse);
+          };
+        });
+
+        let serializedBodyForPostMessage;
+        if (typeof bodyForPostMessage === 'string' || bodyForPostMessage == null) {
+            serializedBodyForPostMessage = bodyForPostMessage;
+        } else if (bodyForPostMessage instanceof ReadableStream) {
+            serializedBodyForPostMessage = null;
+        } else {
+            try {
+                serializedBodyForPostMessage = JSON.stringify(bodyForPostMessage);
+            } catch (e) {
+                serializedBodyForPostMessage = null;
+            }
+        }
+
+        const messageOptions = {
+            method: effectiveOptions.method,
+            headers: Object.fromEntries(new Headers(effectiveOptions.headers).entries()),
+            body: serializedBodyForPostMessage
+        };
+
+        window.parent.postMessage({
+          type: 'requestFetch',
+          url: actualUrl,
+          modelName: modelName,
+          options: messageOptions,
+          promiseId: promiseId,
+        }, '*');
+
+        return promise;
+      }
+      return originalFetch.apply(window, fetchCallArgs);
+    }
+    return originalFetch.apply(window, fetchCallArgs);
+  };
+
+  window.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'resolveFetch') {
+      const { promiseId, response } = event.data;
+      if (pendingFetchResolvers[promiseId]) {
+        try {
+          const reconstructedResponse = new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: new Headers(response.headers),
+          });
+          pendingFetchResolvers[promiseId](reconstructedResponse);
+        } catch (error) {
+          pendingFetchResolvers[promiseId](new Response(null, { status: 500, statusText: "Interceptor Response Reconstruction Error" }));
+        }
+      }
+    }
+  });
+
+}))({"textModelName":"gemini-3-flash-preview","imageModelName":"imagen-4.0-generate-001","imageEditModelName":"gemini-3.1-flash-image","imageTransformModelName":"gemini-3-pro-image","videoModelName":"veo-2.0-generate-001","ttsModelName":"gemini-2.5-flash-preview-tts","deprecatedTextModelNames":["gemini-2.0-flash","gemini-2.5-flash","gemini-2.5-flash-preview-04-17","gemini-2.5-flash-preview-05-20","gemini-2.5-flash-preview-09-2025"],"deprecatedImageModelNames":["imagen-3.0-generate-001","imagen-3.0-generate-002"],"deprecatedGenerateImageModelNames":["gemini-2.5-flash-image-preview","gemini-2.5-flash-image","gemini-3.1-flash-image-preview"],"deprecatedImageTransformModelNames":["gemini-3-pro-image-preview-11-2025"]})</script><script data-bard-client-injected="true">(function() {
+  const OVERLAY_SELECTOR =
+    'dialog[open], [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="combobox"]';
+
+  function isVisibleOverlay(element) {
+    if (element.closest('[hidden], [aria-hidden="true"], [inert]')) {
+      return false;
+    }
+    if (window.getComputedStyle(element).visibility === 'hidden') {
+      return false;
+    }
+    for (let cur = element; cur; cur = cur.parentElement) {
+      if (window.getComputedStyle(cur).display === 'none') {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function hasOpenOverlay() {
+    const candidates = document.querySelectorAll(OVERLAY_SELECTOR);
+    for (let i = 0; i < candidates.length; i++) {
+      if (isVisibleOverlay(candidates[i])) {
+        return true;
+      }
+    }
+    try {
+      if (document.querySelector('[popover]:popover-open')) {
+        return true;
+      }
+    } catch (e) {
+      // Ignore engines that do not support :popover-open.
+    }
+    return false;
+  }
+
+  function isNonEmptySearchInput(target) {
+    return (
+      Boolean(target) &&
+      target.tagName === 'INPUT' &&
+      typeof target.type === 'string' &&
+      target.type.toLowerCase() === 'search' &&
+      typeof target.value === 'string' &&
+      target.value.length > 0
+    );
+  }
+
+  function shouldIgnoreEscape(event) {
+    return (
+      event.key !== 'Escape' ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.isComposing ||
+      event.repeat ||
+      event.keyCode === 229 ||
+      isNonEmptySearchInput(event.target)
+    );
+  }
+
+  let shouldIgnoreCaptureState = false;
+
+  window.addEventListener(
+    'keydown',
+    function(event) {
+      if (event.key === 'Escape') {
+        shouldIgnoreCaptureState =
+          hasOpenOverlay() || isNonEmptySearchInput(event.target);
+      }
+    },
+    {capture: true},
+  );
+
+  window.addEventListener('keydown', function(event) {
+    if (
+      shouldIgnoreEscape(event) ||
+      event.defaultPrevented ||
+      shouldIgnoreCaptureState
+    ) {
+      return;
+    }
+    const wasBlockedOnCapture = shouldIgnoreCaptureState;
+    queueMicrotask(function() {
+      if (event.defaultPrevented || wasBlockedOnCapture) {
+        return;
+      }
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({'type': 'escapeKey'}, '*');
+      }
+    });
+  });
+})();</script><script data-bard-client-injected="true">(function() {
+  function normalizeSlug(str) {
+    try {
+      return str
+        .trim()
+        .toLowerCase()
+        .replace(/[^p{L}p{N}s_-]/gu, '')
+        .replace(/s+/g, '-');
+    } catch (e) {
+      return str
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9s_-]/g, '')
+        .replace(/s+/g, '-');
+    }
+  }
+
+  function findTargetElement(hash) {
+    if (!hash || hash === '#') {
+      return null;
+    }
+    const rawId = hash.startsWith('#') ? hash.slice(1) : hash;
+    let decodedId = rawId;
+    try {
+      decodedId = decodeURIComponent(rawId);
+    } catch (e) {
+      // Ignore URI malformed errors.
+    }
+
+    // 1. Direct ID match (raw and decoded).
+    let target = document.getElementById(rawId) || document.getElementById(decodedId);
+    if (target) {
+      return target;
+    }
+
+    // 2. Name attribute match (<a name="...">).
+    try {
+      if (typeof CSS !== 'undefined' && CSS.escape) {
+        target =
+          document.querySelector('[name="' + CSS.escape(rawId) + '"]') ||
+          document.querySelector('[name="' + CSS.escape(decodedId) + '"]');
+      } else {
+        const namedElements = document.getElementsByName(rawId);
+        if (namedElements && namedElements.length > 0) {
+          return namedElements[0];
+        }
+      }
+    } catch (e) {
+      // Ignore querySelector syntax errors.
+    }
+    if (target) {
+      return target;
+    }
+
+    // 3. Match heading text by slug (for Markdown TOCs where headings lack explicit IDs).
+    const targetSlug = normalizeSlug(decodedId);
+    if (targetSlug) {
+      for (const heading of document.querySelectorAll('h1, h2, h3, h4, h5, h6')) {
+        if (normalizeSlug(heading.textContent || '') === targetSlug) {
+          return heading;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  document.addEventListener('click', function(event) {
+    const target = event.target;
+    const anchor = target && typeof target.closest === 'function' ? target.closest('a') : null;
+    if (!anchor) {
+      return;
+    }
+
+    const href = anchor.getAttribute('href');
+    if (
+      !href ||
+      href.trim().toLowerCase().startsWith('javascript:') ||
+      anchor.hasAttribute('download')
+    ) {
+      return;
+    }
+
+    // Check if the link is an in-page hash / anchor link.
+    if (href.startsWith('#')) {
+      event.preventDefault();
+      const targetElement = findTargetElement(href);
+      if (targetElement) {
+        targetElement.scrollIntoView({behavior: 'smooth', block: 'start'});
+      }
+      return;
+    }
+
+    // Check if the URL has the same origin/pathname but with a hash.
+    try {
+      const url = new URL(anchor.href, window.location.href);
+      if (
+        url.hash &&
+        url.origin === window.location.origin &&
+        url.pathname === window.location.pathname
+      ) {
+        event.preventDefault();
+        const targetElement = findTargetElement(url.hash);
+        if (targetElement) {
+          targetElement.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
+        return;
+      }
+    } catch (e) {
+      // Fall through if URL parsing fails.
+    }
+
+    // For all external or full navigation links, prevent iframe-level navigation
+    // (which breaks in AGSA WebView or sandboxed iframes) and ensure they open
+    // safely in a new tab/window.
+    if (anchor.target !== '_blank') {
+      event.preventDefault();
+      window.open(anchor.href, '_blank', 'noopener,noreferrer');
+    }
+  }, {capture: true});
+})();</script><script data-bard-client-injected="true">(function(){'use strict';function a(){window.parent.postMessage({type:"interaction"},"*")}window.addEventListener("click",a,{capture:!0,passive:!0});window.addEventListener("touchstart",a,{capture:!0,passive:!0});window.addEventListener("keydown",a,{capture:!0,passive:!0});}).call(this);
+</script><script data-bard-client-injected="true">(function() {
+  const originalConsoleLog = console.log;
+  const originalConsoleError = console.error;
+
+    /**
+   * Normalizes an error event or a promise rejection reason into a structured error object.
+   * @param {*} errorEventOrReason The error object or reason.
+   * @return {object} Structured error data { message, name, stack }.
+   */
+  function getErrorObject(errorEventOrReason) {
+    if (errorEventOrReason instanceof Error) {
+      return {
+        message: errorEventOrReason.message,
+        name: errorEventOrReason.name,
+        stack: errorEventOrReason.stack,
+      };
+    }
+    // Fallback for non-Error objects.
+    try {
+      return {
+        message: JSON.stringify(errorEventOrReason),
+        name: 'UnknownErrorType',
+        stack: null,
+      };
+    } catch (e) {
+      return {
+        message: String(errorEventOrReason),
+        name: 'UnknownErrorTypeNonStringifiable',
+        stack: null,
+      };
+    }
+  }
+
+  /**
+   * Converts an array of arguments (from log/error) into a single string.
+   * Handles Error objects specially to include their message and stack.
+   * @param {Array<*>} args - Arguments passed to console methods.
+   * @return {string} A string representation of the arguments.
+   */
+  function stringifyArgs(args) {
+    return args
+      .map((arg) => {
+        if (arg instanceof Error) {
+          const {message, stack} = arg;
+          return `Error: ${message}${stack ? ('\nStack: ' + stack) : ''}`;
+        }
+        if (typeof arg === 'object' && arg !== null) {
+          try {
+            return JSON.stringify(arg);
+          } catch (error) {
+            return '[Circular Object]';
+          }
+        } else {
+          return String(arg);
+        }
+      })
+      .join(' ');
+  }
+
+  console.log = function(...args) {
+    const logString = stringifyArgs(args);
+    window.parent.postMessage({ type: 'log', message: logString }, '*');
+    originalConsoleLog.apply(console, args);
+  };
+
+  console.error = function(...args) {
+    let errorData;
+    if (args.length > 0 && args[0] instanceof Error) {
+      const err = args[0];
+      // If the first arg is an Error, capture its details.
+      errorData = {
+        type: 'error',
+        source: 'CONSOLE_ERROR',
+        ...getErrorObject(err),
+        rawArgsString: stringifyArgs(args.slice(1)),
+        timestamp: new Date().toISOString(),
+      };
+    } else {
+      // If not an Error object, treat all args as a general error message.
+      errorData = {
+        type: 'error',
+        source: 'CONSOLE_ERROR',
+        message: stringifyArgs(args),
+        name: 'ConsoleLoggedError',
+        stack: null,
+        timestamp: new Date().toISOString(),
+      };
+    }
+    window.parent.postMessage(errorData, '*');
+    originalConsoleError.apply(console, args);
+  };
+
+  // Listen for global unhandled synchronous errors.
+  window.addEventListener('error', function(event) {
+    const errorDetails = event.error ? getErrorObject(event.error) : {
+      message: event.message,
+      name: 'GlobalError',
+      stack: null,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+    };
+
+    window.parent.postMessage({
+      type: 'error',
+      source: 'global',
+      ...errorDetails,
+      message: errorDetails.message || event.message,
+      timestamp: new Date().toISOString(),
+    }, '*');
+  });
+
+  // Listen for unhandled promise rejections (asynchronous errors).
+  window.addEventListener('unhandledrejection', function(event) {
+    const errorDetails = getErrorObject(event.reason);
+
+    window.parent.postMessage({
+      type: 'error',
+      source: 'unhandledrejection',
+      ...errorDetails,
+      message: errorDetails.message || 'Unhandled Promise Rejection',
+      timestamp: new Date().toISOString(),
+    }, '*');
+  });
+
+})();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Die with Zero 退休與提領策略互動式看板｜路線 V 專屬儀表板</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+  <!-- Google Fonts: Inter & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Noto+Sans+TC:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+          },
+          colors: {
+            ocean: {
+              950: '#071324',
+              900: '#0B1D36',
+              800: '#122B4D',
+              700: '#1B3D6B',
+              600: '#25538E',
+            },
+            amberwarm: {
+              400: '#FBBF24',
+              500: '#F59E0B',
+              600: '#D97706',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* 自訂捲軸與微調樣式 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    input[type="range"] { accent-color: #d97706; }
+  </style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:Inter, Noto Sans TC, sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.bottom-0{bottom:0px}.bottom-5{bottom:1.25rem}.right-2\.5{right:0.625rem}.right-5{right:1.25rem}.top-0{top:0px}.top-1\.5{top:0.375rem}.z-10{z-index:10}.z-30{z-index:30}.z-50{z-index:50}.mx-auto{margin-left:auto;margin-right:auto}.mb-1{margin-bottom:0.25rem}.mb-1\.5{margin-bottom:0.375rem}.mb-3{margin-bottom:0.75rem}.mt-0\.5{margin-top:0.125rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-10{height:2.5rem}.h-2\.5{height:0.625rem}.h-3\.5{height:0.875rem}.h-\[340px\]{height:340px}.h-full{height:100%}.max-h-\[480px\]{max-height:480px}.max-h-\[calc\(100vh-120px\)\]{max-height:calc(100vh - 120px)}.w-1\.5{width:0.375rem}.w-10{width:2.5rem}.w-14{width:3.5rem}.w-16{width:4rem}.w-2\.5{width:0.625rem}.w-32{width:8rem}.w-full{width:100%}.min-w-0{min-width:0px}.min-w-\[260px\]{min-width:260px}.max-w-7xl{max-width:80rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.border-collapse{border-collapse:collapse}.transform{transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite}.cursor-pointer{cursor:pointer}.select-none{-webkit-user-select:none;user-select:none}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-center{align-items:center}.items-baseline{align-items:baseline}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-1\.5{gap:0.375rem}.gap-2{gap:0.5rem}.gap-2\.5{gap:0.625rem}.gap-3{gap:0.75rem}.gap-3\.5{gap:0.875rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}.space-y-1 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.25rem * var(--tw-space-y-reverse))}.space-y-1\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.375rem * var(--tw-space-y-reverse))}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.space-y-5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.25rem * var(--tw-space-y-reverse))}.space-y-6 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem * var(--tw-space-y-reverse))}.divide-y > :not([hidden]) ~ :not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px * calc(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px * var(--tw-divide-y-reverse))}.divide-slate-200 > :not([hidden]) ~ :not([hidden]){--tw-divide-opacity:1;border-color:rgb(226 232 240 / var(--tw-divide-opacity, 1))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-xl{border-radius:0.75rem}.rounded-t-xl{border-top-left-radius:0.75rem;border-top-right-radius:0.75rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-b-2{border-bottom-width:2px}.border-amber-200{--tw-border-opacity:1;border-color:rgb(253 230 138 / var(--tw-border-opacity, 1))}.border-amber-200\/70{border-color:rgb(253 230 138 / 0.7)}.border-amber-200\/80{border-color:rgb(253 230 138 / 0.8)}.border-amber-400{--tw-border-opacity:1;border-color:rgb(251 191 36 / var(--tw-border-opacity, 1))}.border-amber-400\/30{border-color:rgb(251 191 36 / 0.3)}.border-amber-400\/40{border-color:rgb(251 191 36 / 0.4)}.border-amber-400\/50{border-color:rgb(251 191 36 / 0.5)}.border-emerald-200{--tw-border-opacity:1;border-color:rgb(167 243 208 / var(--tw-border-opacity, 1))}.border-emerald-200\/80{border-color:rgb(167 243 208 / 0.8)}.border-emerald-300{--tw-border-opacity:1;border-color:rgb(110 231 183 / var(--tw-border-opacity, 1))}.border-emerald-400\/40{border-color:rgb(52 211 153 / 0.4)}.border-ocean-600{--tw-border-opacity:1;border-color:rgb(37 83 142 / var(--tw-border-opacity, 1))}.border-ocean-700\/60{border-color:rgb(27 61 107 / 0.6)}.border-ocean-900{--tw-border-opacity:1;border-color:rgb(11 29 54 / var(--tw-border-opacity, 1))}.border-rose-200{--tw-border-opacity:1;border-color:rgb(254 205 211 / var(--tw-border-opacity, 1))}.border-slate-100{--tw-border-opacity:1;border-color:rgb(241 245 249 / var(--tw-border-opacity, 1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240 / var(--tw-border-opacity, 1))}.border-slate-200\/80{border-color:rgb(226 232 240 / 0.8)}.border-slate-300{--tw-border-opacity:1;border-color:rgb(203 213 225 / var(--tw-border-opacity, 1))}.border-transparent{border-color:transparent}.border-amber-300{--tw-border-opacity:1;border-color:rgb(252 211 77 / var(--tw-border-opacity, 1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249 / var(--tw-bg-opacity, 1))}.bg-amber-200\/80{background-color:rgb(253 230 138 / 0.8)}.bg-amber-400{--tw-bg-opacity:1;background-color:rgb(251 191 36 / var(--tw-bg-opacity, 1))}.bg-amber-50\/60{background-color:rgb(255 251 235 / 0.6)}.bg-amber-50\/70{background-color:rgb(255 251 235 / 0.7)}.bg-amber-500{--tw-bg-opacity:1;background-color:rgb(245 158 11 / var(--tw-bg-opacity, 1))}.bg-amber-500\/20{background-color:rgb(245 158 11 / 0.2)}.bg-emerald-400{--tw-bg-opacity:1;background-color:rgb(52 211 153 / var(--tw-bg-opacity, 1))}.bg-emerald-50\/60{background-color:rgb(236 253 245 / 0.6)}.bg-emerald-50\/80{background-color:rgb(236 253 245 / 0.8)}.bg-emerald-500\/20{background-color:rgb(16 185 129 / 0.2)}.bg-ocean-700{--tw-bg-opacity:1;background-color:rgb(27 61 107 / var(--tw-bg-opacity, 1))}.bg-ocean-800{--tw-bg-opacity:1;background-color:rgb(18 43 77 / var(--tw-bg-opacity, 1))}.bg-ocean-900{--tw-bg-opacity:1;background-color:rgb(11 29 54 / var(--tw-bg-opacity, 1))}.bg-ocean-950{--tw-bg-opacity:1;background-color:rgb(7 19 36 / var(--tw-bg-opacity, 1))}.bg-rose-400\/80{background-color:rgb(251 113 133 / 0.8)}.bg-rose-50\/70{background-color:rgb(255 241 242 / 0.7)}.bg-sky-400{--tw-bg-opacity:1;background-color:rgb(56 189 248 / var(--tw-bg-opacity, 1))}.bg-slate-200{--tw-bg-opacity:1;background-color:rgb(226 232 240 / var(--tw-bg-opacity, 1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252 / var(--tw-bg-opacity, 1))}.bg-slate-50\/70{background-color:rgb(248 250 252 / 0.7)}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-white\/90{background-color:rgb(255 255 255 / 0.9)}.bg-amber-50\/40{background-color:rgb(255 251 235 / 0.4)}.bg-amber-50\/80{background-color:rgb(255 251 235 / 0.8)}.bg-amber-50\/90{background-color:rgb(255 251 235 / 0.9)}.bg-slate-100\/80{background-color:rgb(241 245 249 / 0.8)}.bg-gradient-to-br{background-image:linear-gradient(to bottom right, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-amber-500{--tw-gradient-from:#f59e0b var(--tw-gradient-from-position);--tw-gradient-to:rgb(245 158 11 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-ocean-900{--tw-gradient-from:#0B1D36 var(--tw-gradient-from-position);--tw-gradient-to:rgb(11 29 54 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-ocean-950{--tw-gradient-from:#071324 var(--tw-gradient-from-position);--tw-gradient-to:rgb(7 19 36 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.via-ocean-900{--tw-gradient-to:rgb(11 29 54 / 0)  var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), #0B1D36 var(--tw-gradient-via-position), var(--tw-gradient-to)}.to-amber-600{--tw-gradient-to:#d97706 var(--tw-gradient-to-position)}.to-ocean-800{--tw-gradient-to:#122B4D var(--tw-gradient-to-position)}.p-2\.5{padding:0.625rem}.p-3{padding:0.75rem}.p-3\.5{padding:0.875rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-2\.5{padding-left:0.625rem;padding-right:0.625rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-3\.5{padding-left:0.875rem;padding-right:0.875rem}.px-4{padding-left:1rem;padding-right:1rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-3\.5{padding-top:0.875rem;padding-bottom:0.875rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.px-1\.5{padding-left:0.375rem;padding-right:0.375rem}.pb-1{padding-bottom:0.25rem}.pb-1\.5{padding-bottom:0.375rem}.pb-4{padding-bottom:1rem}.pt-0\.5{padding-top:0.125rem}.pt-1{padding-top:0.25rem}.pt-2{padding-top:0.5rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.font-sans{font-family:Inter, Noto Sans TC, sans-serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-normal{font-weight:400}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.tracking-tight{letter-spacing:-0.025em}.tracking-wider{letter-spacing:0.05em}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59 / var(--tw-text-opacity, 1))}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36 / var(--tw-text-opacity, 1))}.text-amber-600{--tw-text-opacity:1;color:rgb(217 119 6 / var(--tw-text-opacity, 1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9 / var(--tw-text-opacity, 1))}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14 / var(--tw-text-opacity, 1))}.text-amber-900{--tw-text-opacity:1;color:rgb(120 53 15 / var(--tw-text-opacity, 1))}.text-emerald-300{--tw-text-opacity:1;color:rgb(110 231 183 / var(--tw-text-opacity, 1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87 / var(--tw-text-opacity, 1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70 / var(--tw-text-opacity, 1))}.text-emerald-900{--tw-text-opacity:1;color:rgb(6 78 59 / var(--tw-text-opacity, 1))}.text-emerald-950{--tw-text-opacity:1;color:rgb(2 44 34 / var(--tw-text-opacity, 1))}.text-ocean-700{--tw-text-opacity:1;color:rgb(27 61 107 / var(--tw-text-opacity, 1))}.text-ocean-800{--tw-text-opacity:1;color:rgb(18 43 77 / var(--tw-text-opacity, 1))}.text-ocean-900{--tw-text-opacity:1;color:rgb(11 29 54 / var(--tw-text-opacity, 1))}.text-ocean-950{--tw-text-opacity:1;color:rgb(7 19 36 / var(--tw-text-opacity, 1))}.text-rose-800{--tw-text-opacity:1;color:rgb(159 18 57 / var(--tw-text-opacity, 1))}.text-rose-900{--tw-text-opacity:1;color:rgb(136 19 55 / var(--tw-text-opacity, 1))}.text-slate-200{--tw-text-opacity:1;color:rgb(226 232 240 / var(--tw-text-opacity, 1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225 / var(--tw-text-opacity, 1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184 / var(--tw-text-opacity, 1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139 / var(--tw-text-opacity, 1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105 / var(--tw-text-opacity, 1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-amber-950{--tw-text-opacity:1;color:rgb(69 26 3 / var(--tw-text-opacity, 1))}.text-rose-300{--tw-text-opacity:1;color:rgb(253 164 175 / var(--tw-text-opacity, 1))}.text-rose-600{--tw-text-opacity:1;color:rgb(225 29 72 / var(--tw-text-opacity, 1))}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.shadow{--tw-shadow:0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-inner{--tw-shadow:inset 0 2px 4px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:inset 0 2px 4px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-md{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.ring-2{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.ring-inset{--tw-ring-inset:inset}.ring-white{--tw-ring-opacity:1;--tw-ring-color:rgb(255 255 255 / var(--tw-ring-opacity, 1))}.ring-amber-400{--tw-ring-opacity:1;--tw-ring-color:rgb(251 191 36 / var(--tw-ring-opacity, 1))}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-300{transition-duration:300ms}.selection\:bg-amber-200 *::selection{--tw-bg-opacity:1;background-color:rgb(253 230 138 / var(--tw-bg-opacity, 1))}.selection\:text-ocean-900 *::selection{--tw-text-opacity:1;color:rgb(11 29 54 / var(--tw-text-opacity, 1))}.selection\:bg-amber-200::selection{--tw-bg-opacity:1;background-color:rgb(253 230 138 / var(--tw-bg-opacity, 1))}.selection\:text-ocean-900::selection{--tw-text-opacity:1;color:rgb(11 29 54 / var(--tw-text-opacity, 1))}.hover\:bg-ocean-600:hover{--tw-bg-opacity:1;background-color:rgb(37 83 142 / var(--tw-bg-opacity, 1))}.hover\:bg-ocean-700:hover{--tw-bg-opacity:1;background-color:rgb(27 61 107 / var(--tw-bg-opacity, 1))}.hover\:bg-amber-100\/60:hover{background-color:rgb(254 243 199 / 0.6)}.hover\:bg-amber-100\/70:hover{background-color:rgb(254 243 199 / 0.7)}.hover\:bg-slate-50:hover{--tw-bg-opacity:1;background-color:rgb(248 250 252 / var(--tw-bg-opacity, 1))}.hover\:from-amber-400:hover{--tw-gradient-from:#fbbf24 var(--tw-gradient-from-position);--tw-gradient-to:rgb(251 191 36 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.hover\:to-amber-500:hover{--tw-gradient-to:#f59e0b var(--tw-gradient-to-position)}.hover\:text-ocean-800:hover{--tw-text-opacity:1;color:rgb(18 43 77 / var(--tw-text-opacity, 1))}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}.focus\:ring-2:focus{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.focus\:ring-amber-400:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(251 191 36 / var(--tw-ring-opacity, 1))}.focus\:ring-amber-500:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(245 158 11 / var(--tw-ring-opacity, 1))}@media (min-width: 640px){.sm\:inline-flex{display:inline-flex}.sm\:h-\[400px\]{height:400px}.sm\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.sm\:grid-cols-5{grid-template-columns:repeat(5, minmax(0, 1fr))}.sm\:flex-row{flex-direction:row}.sm\:items-center{align-items:center}.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}.sm\:text-3xl{font-size:1.875rem;line-height:2.25rem}.sm\:text-base{font-size:1rem;line-height:1.5rem}.sm\:text-lg{font-size:1.125rem;line-height:1.75rem}.sm\:text-sm{font-size:0.875rem;line-height:1.25rem}}@media (min-width: 768px){.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.md\:flex-row{flex-direction:row}.md\:items-center{align-items:center}}@media (min-width: 1024px){.lg\:block{display:block}.lg\:hidden{display:none}.lg\:w-80{width:20rem}.lg\:flex-row{flex-direction:row}.lg\:items-center{align-items:center}}@media (min-width: 1280px){.xl\:w-96{width:24rem}.xl\:grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}}</style></head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased selection:bg-amber-200 selection:text-ocean-900">
+
+  <!-- 頂部導覽列 (深海藍 + 暖琥珀金) -->
+  <header class="bg-gradient-to-r from-ocean-950 via-ocean-900 to-ocean-800 text-white shadow-lg sticky top-0 z-30 border-b border-ocean-700/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 font-bold text-lg shadow-inner">
+          DWZ
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">Die with Zero 退休與提領策略看板</h1>
+            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-400/30">
+              路線 V 定案版
+            </span>
+          </div>
+          <p class="text-xs text-slate-300">「別把錢留到花不掉」・51～100 歲全生涯現金流與 12/31 護欄決策系統</p>
+        </div>
+      </div>
+
+      <!-- 右側功能按鈕群 -->
+      <div class="flex items-center gap-2">
+        <button id="toggleSidebarBtn" type="button" class="lg:hidden px-3 py-2 rounded-xl bg-ocean-700 hover:bg-ocean-600 text-xs font-medium text-white border border-ocean-600 transition flex items-center gap-1.5">
+          <span>⚙️ 參數設定</span>
+        </button>
+        <button id="resetDefaultBtn" type="button" class="px-3 py-2 rounded-xl bg-ocean-800 hover:bg-ocean-700 text-xs font-medium text-slate-200 border border-ocean-600 transition" title="還原至 2026/11/23 退休總綱定案數值">
+          ↺ 重設為定案預設值
+        </button>
+        <button id="exportHtmlBtn" type="button" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-ocean-950 font-bold text-xs shadow-md transition flex items-center gap-1.5">
+          <span>⬇ 匯出 index.html</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 提示訊息 Toast (取代 alert) -->
+  <div id="toastBox" class="fixed bottom-5 right-5 z-50 hidden transform transition-all duration-300">
+    <div class="bg-ocean-900 text-white border border-amber-400/50 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-sm">
+      <span class="text-amber-400 text-base">✔</span>
+      <span id="toastMsg">操作成功</span>
+    </div>
+  </div>
+
+  <!-- 主容器 -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+    <div class="flex flex-col lg:flex-row gap-6 items-start">
+
+      <!-- 左側：可摺疊退休參數設定面板 -->
+      <aside id="paramSidebar" class="w-full lg:w-80 xl:w-96 shrink-0 bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden hidden lg:block">
+        <div class="bg-ocean-900 text-white px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-amber-400">⚙️</span>
+            <h2 class="font-semibold text-sm">退休參數設定面板</h2>
+          </div>
+          <span class="text-[11px] text-slate-300 bg-ocean-800 px-2 py-0.5 rounded-full">即時聯動試算</span>
+        </div>
+
+        <div class="p-4 space-y-5 max-h-[calc(100vh-120px)] overflow-y-auto text-sm">
+
+          <!-- 1. 基本與退休金參數 -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-ocean-700 border-b border-slate-100 pb-1.5 flex items-center justify-between">
+              <span>1. 基本與兼領退休金</span>
+              <span class="text-[11px] font-normal text-slate-400">122/7/31 退</span>
+            </h3>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">出生年 / 月</label>
+                <div class="flex gap-1">
+                  <input type="number" id="birthYear" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-amber-400 focus:outline-none">
+                  <input type="number" id="birthMonth" min="1" max="12" class="w-14 px-2 py-1.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-amber-400 focus:outline-none">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">預計退休西元年</label>
+                <input type="number" id="retireYear" min="2027" max="2045" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-amber-400 focus:outline-none">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">兼領月退 (元/月)</label>
+                <input type="number" id="monthlyPension" step="100" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-amber-400 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">一次退休金 (萬元)</label>
+                <input type="number" id="lumpSumPension" step="0.1" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-amber-400 focus:outline-none">
+              </div>
+            </div>
+            <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none pt-0.5">
+              <input type="checkbox" id="pensionAdjustInflation" class="rounded text-amber-600 focus:ring-amber-500">
+              <span>月退休金隨通膨調整（預設不調整，實質縮水）</span>
+            </label>
+          </div>
+
+          <!-- 2. 報酬與通膨假設 -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-ocean-700 border-b border-slate-100 pb-1.5">
+              2. 報酬、通膨與天花板設定
+            </h3>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <label class="text-slate-600">名目年化投資報酬率</label>
+                <span id="returnRateLabel" class="font-bold text-ocean-800">5.5%</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="range" id="returnRateRange" min="2.0" max="10.0" step="0.1" class="w-full">
+                <input type="number" id="returnRate" step="0.1" min="1" max="15" class="w-16 px-2 py-1 rounded-lg border border-slate-300 text-xs font-semibold text-right">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">年通膨率 (%)</label>
+                <input type="number" id="inflationRate" step="0.1" min="0" max="8" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium">
+              </div>
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">天花板倍數</label>
+                <select id="ceilingMode" class="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs font-medium bg-white">
+                  <option value="1.10">1.10x 愉快線 (總綱)</option>
+                  <option value="1.25">1.25x 安心天花板</option>
+                  <option value="custom">自訂倍數</option>
+                </select>
+              </div>
+            </div>
+            <div id="customCeilingWrap" class="hidden">
+              <label class="block text-xs text-slate-500 mb-1">自訂天花板倍數 (如 1.20)</label>
+              <input type="number" id="customCeilingMult" step="0.05" min="1.05" max="2.0" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium">
+            </div>
+          </div>
+
+          <!-- 3. 退休前收支參數 -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-ocean-700 border-b border-slate-100 pb-1.5">
+              3. 退休前（51～57歲）收支
+            </h3>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">每月定投 (2027起/萬)</label>
+                <input type="number" id="monthlyInvest" step="0.1" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium">
+              </div>
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">每年 1 月體驗金 (萬)</label>
+                <input type="number" id="preRetireExp" step="1" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium">
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-400">※ 2026/12 定投為 1 萬；退休前房貸由薪水支付，不扣投資帳戶。</p>
+          </div>
+
+          <!-- 4. 退休後三階段花費與提領上限 -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-ocean-700 border-b border-slate-100 pb-1.5">
+              4. 退休後三階段花費 (今日價值)
+            </h3>
+            <div class="bg-amber-50/70 border border-amber-200/70 rounded-xl p-2.5 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold text-amber-900">58～65 歲 (黃金期)</span>
+                <span class="text-[11px] text-amber-700">硬性提領上限</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] text-slate-500">年花費 (萬元)</label>
+                  <input type="number" id="spendPhase1" step="5" class="w-full px-2 py-1 rounded-lg border border-slate-300 text-xs font-semibold bg-white">
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-500">提領上限 (%)</label>
+                  <input type="number" id="withdrawCap1" step="0.1" class="w-full px-2 py-1 rounded-lg border border-slate-300 text-xs font-semibold bg-white">
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold text-slate-700">66～75 歲 (慢遊期)</span>
+                <span class="text-[11px] text-slate-500">目標提領率</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] text-slate-500">年花費 (萬元)</label>
+                  <input type="number" id="spendPhase2" step="5" class="w-full px-2 py-1 rounded-lg border border-slate-300 text-xs font-semibold bg-white">
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-500">參考上限 (%)</label>
+                  <input type="number" id="withdrawCap2" step="0.1" class="w-full px-2 py-1 rounded-lg border border-slate-300 text-xs font-semibold bg-white">
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold text-slate-700">76～100 歲 (守護期)</span>
+                <span class="text-[11px] text-slate-500">晚年護欄參考</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] text-slate-500">年花費 (萬元)</label>
+                  <input type="number" id="spendPhase3" step="5" class="w-full px-2 py-1 rounded-lg border border-slate-300 text-xs font-semibold bg-white">
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-500">參考上限 (%)</label>
+                  <input type="number" id="withdrawCap3" step="0.1" class="w-full px-2 py-1 rounded-lg border border-slate-300 text-xs font-semibold bg-white">
+                </div>
+              </div>
+              <label class="flex items-center gap-2 text-xs text-ocean-800 font-medium cursor-pointer pt-1">
+                <input type="checkbox" id="strict3Percent" class="rounded text-amber-600 focus:ring-amber-500">
+                <span>模擬「76歲後硬守 3% 上限」遺產暴增對照</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 5. 大額支出、房貸與護城河 -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-ocean-700 border-b border-slate-100 pb-1.5">
+              5. 護城河、房貸與大額支出 (今日價值)
+            </h3>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">絕對護城河 (100歲留/萬)</label>
+                <input type="number" id="moatAmount" step="10" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium">
+              </div>
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">退休後房貸 (萬/年)</label>
+                <input type="number" id="mortgageAnnual" step="1" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">房貸繳清西元年</label>
+                <input type="number" id="mortgageEndYear" min="2030" max="2045" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium">
+              </div>
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">2033 換車支出 (萬)</label>
+                <input type="number" id="carCost" step="10" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">2034~35 老屋修繕 (萬)</label>
+                <input type="number" id="houseRepairCost" step="10" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium">
+              </div>
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">2040 長輩後事 (萬)</label>
+                <input type="number" id="elderCareCost" step="10" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium">
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </aside>
+
+      <!-- 右側：主內容區 -->
+      <main class="flex-1 w-full min-w-0 space-y-6">
+
+        <!-- 頂部總覽與 12/31 護欄即時診斷卡 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-5">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <h2 class="text-base sm:text-lg font-bold text-ocean-900">12/31 年度盤點與三層水位即時診斷</h2>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">輸入你在 App 上看到的「自有投資淨資產（不含 58 歲一次金，已含隔年 1 月體驗金）」，立即檢視護欄動作。</p>
+            </div>
+
+            <!-- 互動輸入：目前自有資產 & 檢視年度 -->
+            <div class="flex flex-wrap items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+              <div>
+                <label for="checkYearSelect" class="block text-[11px] font-medium text-slate-500">檢視時間點</label>
+                <select id="checkYearSelect" class="mt-0.5 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold text-ocean-900 focus:ring-2 focus:ring-amber-400 focus:outline-none"><option value="2026">2026/12 (51歲)</option><option value="2027">2027/12 (52歲)</option><option value="2028">2028/12 (53歲)</option><option value="2029">2029/12 (54歲)</option><option value="2030">2030/12 (55歲)</option><option value="2031">2031/12 (56歲)</option><option value="2032">2032/12 (57歲)</option><option value="2033">2033/7/31 退休日 (58歲)</option></select>
+              </div>
+              <div>
+                <label for="currentOwnAsset" class="block text-[11px] font-medium text-slate-500">目前自有資產 (萬元)</label>
+                <div class="relative mt-0.5">
+                  <input type="number" id="currentOwnAsset" step="10" class="w-32 px-3 py-1.5 rounded-lg border-2 border-amber-400 bg-white text-sm font-bold text-ocean-950 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  <span class="absolute right-2.5 top-1.5 text-xs text-slate-400 font-medium">萬</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 四張核心指標卡 -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+            <!-- 卡片 1：目前輸入資產 -->
+            <div class="rounded-xl bg-gradient-to-br from-ocean-900 to-ocean-800 text-white p-4 shadow-sm relative overflow-hidden">
+              <div class="text-xs text-slate-300 flex items-center justify-between">
+                <span>目前自有淨資產</span>
+                <span id="diagBadge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/40">⚠️ 略低建議線</span>
+              </div>
+              <div class="mt-2 flex items-baseline gap-1.5">
+                <span id="kpiCurrentAsset" class="text-2xl sm:text-3xl font-bold tracking-tight text-amber-300">2,697</span>
+                <span class="text-xs text-slate-300">萬元</span>
+              </div>
+              <div id="kpiDiffText" class="mt-2 text-xs text-rose-300 font-medium">低於建議線 -975 萬 (-26.6%)</div>
+            </div>
+
+            <!-- 卡片 2：🛡 地板線 -->
+            <div class="rounded-xl bg-slate-50 border border-slate-200 p-4">
+              <div class="text-xs text-slate-500 flex items-center justify-between">
+                <span class="font-semibold text-slate-700">🛡 地板線 (警戒線)</span>
+                <span class="text-[11px] text-slate-400">100歲僅留護城河</span>
+              </div>
+              <div class="mt-2 flex items-baseline gap-1.5">
+                <span id="kpiFloorVal" class="text-2xl font-bold text-slate-800">1,768</span>
+                <span class="text-xs text-slate-500">萬元</span>
+              </div>
+              <div id="kpiFloorSub" class="mt-2 text-[11px] text-slate-500">距離警戒線緩衝：+929 萬</div>
+            </div>
+
+            <!-- 卡片 3：⭐ 建議線 -->
+            <div class="rounded-xl bg-amber-50/70 border border-amber-200 p-4">
+              <div class="text-xs text-amber-900 flex items-center justify-between">
+                <span class="font-bold">⭐ 建議線 (目標水位)</span>
+                <span class="text-[11px] text-amber-700">守住 58~65歲 ≤5%</span>
+              </div>
+              <div class="mt-2 flex items-baseline gap-1.5">
+                <span id="kpiTargetVal" class="text-2xl font-bold text-ocean-900">3,672</span>
+                <span class="text-xs text-slate-600">萬元</span>
+              </div>
+              <div id="kpiTargetSub" class="mt-2 text-[11px] text-amber-800">退休日 (2033/7/31) 目標：4,994 萬</div>
+            </div>
+
+            <!-- 卡片 4：🎉 愉快線 / 安心天花板 -->
+            <div class="rounded-xl bg-emerald-50/60 border border-emerald-200 p-4">
+              <div class="text-xs text-emerald-900 flex items-center justify-between">
+                <span id="kpiCeilingTitle" class="font-bold">🎉 愉快線 (×1.10)</span>
+                <span class="text-[11px] text-emerald-700">DWZ 超額花費線</span>
+              </div>
+              <div class="mt-2 flex items-baseline gap-1.5">
+                <span id="kpiCeilingVal" class="text-2xl font-bold text-emerald-800">4,039</span>
+                <span class="text-xs text-slate-600">萬元</span>
+              </div>
+              <div id="kpiCeilingSub" class="mt-2 text-[11px] text-emerald-700">距離超額花費線：尚差 1,342 萬</div>
+            </div>
+          </div>
+
+          <!-- 視覺化水位進度條 -->
+          <div class="pt-1">
+            <div class="flex justify-between text-[11px] text-slate-500 mb-1.5">
+              <span>0 萬</span>
+              <span id="barFloorLabel">🛡 地板 1,768萬</span>
+              <span id="barTargetLabel" class="font-semibold text-ocean-800">⭐ 建議 3,672萬</span>
+              <span id="barCeilingLabel" class="font-semibold text-emerald-700">🎉 天花板 4,039萬</span>
+            </div>
+            <div class="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden relative flex">
+              <div id="barSeg1" class="bg-rose-400/80 h-full transition-all duration-300" style="width: 36.4679%;"></div>
+              <div id="barSeg2" class="bg-amber-400 h-full transition-all duration-300" style="width: 39.2897%;"></div>
+              <div id="barSeg3" class="bg-sky-400 h-full transition-all duration-300" style="width: 7.57576%;"></div>
+              <div id="barSeg4" class="bg-emerald-400 h-full transition-all duration-300" style="width: 16.6667%;"></div>
+              <!-- 目前資產游標 -->
+              <div id="barPointer" class="absolute top-0 bottom-0 w-1.5 bg-ocean-950 ring-2 ring-white shadow transition-all duration-300" style="left: 55.641%;"></div>
+            </div>
+          </div>
+
+          <!-- 自動護欄決策提示卡 -->
+          <div id="guardrailBox" class="rounded-xl border p-4 transition-all bg-amber-50/90 border-amber-300">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span id="guardrailIcon" class="text-lg">⚠️</span>
+                  <h3 id="guardrailTitle" class="font-bold text-sm sm:text-base text-amber-950">狀態：介於地板線與建議線之間 — 啟動溫和節流護欄（體驗金 ×0.75）</h3>
+                </div>
+                <p id="guardrailDesc" class="text-xs sm:text-sm text-amber-900 leading-relaxed">目前資產仍高於 100 歲安全底線，但安全邊際略為收斂。建議下一年體驗金調整為 <strong>×0.75 倍（約 30 萬元）</strong>，大額長途旅行可延後一年，等待市場均值回歸。</p>
+              </div>
+
+              <!-- 超額資產 50/30/20 自動試算器 -->
+              <div id="excessSplitBox" class="shrink-0 bg-white/90 rounded-xl border border-emerald-200 p-3 text-xs space-y-1.5 min-w-[260px] hidden">
+                <div class="font-bold text-ocean-900 flex items-center justify-between border-b border-slate-100 pb-1">
+                  <span>超額資產制度化分配建議</span>
+                  <span id="excessAmountBadge" class="text-emerald-700 font-bold">+262 萬</span>
+                </div>
+                <div class="flex justify-between text-slate-700">
+                  <span>🌍 體驗基金 (50%)：</span>
+                  <span id="excessExpVal" class="font-bold text-ocean-900">131.0 萬</span>
+                </div>
+                <div class="flex justify-between text-slate-700">
+                  <span>🎁 生前饋贈 (30%)：</span>
+                  <span id="excessGiftVal" class="font-bold text-amber-700">78.6 萬</span>
+                </div>
+                <div class="flex justify-between text-slate-700">
+                  <span>❤️ 慈善/宗教 (20%)：</span>
+                  <span id="excessCharityVal" class="font-bold text-emerald-700">52.4 萬</span>
+                </div>
+                <div class="text-[10px] text-slate-400 pt-0.5">
+                  ※ 台灣贈與稅免稅額：每人每年 244 萬元
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 多頁籤視覺化分析區 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+          <!-- Tab 導覽列 -->
+          <div class="flex overflow-x-auto border-b border-slate-200 bg-slate-50/70 px-2 pt-2 gap-1">
+            <button type="button" data-tab="tab1" class="tab-btn px-4 py-2.5 text-xs sm:text-sm rounded-t-xl border-b-2 whitespace-nowrap transition border-transparent text-slate-500 font-medium">
+              📈 全生涯資產軌跡圖 (51～100歲)
+            </button>
+            <button type="button" data-tab="tab2" class="tab-btn px-4 py-2.5 text-xs sm:text-sm rounded-t-xl border-b-2 hover:text-ocean-800 whitespace-nowrap transition border-transparent text-slate-500 font-medium">
+              🗓 退休前檢核表 (2026～2033)
+            </button>
+            <button type="button" data-tab="tab3" class="tab-btn px-4 py-2.5 text-xs sm:text-sm rounded-t-xl border-b-2 hover:text-ocean-800 whitespace-nowrap transition active border-ocean-900 text-ocean-900 bg-white font-bold">
+              📊 全生涯逐年現金流與提領率
+            </button>
+            <button type="button" data-tab="tab4" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-ocean-800 whitespace-nowrap transition">
+              🧭 12/31 五步驟 SOP 與帳戶分工
+            </button>
+          </div>
+
+          <!-- Tab 1：全生涯資產軌跡圖 -->
+          <div id="tab1" class="tab-panel p-5 space-y-4 hidden">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 class="font-bold text-ocean-900 text-sm sm:text-base">51～100 歲全生涯資產軌跡模擬（名目價值 / 萬元）</h3>
+                <p class="text-xs text-slate-500">對比你的「實際預估軌跡」、「建議線目標」、「地板線」、「愉快線/天花板」以及「若 76 歲後硬守 3% 提領」的資產膨脹曲線。</p>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <span class="px-2.5 py-1 rounded-lg bg-ocean-50 text-ocean-800 font-medium border border-ocean-200" id="chartSummaryBadge">100歲建議線餘額：約 27,042 萬 (今日價值約 10,248 萬)</span>
+              </div>
+            </div>
+
+            <!-- Chart.js 畫布容器 -->
+            <div class="relative w-full h-[340px] sm:h-[400px]">
+              <canvas id="trajectoryChart" width="766" height="500" style="display: block; box-sizing: border-box; height: 400px; width: 612px;"></canvas>
+            </div>
+
+            <!-- 圖表關鍵洞察卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+              <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-1">
+                <div class="font-bold text-ocean-900">1. 為什麼退休日建議線是 2,925 萬？</div>
+                <p class="text-slate-600 leading-relaxed">保證 58～65 歲（含 2034～35 房貸與通膨）每年提領率皆 <strong>≤ 5.0%</strong>，且 100 歲時仍保留約今日價值 850 萬吸收晚年長照費用。</p>
+              </div>
+              <div class="p-3.5 rounded-xl bg-amber-50/60 border border-amber-200/80 text-xs space-y-1">
+                <div class="font-bold text-amber-900">2. 為什麼不硬守「76 歲後只領 3%」？</div>
+                <p class="text-slate-700 leading-relaxed">因報酬率 5.5% 高於 3% 提領，硬守 3% 會讓 100 歲帳上暴增至約 <strong>5,900 萬名目</strong>，正是 DWZ 反對的「人走了，錢還在」。</p>
+              </div>
+              <div class="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80 text-xs space-y-1">
+                <div class="font-bold text-emerald-900">3. 你目前的超前優勢</div>
+                <p id="insightActualSummary" class="text-slate-700 leading-relaxed">依你輸入的 <strong>2,697 萬</strong> 起步推算，退休日可達 <strong>3,607 萬</strong>（超出建議線 -1,387 萬），若不加碼體驗，100 歲將留下 <strong>13,602 萬</strong>名目資產！</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2：退休前（2026～2033）年度水位檢核表 -->
+          <div id="tab2" class="tab-panel p-5 space-y-4 hidden">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 class="font-bold text-ocean-900 text-sm sm:text-base">路線 V 退休前（2026～2033）年度水位檢核與主線任務</h3>
+                <p class="text-xs text-slate-500">「自有資產」不含 58 歲一次金 383.7 萬，且每年 12/31 數字已包含隔年 1 月要撥出的體驗金。點擊任一列可檢視當年任務。</p>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+              <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                <thead>
+                  <tr class="bg-ocean-900 text-white text-xs">
+                    <th class="py-3 px-3 font-semibold">檢核時間點</th>
+                    <th class="py-3 px-2 font-semibold text-center">年齡</th>
+                    <th class="py-3 px-3 font-semibold text-right">🛡 地板線</th>
+                    <th class="py-3 px-3 font-semibold text-right text-amber-300">⭐ 建議線 (目標)</th>
+                    <th class="py-3 px-3 font-semibold text-right text-emerald-300" id="thCeilingCol">🎉 愉快線 (×1.10)</th>
+                    <th class="py-3 px-3 font-semibold text-right bg-ocean-800">你的預估軌跡</th>
+                    <th class="py-3 px-3 font-semibold text-right bg-ocean-800">vs 建議線差額</th>
+                    <th class="py-3 px-3 font-semibold">路線 V 主線任務與財務里程碑</th>
+                  </tr>
+                </thead>
+                <tbody id="preRetireTableBody" class="divide-y divide-slate-200 bg-white"></tbody>
+              </table>
+            </div>
+
+            <!-- 點選年份任務詳情卡 -->
+            <div id="milestoneDetailCard" class="rounded-xl bg-ocean-50 border border-ocean-200 p-4 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <span class="inline-block px-2 py-0.5 rounded bg-ocean-900 text-amber-300 text-xs font-bold mb-1" id="msYearBadge">2026/12 (51歲)</span>
+                <h4 class="font-bold text-ocean-950" id="msTitle">703 導師（七年級）起跑｜開立體驗帳戶</h4>
+                <p class="text-slate-600 mt-1" id="msDesc">2027/1 半馬；寒假日本溫泉；暑假越南；體驗預算 40 萬；4/15 00631L 時間停損紀律。</p>
+              </div>
+              <div class="shrink-0 text-right">
+                <div class="text-[11px] text-slate-500">每年 3 月安全閥檢查</div>
+                <div class="font-semibold text-ocean-800 text-xs mt-0.5">健檢紅燈 / 睡眠身心 / 爸媽照護</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 3：全生涯逐年現金流與提領率明細表 -->
+          <div id="tab3" class="tab-panel p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 class="font-bold text-ocean-900 text-sm sm:text-base">51～100 歲全生涯逐年現金流模擬表（名目金額 / 萬元）</h3>
+                <p class="text-xs text-slate-500">呈現「建議線軌跡」與「你的實際預估軌跡」在退休後每年的真實花費（含 2% 通膨）、月退給付、大額支出與實際提領率。</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="text-xs text-slate-600 font-medium">顯示基準：</label>
+                <select id="cashflowModeSelect" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white text-ocean-900">
+                  <option value="target">⭐ 建議線基準軌跡 (2,214萬起)</option>
+                  <option value="actual">🚀 你的目前實際資產軌跡</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto max-h-[480px] rounded-xl border border-slate-200">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead class="sticky top-0 z-10">
+                  <tr class="bg-ocean-900 text-white">
+                    <th class="py-2.5 px-2.5 font-semibold">西元年</th>
+                    <th class="py-2 px-2 font-semibold text-center">年齡</th>
+                    <th class="py-2.5 px-2.5 font-semibold">階段</th>
+                    <th class="py-2.5 px-2.5 font-semibold text-right">名目生活/體驗費</th>
+                    <th class="py-2.5 px-2.5 font-semibold text-right">月退年金</th>
+                    <th class="py-2.5 px-2.5 font-semibold text-right">房貸/大額支出</th>
+                    <th class="py-2.5 px-2.5 font-semibold text-right">投資帳戶淨提領</th>
+                    <th class="py-2.5 px-2.5 font-semibold text-right">實際提領率</th>
+                    <th class="py-2.5 px-2.5 font-semibold text-right">期末資產 (名目)</th>
+                    <th class="py-2.5 px-2.5 font-semibold text-right">今日購買力現值</th>
+                  </tr>
+                </thead>
+                <tbody id="fullCashflowTableBody" class="divide-y divide-slate-200 bg-white"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab 4：12/31 五步驟 SOP 與帳戶分工指南 -->
+          <div id="tab4" class="tab-panel hidden p-5 space-y-6">
+            <!-- 三帳戶分工 -->
+            <div>
+              <h3 class="font-bold text-ocean-900 text-sm sm:text-base mb-3">一、三個帳戶的黃金分工原則</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="rounded-xl border border-slate-200 p-4 bg-slate-50/70 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-ocean-900 text-sm">🏦 1. 生活帳戶</span>
+                    <span class="text-[11px] px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-medium">日常與房貸</span>
+                  </div>
+                  <p class="text-xs text-slate-600"><strong>資金來源：</strong>在職薪水；退休後為兼領月退（28,001 元/月）。</p>
+                  <p class="text-xs text-slate-600"><strong>核心規則：</strong>退休前房貸（至 124/12）由薪水支付，不驚動投資帳戶；退休後房貸改由投資帳戶提領補貼。</p>
+                </div>
+
+                <div class="rounded-xl border border-amber-200 p-4 bg-amber-50/60 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-amber-900 text-sm">✈️ 2. 體驗帳戶</span>
+                    <span class="text-[11px] px-2 py-0.5 rounded bg-amber-200/80 text-amber-900 font-medium">不存只花</span>
+                  </div>
+                  <p class="text-xs text-slate-700"><strong>資金來源：</strong>每年 1 月從投資帳戶賣出 0050 撥入 40 萬（含通膨），加上年終獎金。</p>
+                  <p class="text-xs text-slate-700"><strong>核心規則：</strong>結餘最多滾一年，滾到第二年就強制排一趟旅行或請客；高於愉快線時下一年預算 <strong>×1.5</strong>。</p>
+                </div>
+
+                <div class="rounded-xl border border-ocean-200 p-4 bg-ocean-50/60 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-ocean-900 text-sm">📈 3. 投資帳戶</span>
+                    <span class="text-[11px] px-2 py-0.5 rounded bg-ocean-200 text-ocean-900 font-medium">引擎與護城河</span>
+                  </div>
+                  <p class="text-xs text-slate-700"><strong>資金來源：</strong>現有台美股資產＋每月定投 1.5 萬＋58 歲一次金 383.7 萬全數投入。</p>
+                  <p class="text-xs text-slate-700"><strong>核心規則：</strong>2031/8/1 觸發退休前兩年配置（80:5:15），提前備妥兩年現金流緩衝防禦順序風險。</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 每年 12/31 五步驟 SOP -->
+            <div>
+              <h3 class="font-bold text-ocean-900 text-sm sm:text-base mb-3">二、每年 12/31 五步驟標準作業程序 (SOP)</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                <div class="rounded-xl border border-slate-200 p-3.5 bg-white">
+                  <div class="text-xs font-bold text-amber-600">STEP 1｜算帳</div>
+                  <div class="font-bold text-ocean-900 text-sm mt-1">盤點淨資產</div>
+                  <p class="text-xs text-slate-600 mt-1">記錄 12/31 實際自有資產（扣除質押借款），對照本看板建議線與愉快線。</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 p-3.5 bg-white">
+                  <div class="text-xs font-bold text-amber-600">STEP 2｜分區</div>
+                  <div class="font-bold text-ocean-900 text-sm mt-1">定位護欄區間</div>
+                  <p class="text-xs text-slate-600 mt-1">確認資產落在「高於愉快線 / 建議～愉快 / 地板～建議 / 跌破地板」哪一區。</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 p-3.5 bg-white">
+                  <div class="text-xs font-bold text-amber-600">STEP 3｜決策</div>
+                  <div class="font-bold text-ocean-900 text-sm mt-1">調整體驗倍數</div>
+                  <p class="text-xs text-slate-600 mt-1">超標即執行 ×1.5 放大體驗與 50/30/20 分配；跌破地板線則體驗減半但不歸零。</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 p-3.5 bg-white">
+                  <div class="text-xs font-bold text-amber-600">STEP 4｜預留</div>
+                  <div class="font-bold text-ocean-900 text-sm mt-1">1月撥出現金流</div>
+                  <p class="text-xs text-slate-600 mt-1">將隔年體驗金或生活缺口轉入貨幣工具，不參與股市波動以抗順序風險。</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 p-3.5 bg-white">
+                  <div class="text-xs font-bold text-amber-600">STEP 5｜記錄</div>
+                  <div class="font-bold text-ocean-900 text-sm mt-1">結算記憶股息</div>
+                  <p class="text-xs text-slate-600 mt-1">翻閱 Obsidian 體驗紀錄，挑出快樂分數最高（8～10分）的類型隔年加碼。</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 四大風險提醒 -->
+            <div>
+              <h3 class="font-bold text-ocean-900 text-sm sm:text-base mb-3">三、四大執行風險與防禦對策</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div class="p-3.5 rounded-xl bg-rose-50/70 border border-rose-200 space-y-1">
+                  <div class="font-bold text-rose-900">⚠️ 1. 「不敢花」的心理帳戶風險（最大執行敵人）</div>
+                  <p class="text-rose-800 leading-relaxed">DWZ 失敗多半不是算錯，而是「再等一下、再多存一點」。務必把超過愉快線的資金視為「不花才是違規」，先排進行事曆訂機票飯店。</p>
+                </div>
+                <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 space-y-1">
+                  <div class="font-bold text-amber-900">⚠️ 2. 退休初期的順序風險 (Sequence Risk)</div>
+                  <p class="text-amber-800 leading-relaxed">58～61 歲剛退休若遇大空頭最傷。透過「每年 12 月先預留隔年缺口」＋「月退 33.6 萬墊底」，你天然擁有約兩年現金流緩衝。</p>
+                </div>
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                  <div class="font-bold text-ocean-900">🛡️ 3. 晚年長照缺口（300 萬護城河之外的準備）</div>
+                  <p class="text-slate-600 leading-relaxed">失能 8～10 年長照花費可能達 400～700 萬。本看板的「建議線」在 100 歲時仍保留約今日價值 850 萬，正是用來從容吸收長照支出。</p>
+                </div>
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                  <div class="font-bold text-ocean-900">📉 4. 月退不隨通膨調整的購買力縮水</div>
+                  <p class="text-slate-600 leading-relaxed">模型全程假設月退 28,001 元不調薪，38 年後實質購買力僅剩約一半；但也因為兼領先拿回了 383.7 萬一次金投入複利，成功對沖了年金改革與通膨風險。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- 核心試算與互動邏輯腳本 -->
+  <script id="app-script">
+    // =========================================================================
+    // 1. 2026/11/23 退休總綱定案預設參數 (可被一鍵匯出功能覆寫為使用者最新設定)
+    // =========================================================================
+    const DEFAULT_CONFIG = /*__EXPORTED_CONFIG_START__*/{
+  "currentOwnAsset": 2697,
+  "checkYear": 2026,
+  "birthYear": 1975,
+  "birthMonth": 3,
+  "retireYear": 2033,
+  "monthlyPension": 28001,
+  "lumpSumPension": 383.7,
+  "pensionAdjustInflation": false,
+  "returnRate": 5.5,
+  "inflationRate": 2,
+  "ceilingMode": "1.10",
+  "customCeilingMult": 1.25,
+  "monthlyInvest": 1.5,
+  "preRetireExp": 40,
+  "spendPhase1": 120,
+  "withdrawCap1": 5,
+  "spendPhase2": 100,
+  "withdrawCap2": 4,
+  "spendPhase3": 80,
+  "withdrawCap3": 3,
+  "strict3Percent": false,
+  "moatAmount": 300,
+  "mortgageAnnual": 35,
+  "mortgageEndYear": 2035,
+  "carCost": 150,
+  "houseRepairCost": 200,
+  "elderCareCost": 100
+}/*__EXPORTED_CONFIG_END__*/;
+
+    const STORAGE_KEY = 'dwz_retirement_dashboard_v2026_11';
+    let state = loadState();
+    let trajectoryChartInstance = null;
+    let lastSimResult = null;
+
+    // 路線 V 每年主線任務對照表
+    const ROUTE_V_MILESTONES = {
+      2026: { title: '703 導師（七年級）起跑｜開立體驗帳戶', desc: '2027/1 半馬；寒假日本溫泉；暑假越南；體驗預算 40 萬；4/15 00631L 時間停損紀律。' },
+      2027: { title: '703 導師（八年級）｜北海道試住 21 天', desc: '第二場全馬；寒假北海道；暑假北海道試住 21 天練習退休生活節奏；2027 起每月定投 1.5 萬。' },
+      2028: { title: '703 導師（九年級會考年）｜申請專任', desc: '會考年放輕；2029 暑假第一次一個月微退休（日本長野/東北）；2029 春天申請 118 學年專任。' },
+      2029: { title: '專任休息年（118 學年）｜體力恢復緩衝', desc: '準時下班跑步重訓；試做志工與攝影；2030 春天依體力決定是否接第二屆導師（備案可 120/8/1 退）。' },
+      2030: { title: '第二屆導師（七年級）｜歐洲 3 週夢想清單', desc: '2030 暑假完成瑞士/奧地利健行夢想清單；寒暑假照常微退休；每年 3 月檢視安全閥。' },
+      2031: { title: '第二屆導師（八年級）｜2031/8/1 觸發退休前配置', desc: '2031/8/1 正式啟動退休前兩年配置（80:5:15），清零正二槓桿並備妥兩年現金流護城河；暑假退休總彩排。' },
+      2032: { title: '第二屆導師（九年級）｜送出退休申請', desc: '會考年放輕；向人事室精算確認兼領月退與一次金金額；排定 2033 下半年退休元年長住行程。' },
+      2033: { title: '122/7/31 正式退休（58歲）｜黃金期展開！', desc: '和第二屆學生一起畢業！8 月一次金 383.7 萬入帳投入股市；換車到位；9～10 月日本長住 1～2 個月。' }
+    };
+
+    // =========================================================================
+    // 2. 狀態讀取、儲存與重設
+    // =========================================================================
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          return { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
+        }
+      } catch (e) {
+        console.warn('無法讀取 localStorage:', e);
+      }
+      return { ...DEFAULT_CONFIG };
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.warn('無法寫入 localStorage:', e);
+      }
+    }
+
+    function showToast(msg) {
+      const box = document.getElementById('toastBox');
+      const text = document.getElementById('toastMsg');
+      text.textContent = msg;
+      box.classList.remove('hidden');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        box.classList.add('hidden');
+      }, 3200);
+    }
+
+    // =========================================================================
+    // 3. 核心財務精算與逆推引擎 (51歲 ~ 100歲)
+    // =========================================================================
+    function getCeilingMultiplier(cfg) {
+      if (cfg.ceilingMode === '1.10') return 1.10;
+      if (cfg.ceilingMode === '1.25') return 1.25;
+      return Math.max(1.01, Number(cfg.customCeilingMult) || 1.25);
+    }
+
+    /**
+     * 計算單一年度的退休後淨現金流需求 (扣除月退後的投資帳戶需補貼金額)
+     * @param {number} year 西元年
+     * @param {number} age 該年年底實歲
+     * @param {object} cfg 設定參數
+     */
+    function getPostRetireCashflowDetail(year, age, cfg) {
+      const infFactor = Math.pow(1 + cfg.inflationRate / 100, Math.max(0, year - 2026));
+      let baseSpendToday = cfg.spendPhase3;
+      let phaseName = '76歲+ 守護期';
+      let capPct = cfg.withdrawCap3;
+
+      if (age <= 65) {
+        baseSpendToday = cfg.spendPhase1;
+        phaseName = '58~65 黃金期';
+        capPct = cfg.withdrawCap1;
+      } else if (age <= 75) {
+        baseSpendToday = cfg.spendPhase2;
+        phaseName = '66~75 慢遊期';
+        capPct = cfg.withdrawCap2;
+      }
+
+      // 退休當年 (retireYear，7/31 退休) 僅計算 8~12 月 (5/12 年) 的退休生活費
+      const fractionOfYear = (year === cfg.retireYear) ? (5 / 12) : 1.0;
+      const livingSpendNominal = baseSpendToday * infFactor * fractionOfYear;
+
+      // 月退年金 (28,001 * 12 / 10000 = 33.6012 萬/年)
+      const annualPensionBase = (cfg.monthlyPension * 12) / 10000;
+      const pensionFactor = cfg.pensionAdjustInflation ? infFactor : 1.0;
+      const pensionIncome = annualPensionBase * pensionFactor * fractionOfYear;
+
+      // 房貸支出 (退休後至 mortgageEndYear 年底，名目固定不隨通膨膨脹)
+      let mortgageOut = 0;
+      if (year >= cfg.retireYear && year <= cfg.mortgageEndYear) {
+        mortgageOut = cfg.mortgageAnnual * fractionOfYear;
+      }
+
+      // 一次性大額支出 (按發生年度計入通膨)
+      let oneTimeOut = 0;
+      if (year === cfg.retireYear) {
+        oneTimeOut += cfg.carCost * infFactor; // 2033 換車
+      }
+      if (year === cfg.retireYear + 1 || year === cfg.retireYear + 2) {
+        oneTimeOut += (cfg.houseRepairCost / 2) * infFactor; // 2034~2035 老屋修繕分兩年
+      }
+      if (year === cfg.retireYear + 7) {
+        oneTimeOut += cfg.elderCareCost * infFactor; // 2040 長輩後事
+      }
+
+      const extraOut = mortgageOut + oneTimeOut;
+      const netDraw = Math.max(0, livingSpendNominal + extraOut - pensionIncome);
+
+      return {
+        phaseName,
+        capPct,
+        infFactor,
+        livingSpendNominal,
+        pensionIncome,
+        mortgageOut,
+        oneTimeOut,
+        extraOut,
+        netDraw
+      };
+    }
+
+    /**
+     * 模擬給定「退休日 (retireYear/7/31) 自有資產 W_retire」下，從 retireYear 到 100 歲的資產走勢
+     */
+    function simulatePostRetirement(wRetire, cfg, enforceStrict3 = false) {
+      const r = cfg.returnRate / 100;
+      const endAge = 100;
+      const startAge = cfg.retireYear - cfg.birthYear; // 2033 - 1975 = 58
+      const yearsCount = endAge - startAge; // 42 年 (到 2075 年 100 歲)
+
+      // 退休日 7/31 加上 8 月一次金入帳
+      let balance = wRetire + cfg.lumpSumPension;
+      let minSurplusOverMoat = Infinity;
+      let maxPhase1WithdrawRate = 0;
+      let violatedCap = false;
+
+      const timeline = [];
+
+      for (let i = 0; i <= yearsCount; i++) {
+        const year = cfg.retireYear + i;
+        const age = startAge + i;
+        const cf = getPostRetireCashflowDetail(year, age, cfg);
+
+        if (year === cfg.retireYear) {
+          // 退休當年 8~12 月 (5 個月)
+          const r5m = Math.pow(1 + r, 5 / 12) - 1;
+          const drawRate = (cf.netDraw / balance) * 100;
+          balance = balance * (1 + r5m) - cf.netDraw;
+          timeline.push({
+            year, age, ...cf,
+            withdrawRate: drawRate,
+            endBalance: balance,
+            realBalance: balance / cf.infFactor
+          });
+        } else {
+          // 完整年度：年初餘額先支應年度淨提領 (符合 12 月先預留隔年缺口規則)
+          const startBal = balance;
+          let actualDraw = cf.netDraw;
+          let withdrawRate = startBal > 0 ? (actualDraw / startBal) * 100 : 999;
+
+          if (age <= 65 && withdrawRate > maxPhase1WithdrawRate) {
+            maxPhase1WithdrawRate = withdrawRate;
+          }
+          if (age <= 65 && withdrawRate > cfg.withdrawCap1 + 0.001) {
+            violatedCap = true;
+          }
+
+          // 若勾選「76歲後硬守 3% 上限」且該年需求超過 3%，模擬只領 3% 導致資產越滾越大
+          if (enforceStrict3 && age >= 76 && startBal > 0) {
+            const maxAllowed = startBal * (cfg.withdrawCap3 / 100);
+            if (actualDraw < maxAllowed) {
+              // 需求本來就低於 3%
+            } else {
+              actualDraw = maxAllowed;
+              withdrawRate = cfg.withdrawCap3;
+            }
+          }
+
+          const investable = startBal - actualDraw;
+          balance = investable * (1 + r);
+
+          const requiredMoatNominal = cfg.moatAmount * cf.infFactor;
+          const surplus = balance - requiredMoatNominal;
+          if (surplus < minSurplusOverMoat) {
+            minSurplusOverMoat = surplus;
+          }
+
+          timeline.push({
+            year, age, ...cf,
+            netDraw: actualDraw,
+            withdrawRate,
+            endBalance: balance,
+            realBalance: balance / cf.infFactor
+          });
+        }
+      }
+
+      const finalEntry = timeline[timeline.length - 1];
+      return {
+        timeline,
+        minSurplusOverMoat,
+        maxPhase1WithdrawRate,
+        violatedCap,
+        endBalance100: finalEntry.endBalance,
+        realBalance100: finalEntry.realBalance
+      };
+    }
+
+    /**
+     * 逆推退休前 (2026/12 ~ retireYear/7/31) 各年底應有自有資產
+     * 規則：每年 12/31 數字包含隔年 1 月要撥出的體驗金 (preRetireExp * infFactor)
+     */
+    function backsolvePreRetirement(wRetireTarget, cfg) {
+      const r = cfg.returnRate / 100;
+      const startYear = 2026;
+      const retireYear = cfg.retireYear;
+
+      // 先處理 retireYear (2033)：年初 1 月撥出體驗金後，滾 7 個月 (1~7月) 並加上 7 個月定投到達 wRetireTarget
+      const infRetire = Math.pow(1 + cfg.inflationRate / 100, retireYear - 2026);
+      const expRetireJan = cfg.preRetireExp * infRetire;
+      const r7m = Math.pow(1 + r, 7 / 12) - 1;
+      const invest7m = cfg.monthlyInvest * 7;
+
+      // (W_{retireYear-1, 12/31} - expRetireJan) * (1 + r7m) + invest7m = wRetireTarget
+      let wPrevDec = ((wRetireTarget - invest7m) / (1 + r7m)) + expRetireJan;
+
+      const preMap = {};
+      preMap[retireYear - 1] = wPrevDec;
+
+      for (let y = retireYear - 2; y >= startYear; y--) {
+        // y 年 12/31 到 y+1 年 12/31：先扣 y+1 年 1 月體驗金，剩餘滾 1 年，再加 y+1 年全年定投
+        const infNext = Math.pow(1 + cfg.inflationRate / 100, (y + 1) - 2026);
+        const expNextJan = cfg.preRetireExp * infNext;
+        const annualInvestNext = cfg.monthlyInvest * 12;
+
+        // (W_y - expNextJan) * (1 + r) + annualInvestNext = W_{y+1}
+        const wCurrDec = ((preMap[y + 1] - annualInvestNext) / (1 + r)) + expNextJan;
+        preMap[y] = wCurrDec;
+      }
+
+      return preMap;
+    }
+
+    /**
+     * 順推使用者「目前輸入自有資產」在退休前 (2026 ~ retireYear/7/31) 的實際預估軌跡
+     */
+    function projectActualPreRetirement(cfg) {
+      const r = cfg.returnRate / 100;
+      const startYear = 2026;
+      const retireYear = cfg.retireYear;
+      const actualPreMap = {};
+
+      // 使用者輸入的是 checkYear 的資產，先推回或推展到各年
+      actualPreMap[cfg.checkYear] = cfg.currentOwnAsset;
+
+      // 往後順推至 retireYear - 1
+      for (let y = cfg.checkYear; y < retireYear - 1; y++) {
+        const infNext = Math.pow(1 + cfg.inflationRate / 100, (y + 1) - 2026);
+        const expNextJan = cfg.preRetireExp * infNext;
+        const annualInvestNext = cfg.monthlyInvest * 12;
+        actualPreMap[y + 1] = Math.max(0, (actualPreMap[y] - expNextJan) * (1 + r) + annualInvestNext);
+      }
+
+      // 往前反推至 2026 (若 checkYear > 2026)
+      for (let y = cfg.checkYear; y > startYear; y--) {
+        const infCurr = Math.pow(1 + cfg.inflationRate / 100, y - 2026);
+        const expCurrJan = cfg.preRetireExp * infCurr;
+        const annualInvestCurr = cfg.monthlyInvest * 12;
+        actualPreMap[y - 1] = ((actualPreMap[y] - annualInvestCurr) / (1 + r)) + expCurrJan;
+      }
+
+      // 計算退休日 (retireYear/7/31) 實際自有資產
+      const infRetire = Math.pow(1 + cfg.inflationRate / 100, retireYear - 2026);
+      const expRetireJan = cfg.preRetireExp * infRetire;
+      const r7m = Math.pow(1 + r, 7 / 12) - 1;
+      const invest7m = cfg.monthlyInvest * 7;
+      const actualAtRetireDay = Math.max(0, (actualPreMap[retireYear - 1] - expRetireJan) * (1 + r7m) + invest7m);
+
+      return { actualPreMap, actualAtRetireDay };
+    }
+
+    /**
+     * 主計算引擎：整合地板線、建議線、愉快線與實際軌跡
+     */
+    function runFullModel(cfg) {
+      // 1. 二分搜尋「地板線」退休日自有資產 (100 歲剛好剩護城河，且全程不破產)
+      let low = 500, high = 8000;
+      for (let iter = 0; iter < 50; iter++) {
+        const mid = (low + high) / 2;
+        const sim = simulatePostRetirement(mid, cfg, false);
+        if (sim.minSurplusOverMoat >= 0) {
+          high = mid;
+        } else {
+          low = mid;
+        }
+      }
+      const floorAtRetireDay = high;
+
+      // 2. 二分搜尋「建議線」退休日自有資產 (滿足地板線 + 58~65 歲提領率 <= withdrawCap1 + 100歲留安全餘裕)
+      let tLow = floorAtRetireDay, tHigh = 9000;
+      for (let iter = 0; iter < 50; iter++) {
+        const mid = (tLow + tHigh) / 2;
+        const sim = simulatePostRetirement(mid, cfg, false);
+        // 條件：58~65 歲提領率不超過上限，且 100 歲實質購買力至少保留約 850 萬 (或 2.8 倍護城河) 吸收長照
+        const targetReal100 = Math.max(cfg.moatAmount * 2.8, 850);
+        if (!sim.violatedCap && sim.realBalance100 >= targetReal100) {
+          tHigh = mid;
+        } else {
+          tLow = mid;
+        }
+      }
+      const targetAtRetireDay = tHigh;
+
+      const ceilingMult = getCeilingMultiplier(cfg);
+      const ceilingAtRetireDay = targetAtRetireDay * ceilingMult;
+
+      // 3. 逆推 2026 ~ retireYear-1 各年底水位
+      const floorPreMap = backsolvePreRetirement(floorAtRetireDay, cfg);
+      const targetPreMap = backsolvePreRetirement(targetAtRetireDay, cfg);
+      const ceilingPreMap = {};
+      Object.keys(targetPreMap).forEach(y => {
+        ceilingPreMap[y] = targetPreMap[y] * ceilingMult;
+      });
+
+      // 4. 實際預估軌跡
+      const { actualPreMap, actualAtRetireDay } = projectActualPreRetirement(cfg);
+
+      // 5. 退休後全生涯模擬
+      const targetPostSim = simulatePostRetirement(targetAtRetireDay, cfg, false);
+      const floorPostSim = simulatePostRetirement(floorAtRetireDay, cfg, false);
+      const ceilingPostSim = simulatePostRetirement(ceilingAtRetireDay, cfg, false);
+      const actualPostSim = simulatePostRetirement(actualAtRetireDay, cfg, false);
+      const strict3PostSim = simulatePostRetirement(targetAtRetireDay, cfg, true);
+
+      return {
+        floorAtRetireDay,
+        targetAtRetireDay,
+        ceilingAtRetireDay,
+        actualAtRetireDay,
+        floorPreMap,
+        targetPreMap,
+        ceilingPreMap,
+        actualPreMap,
+        targetPostSim,
+        floorPostSim,
+        ceilingPostSim,
+        actualPostSim,
+        strict3PostSim
+      };
+    }
+
+    // =========================================================================
+    // 4. UI 更新與渲染函式
+    // =========================================================================
+    function formatNum(num) {
+      return Math.round(num).toLocaleString('zh-TW');
+    }
+
+    function formatDec(num, dec = 1) {
+      return Number(num).toLocaleString('zh-TW', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    }
+
+    function syncInputsFromState() {
+      const fields = [
+        'currentOwnAsset', 'birthYear', 'birthMonth', 'retireYear',
+        'monthlyPension', 'lumpSumPension', 'returnRate', 'inflationRate',
+        'ceilingMode', 'customCeilingMult', 'monthlyInvest', 'preRetireExp',
+        'spendPhase1', 'withdrawCap1', 'spendPhase2', 'withdrawCap2',
+        'spendPhase3', 'withdrawCap3', 'moatAmount', 'mortgageAnnual',
+        'mortgageEndYear', 'carCost', 'houseRepairCost', 'elderCareCost'
+      ];
+      fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = state[id];
+      });
+      document.getElementById('returnRateRange').value = state.returnRate;
+      document.getElementById('returnRateLabel').textContent = state.returnRate + '%';
+      document.getElementById('pensionAdjustInflation').checked = !!state.pensionAdjustInflation;
+      document.getElementById('strict3Percent').checked = !!state.strict3Percent;
+      document.getElementById('customCeilingWrap').classList.toggle('hidden', state.ceilingMode !== 'custom');
+
+      // 更新檢視年度下拉選單 (2026 ~ retireYear)
+      const sel = document.getElementById('checkYearSelect');
+      const prevVal = state.checkYear;
+      sel.innerHTML = '';
+      for (let y = 2026; y <= state.retireYear; y++) {
+        const age = y - state.birthYear;
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = (y === state.retireYear)
+          ? `${y}/7/31 退休日 (${age}歲)`
+          : `${y}/12 (${age}歲)`;
+        sel.appendChild(opt);
+      }
+      sel.value = (prevVal >= 2026 && prevVal <= state.retireYear) ? prevVal : 2026;
+      state.checkYear = Number(sel.value);
+    }
+
+    function updateDashboard() {
+      const res = runFullModel(state);
+      lastSimResult = res;
+
+      const y = state.checkYear;
+      const isRetireDay = (y === state.retireYear);
+      const floorVal = isRetireDay ? res.floorAtRetireDay : res.floorPreMap[y];
+      const targetVal = isRetireDay ? res.targetAtRetireDay : res.targetPreMap[y];
+      const ceilingVal = isRetireDay ? res.ceilingAtRetireDay : res.ceilingPreMap[y];
+      const actualVal = state.currentOwnAsset;
+      const mult = getCeilingMultiplier(state);
+
+      // 更新頂部 KPI 卡片
+      document.getElementById('kpiCurrentAsset').textContent = formatNum(actualVal);
+      document.getElementById('kpiFloorVal').textContent = formatNum(floorVal);
+      document.getElementById('kpiTargetVal').textContent = formatNum(targetVal);
+      document.getElementById('kpiCeilingVal').textContent = formatNum(ceilingVal);
+
+      const ceilingTitleText = state.ceilingMode === '1.10'
+        ? '🎉 愉快線 (×1.10)'
+        : state.ceilingMode === '1.25'
+          ? '🎉 安心天花板 (×1.25)'
+          : `🎉 自訂天花板 (×${mult.toFixed(2)})`;
+      document.getElementById('kpiCeilingTitle').textContent = ceilingTitleText;
+      document.getElementById('thCeilingCol').textContent = ceilingTitleText;
+
+      const diffTarget = actualVal - targetVal;
+      const diffPct = ((diffTarget / targetVal) * 100).toFixed(1);
+      const diffTextEl = document.getElementById('kpiDiffText');
+      if (diffTarget >= 0) {
+        diffTextEl.textContent = `高於建議線 +${formatNum(diffTarget)} 萬 (+${diffPct}%)`;
+        diffTextEl.className = 'mt-2 text-xs text-emerald-300 font-medium';
+      } else {
+        diffTextEl.textContent = `低於建議線 ${formatNum(diffTarget)} 萬 (${diffPct}%)`;
+        diffTextEl.className = 'mt-2 text-xs text-rose-300 font-medium';
+      }
+
+      const diffFloor = actualVal - floorVal;
+      document.getElementById('kpiFloorSub').textContent = diffFloor >= 0
+        ? `距離警戒線緩衝：+${formatNum(diffFloor)} 萬`
+        : `⚠️ 已跌破警戒線：${formatNum(diffFloor)} 萬`;
+
+      document.getElementById('kpiTargetSub').textContent =
+        `退休日 (${state.retireYear}/7/31) 目標：${formatNum(res.targetAtRetireDay)} 萬`;
+
+      const diffCeiling = actualVal - ceilingVal;
+      document.getElementById('kpiCeilingSub').textContent = diffCeiling >= 0
+        ? `超越天花板：+${formatNum(diffCeiling)} 萬 (建議花掉)`
+        : `距離超額花費線：尚差 ${formatNum(Math.abs(diffCeiling))} 萬`;
+
+      // 更新視覺化進度條
+      const maxScale = Math.max(ceilingVal * 1.2, actualVal * 1.1);
+      const pFloor = (floorVal / maxScale) * 100;
+      const pTarget = (targetVal / maxScale) * 100;
+      const pCeiling = (ceilingVal / maxScale) * 100;
+      const pActual = Math.min(99, Math.max(1, (actualVal / maxScale) * 100));
+
+      document.getElementById('barSeg1').style.width = `${pFloor}%`;
+      document.getElementById('barSeg2').style.width = `${Math.max(0, pTarget - pFloor)}%`;
+      document.getElementById('barSeg3').style.width = `${Math.max(0, pCeiling - pTarget)}%`;
+      document.getElementById('barSeg4').style.width = `${Math.max(0, 100 - pCeiling)}%`;
+      document.getElementById('barPointer').style.left = `${pActual}%`;
+
+      document.getElementById('barFloorLabel').textContent = `🛡 地板 ${formatNum(floorVal)}萬`;
+      document.getElementById('barTargetLabel').textContent = `⭐ 建議 ${formatNum(targetVal)}萬`;
+      document.getElementById('barCeilingLabel').textContent = `🎉 天花板 ${formatNum(ceilingVal)}萬`;
+
+      // 更新自動護欄決策提示卡
+      updateGuardrailCard(actualVal, floorVal, targetVal, ceilingVal);
+
+      // 更新圖表與表格
+      renderTrajectoryChart(res);
+      renderPreRetireTable(res);
+      renderFullCashflowTable(res);
+    }
+
+    function updateGuardrailCard(actual, floor, target, ceiling) {
+      const box = document.getElementById('guardrailBox');
+      const icon = document.getElementById('guardrailIcon');
+      const title = document.getElementById('guardrailTitle');
+      const desc = document.getElementById('guardrailDesc');
+      const badge = document.getElementById('diagBadge');
+      const splitBox = document.getElementById('excessSplitBox');
+
+      if (actual >= ceiling) {
+        const excess = actual - ceiling;
+        box.className = 'rounded-xl border p-4 transition-all bg-emerald-50/90 border-emerald-300';
+        badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40';
+        badge.textContent = '🎉 高於天花板';
+        icon.textContent = '🎉';
+        title.className = 'font-bold text-sm sm:text-base text-emerald-950';
+        title.textContent = '狀態：高於愉快線／天花板 — 啟動「DWZ 超額花費與體驗放大」護欄！';
+        desc.className = 'text-xs sm:text-sm text-emerald-900 leading-relaxed';
+        desc.innerHTML = `你的自有資產已超過「死前用不到的錢」門檻！依總綱第九節護欄：下一年體驗金額可放大 <strong>×1.5 倍（約 ${formatNum(state.preRetireExp * 1.5)} 萬元）</strong>，多出來的資金優先用在爸媽陪伴、好友聚餐與體力黃金期夢想清單。`;
+
+        splitBox.classList.remove('hidden');
+        document.getElementById('excessAmountBadge').textContent = `+${formatNum(excess)} 萬`;
+        document.getElementById('excessExpVal').textContent = `${formatDec(excess * 0.5)} 萬`;
+        document.getElementById('excessGiftVal').textContent = `${formatDec(excess * 0.3)} 萬`;
+        document.getElementById('excessCharityVal').textContent = `${formatDec(excess * 0.2)} 萬`;
+      } else if (actual >= target) {
+        box.className = 'rounded-xl border p-4 transition-all bg-sky-50/90 border-sky-300';
+        badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-bold bg-sky-500/20 text-sky-300 border border-sky-400/40';
+        badge.textContent = '⭐ 穩健達標';
+        icon.textContent = '⭐';
+        title.className = 'font-bold text-sm sm:text-base text-ocean-950';
+        title.textContent = '狀態：介於建議線與天花板之間 — 照表執行原訂體驗與投資紀律！';
+        desc.className = 'text-xs sm:text-sm text-slate-700 leading-relaxed';
+        desc.innerHTML = `完美落在《Die with Zero》黃金軌道內！維持每年 1 月撥出 <strong>${formatNum(state.preRetireExp)} 萬元</strong>體驗金（不存只花），其餘資產按 0050/美股配置紀律推進即可。`;
+        splitBox.classList.add('hidden');
+      } else if (actual >= floor) {
+        box.className = 'rounded-xl border p-4 transition-all bg-amber-50/90 border-amber-300';
+        badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/40';
+        badge.textContent = '⚠️ 略低建議線';
+        icon.textContent = '⚠️';
+        title.className = 'font-bold text-sm sm:text-base text-amber-950';
+        title.textContent = '狀態：介於地板線與建議線之間 — 啟動溫和節流護欄（體驗金 ×0.75）';
+        desc.className = 'text-xs sm:text-sm text-amber-900 leading-relaxed';
+        desc.innerHTML = `目前資產仍高於 100 歲安全底線，但安全邊際略為收斂。建議下一年體驗金調整為 <strong>×0.75 倍（約 ${formatNum(state.preRetireExp * 0.75)} 萬元）</strong>，大額長途旅行可延後一年，等待市場均值回歸。`;
+        splitBox.classList.add('hidden');
+      } else {
+        box.className = 'rounded-xl border p-4 transition-all bg-rose-50/90 border-rose-300';
+        badge.className = 'px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-400/40';
+        badge.textContent = '🚨 跌破地板線';
+        icon.textContent = '🚨';
+        title.className = 'font-bold text-sm sm:text-base text-rose-950';
+        title.textContent = '狀態：跌破地板線 — 啟動 B 計畫（體驗金額減半，但不歸零）';
+        desc.className = 'text-xs sm:text-sm text-rose-900 leading-relaxed';
+        desc.innerHTML = `體力不會等市場回來！依總綱護欄：下一年體驗金額減半為 <strong>${formatNum(state.preRetireExp * 0.5)} 萬元（絕不歸零）</strong>，同時暫停非必要大額支出，護城河只動利息不動本金。`;
+        splitBox.classList.add('hidden');
+      }
+    }
+
+    // =========================================================================
+    // 5. Chart.js 全生涯軌跡折線圖 (51 ~ 100 歲)
+    // =========================================================================
+    function renderTrajectoryChart(res) {
+      const ctx = document.getElementById('trajectoryChart').getContext('2d');
+      const labels = [];
+      const actualSeries = [];
+      const targetSeries = [];
+      const floorSeries = [];
+      const ceilingSeries = [];
+      const strict3Series = [];
+
+      // 1. 退休前 (2026 ~ retireYear - 1)
+      for (let y = 2026; y < state.retireYear; y++) {
+        const age = y - state.birthYear;
+        labels.push(`${y} (${age}歲)`);
+        actualSeries.push(Math.round(res.actualPreMap[y]));
+        targetSeries.push(Math.round(res.targetPreMap[y]));
+        floorSeries.push(Math.round(res.floorPreMap[y]));
+        ceilingSeries.push(Math.round(res.ceilingPreMap[y]));
+        strict3Series.push(Math.round(res.targetPreMap[y]));
+      }
+
+      // 2. 退休後 (retireYear ~ 100 歲)
+      res.targetPostSim.timeline.forEach((row, idx) => {
+        labels.push(`${row.year} (${row.age}歲)`);
+        targetSeries.push(Math.round(row.endBalance));
+        floorSeries.push(Math.round(res.floorPostSim.timeline[idx].endBalance));
+        ceilingSeries.push(Math.round(res.ceilingPostSim.timeline[idx].endBalance));
+        actualSeries.push(Math.round(res.actualPostSim.timeline[idx].endBalance));
+        strict3Series.push(Math.round(res.strict3PostSim.timeline[idx].endBalance));
+      });
+
+      // 更新摘要徽章
+      const end100Target = res.targetPostSim.endBalance100;
+      const end100Real = res.targetPostSim.realBalance100;
+      document.getElementById('chartSummaryBadge').textContent =
+        `100歲建議線餘額：約 ${formatNum(end100Target)} 萬 (今日價值約 ${formatNum(end100Real)} 萬)`;
+
+      const end100Actual = res.actualPostSim.endBalance100;
+      document.getElementById('insightActualSummary').innerHTML =
+        `依你輸入的 <strong>${formatNum(state.currentOwnAsset)} 萬</strong> 起步推算，退休日可達 <strong>${formatNum(res.actualAtRetireDay)} 萬</strong>（超出建議線 ${formatNum(res.actualAtRetireDay - res.targetAtRetireDay)} 萬），若不加碼體驗，100 歲將留下 <strong>${formatNum(end100Actual)} 萬</strong>名目資產！`;
+
+      const datasets = [
+        {
+          label: '🚀 你的實際預估軌跡',
+          data: actualSeries,
+          borderColor: '#D97706',
+          backgroundColor: 'rgba(217, 119, 6, 0.12)',
+          borderWidth: 3,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          tension: 0.25,
+          fill: false
+        },
+        {
+          label: '⭐ 建議線目標軌跡',
+          data: targetSeries,
+          borderColor: '#0B1D36',
+          backgroundColor: 'rgba(11, 29, 54, 0.08)',
+          borderWidth: 2.5,
+          pointRadius: 1.5,
+          tension: 0.25,
+          fill: false
+        },
+        {
+          label: '🎉 愉快線 / 天花板',
+          data: ceilingSeries,
+          borderColor: '#10B981',
+          borderDash: [5, 4],
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.25,
+          fill: false
+        },
+        {
+          label: '🛡 地板線 (警戒線)',
+          data: floorSeries,
+          borderColor: '#EF4444',
+          borderDash: [3, 3],
+          borderWidth: 1.8,
+          pointRadius: 0,
+          tension: 0.25,
+          fill: false
+        }
+      ];
+
+      if (state.strict3Percent) {
+        datasets.push({
+          label: '⚠️ 若76歲後硬守3%上限 (遺產暴增對照)',
+          data: strict3Series,
+          borderColor: '#8B5CF6',
+          borderDash: [6, 3],
+          borderWidth: 2.2,
+          pointRadius: 0,
+          tension: 0.25,
+          fill: false
+        });
+      }
+
+      if (trajectoryChartInstance) {
+        trajectoryChartInstance.destroy();
+      }
+
+      trajectoryChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { usePointStyle: true, boxWidth: 8, font: { size: 11, family: 'Inter, Noto Sans TC' } }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(7, 19, 36, 0.94)',
+              padding: 10,
+              titleFont: { size: 12, weight: 'bold' },
+              bodyFont: { size: 11 },
+              callbacks: {
+                label: (context) => `${context.dataset.label}: ${Number(context.raw).toLocaleString('zh-TW')} 萬元`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { maxTicksLimit: 12, font: { size: 10 } }
+            },
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { size: 10 },
+                callback: (val) => val.toLocaleString('zh-TW') + '萬'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // =========================================================================
+    // 6. 退休前 (2026 ~ 2033) 年度水位檢核表
+    // =========================================================================
+    function renderPreRetireTable(res) {
+      const tbody = document.getElementById('preRetireTableBody');
+      tbody.innerHTML = '';
+
+      const rowsData = [];
+      for (let y = 2026; y < state.retireYear; y++) {
+        const age = y - state.birthYear;
+        rowsData.push({
+          yearKey: y,
+          label: `${y}/12`,
+          age: `${age} 歲`,
+          floor: res.floorPreMap[y],
+          target: res.targetPreMap[y],
+          ceiling: res.ceilingPreMap[y],
+          actual: res.actualPreMap[y],
+          isHighlight: y === state.checkYear,
+          note: ROUTE_V_MILESTONES[y]?.title || '路線 V 穩健累積期'
+        });
+      }
+
+      // 退休日 (retireYear/7/31)
+      const rAge = state.retireYear - state.birthYear;
+      rowsData.push({
+        yearKey: state.retireYear,
+        label: `${state.retireYear}/7/31 退休日`,
+        age: `${rAge} 歲`,
+        floor: res.floorAtRetireDay,
+        target: res.targetAtRetireDay,
+        ceiling: res.ceilingAtRetireDay,
+        actual: res.actualAtRetireDay,
+        isHighlight: state.checkYear === state.retireYear,
+        isRetireDay: true,
+        note: '🎯 路線 V 畢業退休日（自有資產目標，不含一次金）'
+      });
+
+      // 退休當年 12/31 檢查點 (含一次金 383.7 萬，扣換車與 8~12 月缺口)
+      const decRetireTarget = res.targetPostSim.timeline[0]?.endBalance || 0;
+      const decRetireFloor = res.floorPostSim.timeline[0]?.endBalance || 0;
+      const decRetireCeiling = res.ceilingPostSim.timeline[0]?.endBalance || 0;
+      const decRetireActual = res.actualPostSim.timeline[0]?.endBalance || 0;
+
+      rowsData.push({
+        yearKey: state.retireYear,
+        label: `${state.retireYear}/12 (含一次金)`,
+        age: `${rAge} 歲`,
+        floor: decRetireFloor,
+        target: decRetireTarget,
+        ceiling: decRetireCeiling,
+        actual: decRetireActual,
+        isCheckpoint: true,
+        note: '📌 退休後首個檢查點（已併入一次金、扣換車與 8~12 月缺口）'
+      });
+
+      rowsData.forEach(r => {
+        const tr = document.createElement('tr');
+        const diff = r.actual - r.target;
+        const diffClass = diff >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold';
+        const diffSign = diff >= 0 ? `+${formatNum(diff)}` : formatNum(diff);
+
+        let rowBg = 'hover:bg-slate-50 cursor-pointer transition';
+        if (r.isRetireDay) rowBg = 'bg-amber-50/80 hover:bg-amber-100/70 font-semibold cursor-pointer transition';
+        if (r.isCheckpoint) rowBg = 'bg-slate-100/80 text-slate-600 cursor-pointer transition';
+        if (r.isHighlight) rowBg += ' ring-2 ring-inset ring-amber-400';
+
+        tr.className = rowBg;
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 whitespace-nowrap font-semibold text-ocean-900">${r.label}</td>
+          <td class="py-2.5 px-2 text-center whitespace-nowrap text-slate-600">${r.age}</td>
+          <td class="py-2.5 px-3 text-right whitespace-nowrap text-slate-600">${formatNum(r.floor)} 萬</td>
+          <td class="py-2.5 px-3 text-right whitespace-nowrap font-bold text-ocean-900">${formatNum(r.target)} 萬</td>
+          <td class="py-2.5 px-3 text-right whitespace-nowrap font-semibold text-emerald-700">${formatNum(r.ceiling)} 萬</td>
+          <td class="py-2.5 px-3 text-right whitespace-nowrap font-bold text-amber-700 bg-amber-50/40">${formatNum(r.actual)} 萬</td>
+          <td class="py-2.5 px-3 text-right whitespace-nowrap bg-amber-50/40 ${diffClass}">${diffSign} 萬</td>
+          <td class="py-2.5 px-3 text-xs text-slate-600">${r.note}</td>
+        `;
+
+        tr.addEventListener('click', () => {
+          const ms = ROUTE_V_MILESTONES[r.yearKey] || ROUTE_V_MILESTONES[2033];
+          document.getElementById('msYearBadge').textContent = `${r.label} (${r.age})`;
+          document.getElementById('msTitle').textContent = ms.title;
+          document.getElementById('msDesc').textContent = ms.desc;
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // =========================================================================
+    // 7. 全生涯逐年現金流與提領率明細表 (51 ~ 100 歲)
+    // =========================================================================
+    function renderFullCashflowTable(res) {
+      const tbody = document.getElementById('fullCashflowTableBody');
+      tbody.innerHTML = '';
+      const mode = document.getElementById('cashflowModeSelect').value;
+
+      const preMap = (mode === 'actual') ? res.actualPreMap : res.targetPreMap;
+      const postTimeline = (mode === 'actual') ? res.actualPostSim.timeline : res.targetPostSim.timeline;
+
+      // 1. 退休前 (2026 ~ retireYear - 1)
+      for (let y = 2026; y < state.retireYear; y++) {
+        const age = y - state.birthYear;
+        const infFactor = Math.pow(1 + state.inflationRate / 100, y - 2026);
+        const expNominal = state.preRetireExp * infFactor;
+        const endBal = preMap[y];
+        const realBal = endBal / infFactor;
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 text-slate-600';
+        tr.innerHTML = `
+          <td class="py-2 px-2.5 font-semibold text-ocean-900">${y}</td>
+          <td class="py-2 px-2 text-center">${age}</td>
+          <td class="py-2 px-2.5"><span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[11px]">在職累積期</span></td>
+          <td class="py-2 px-2.5 text-right">${formatDec(expNominal)} 萬 (體驗)</td>
+          <td class="py-2 px-2.5 text-right text-slate-400">薪資支應</td>
+          <td class="py-2 px-2.5 text-right text-slate-400">薪資付房貸</td>
+          <td class="py-2 px-2.5 text-right text-emerald-700">+${formatDec(y === 2026 ? 1 : state.monthlyInvest * 12)} 萬 (定投)</td>
+          <td class="py-2 px-2.5 text-right text-slate-400">—</td>
+          <td class="py-2 px-2.5 text-right font-bold text-ocean-900">${formatNum(endBal)} 萬</td>
+          <td class="py-2 px-2.5 text-right text-slate-500">${formatNum(realBal)} 萬</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      // 2. 退休後 (retireYear ~ 100 歲)
+      postTimeline.forEach(row => {
+        const tr = document.createElement('tr');
+        const isOverCap = (row.age <= 65 && row.withdrawRate > state.withdrawCap1 + 0.05) ||
+                          (row.age >= 66 && row.age <= 75 && row.withdrawRate > state.withdrawCap2 + 0.5);
+        const rateClass = isOverCap
+          ? 'text-rose-600 font-bold bg-rose-50'
+          : row.withdrawRate <= 4.0
+            ? 'text-emerald-700 font-semibold'
+            : 'text-amber-700 font-semibold';
+
+        tr.className = row.year === state.retireYear
+          ? 'bg-amber-50/70 hover:bg-amber-100/60'
+          : 'hover:bg-slate-50';
+
+        tr.innerHTML = `
+          <td class="py-2 px-2.5 font-semibold text-ocean-900">${row.year}</td>
+          <td class="py-2 px-2 text-center font-medium">${row.age}</td>
+          <td class="py-2 px-2.5"><span class="px-1.5 py-0.5 rounded bg-ocean-50 text-ocean-800 text-[11px] font-medium">${row.phaseName}</span></td>
+          <td class="py-2 px-2.5 text-right">${formatDec(row.livingSpendNominal)} 萬</td>
+          <td class="py-2 px-2.5 text-right text-emerald-700">${formatDec(row.pensionIncome)} 萬</td>
+          <td class="py-2 px-2.5 text-right text-amber-800">${row.extraOut > 0 ? formatDec(row.extraOut) + ' 萬' : '—'}</td>
+          <td class="py-2 px-2.5 text-right font-semibold text-slate-800">${formatDec(row.netDraw)} 萬</td>
+          <td class="py-2 px-2.5 text-right ${rateClass}">${row.withdrawRate.toFixed(2)}%</td>
+          <td class="py-2 px-2.5 text-right font-bold text-ocean-900">${formatNum(row.endBalance)} 萬</td>
+          <td class="py-2 px-2.5 text-right text-slate-500">${formatNum(row.realBalance)} 萬</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // =========================================================================
+    // 8. 一鍵匯出單一 index.html (將目前 state 寫入預設值，適合 GitHub Pages)
+    // =========================================================================
+    function exportStandaloneHtml() {
+      try {
+        const docClone = document.documentElement.cloneNode(true);
+        // 清除動態生成的 Canvas 與表格內容，確保匯出檔案乾淨且重新載入時會自動渲染
+        const preBody = docClone.querySelector('#preRetireTableBody');
+        if (preBody) preBody.innerHTML = '';
+        const cfBody = docClone.querySelector('#fullCashflowTableBody');
+        if (cfBody) cfBody.innerHTML = '';
+        const toast = docClone.querySelector('#toastBox');
+        if (toast) toast.classList.add('hidden');
+
+        // 替換 script 中的 DEFAULT_CONFIG 為使用者目前的最新參數
+        const scriptEl = docClone.querySelector('#app-script');
+        if (scriptEl) {
+          const serializedState = JSON.stringify(state, null, 2);
+          scriptEl.textContent = scriptEl.textContent.replace(
+            /\/\*__EXPORTED_CONFIG_START__\*\/[\s\S]*?\/\*__EXPORTED_CONFIG_END__\*\//,
+            `/*__EXPORTED_CONFIG_START__*/${serializedState}/*__EXPORTED_CONFIG_END__*/`
+          );
+        }
+
+        const htmlContent = '<!DOCTYPE html>\n' + docClone.outerHTML;
+        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'index.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast('已匯出含目前最新參數的 index.html，可直接上傳 GitHub Pages！');
+      } catch (err) {
+        console.error(err);
+        showToast('匯出失敗，請稍後再試');
+      }
+    }
+
+    // =========================================================================
+    // 9. 事件綁定與初始化
+    // =========================================================================
+    function bindEvents() {
+      const numericIds = [
+        'currentOwnAsset', 'birthYear', 'birthMonth', 'retireYear',
+        'monthlyPension', 'lumpSumPension', 'returnRate', 'inflationRate',
+        'customCeilingMult', 'monthlyInvest', 'preRetireExp',
+        'spendPhase1', 'withdrawCap1', 'spendPhase2', 'withdrawCap2',
+        'spendPhase3', 'withdrawCap3', 'moatAmount', 'mortgageAnnual',
+        'mortgageEndYear', 'carCost', 'houseRepairCost', 'elderCareCost'
+      ];
+
+      numericIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', () => {
+          const val = parseFloat(el.value);
+          if (!isNaN(val)) {
+            state[id] = val;
+            if (id === 'returnRate') {
+              document.getElementById('returnRateRange').value = val;
+              document.getElementById('returnRateLabel').textContent = val + '%';
+            }
+            if (id === 'retireYear' || id === 'birthYear') {
+              syncInputsFromState();
+            }
+            saveState();
+            updateDashboard();
+          }
+        });
+      });
+
+      document.getElementById('returnRateRange').addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        state.returnRate = val;
+        document.getElementById('returnRate').value = val;
+        document.getElementById('returnRateLabel').textContent = val + '%';
+        saveState();
+        updateDashboard();
+      });
+
+      document.getElementById('ceilingMode').addEventListener('change', (e) => {
+        state.ceilingMode = e.target.value;
+        document.getElementById('customCeilingWrap').classList.toggle('hidden', state.ceilingMode !== 'custom');
+        saveState();
+        updateDashboard();
+      });
+
+      document.getElementById('checkYearSelect').addEventListener('change', (e) => {
+        state.checkYear = Number(e.target.value);
+        saveState();
+        updateDashboard();
+      });
+
+      document.getElementById('pensionAdjustInflation').addEventListener('change', (e) => {
+        state.pensionAdjustInflation = e.target.checked;
+        saveState();
+        updateDashboard();
+      });
+
+      document.getElementById('strict3Percent').addEventListener('change', (e) => {
+        state.strict3Percent = e.target.checked;
+        saveState();
+        updateDashboard();
+      });
+
+      document.getElementById('cashflowModeSelect').addEventListener('change', () => {
+        if (lastSimResult) renderFullCashflowTable(lastSimResult);
+      });
+
+      // Tab 切換
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('active', 'border-ocean-900', 'text-ocean-900', 'bg-white', 'font-bold');
+            b.classList.add('border-transparent', 'text-slate-500', 'font-medium');
+          });
+          btn.classList.add('active', 'border-ocean-900', 'text-ocean-900', 'bg-white', 'font-bold');
+          btn.classList.remove('border-transparent', 'text-slate-500', 'font-medium');
+
+          const targetTab = btn.getAttribute('data-tab');
+          document.querySelectorAll('.tab-panel').forEach(panel => {
+            panel.classList.toggle('hidden', panel.id !== targetTab);
+          });
+        });
+      });
+
+      // 手機版左側面板展開/收合
+      document.getElementById('toggleSidebarBtn').addEventListener('click', () => {
+        const sidebar = document.getElementById('paramSidebar');
+        sidebar.classList.toggle('hidden');
+      });
+
+      // 重設預設值
+      document.getElementById('resetDefaultBtn').addEventListener('click', () => {
+        state = {
+          currentOwnAsset: 2697,
+          checkYear: 2026,
+          birthYear: 1975,
+          birthMonth: 3,
+          retireYear: 2033,
+          monthlyPension: 28001,
+          lumpSumPension: 383.7,
+          pensionAdjustInflation: false,
+          returnRate: 5.5,
+          inflationRate: 2.0,
+          ceilingMode: '1.10',
+          customCeilingMult: 1.25,
+          monthlyInvest: 1.5,
+          preRetireExp: 40,
+          spendPhase1: 120,
+          withdrawCap1: 5.0,
+          spendPhase2: 100,
+          withdrawCap2: 4.0,
+          spendPhase3: 80,
+          withdrawCap3: 3.0,
+          strict3Percent: false,
+          moatAmount: 300,
+          mortgageAnnual: 35,
+          mortgageEndYear: 2035,
+          carCost: 150,
+          houseRepairCost: 200,
+          elderCareCost: 100
+        };
+        saveState();
+        syncInputsFromState();
+        updateDashboard();
+        showToast('已還原為 2026/11/23 退休總綱定案預設值！');
+      });
+
+      // 匯出 index.html
+      document.getElementById('exportHtmlBtn').addEventListener('click', exportStandaloneHtml);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      syncInputsFromState();
+      bindEvents();
+      updateDashboard();
+    });
+  </script>
+
+</body></html>
