@@ -183,7 +183,7 @@ select{font:15px inherit;width:100%;padding:8px;border:1px solid var(--border2);
   <p class="note">拿這些數字對照其他 AI 的答案，差超過 5% 就要找原因。</p>
   <div class="scroll"><table id="chk"></table></div>
   <h2 style="margin-top:20px">退休後逐年：我每年能花多少、帳戶怎麼變（建議線）</h2>
-  <p class="note">⑥＝②−③＋④＋⑤（從投資帳戶提出的錢）｜提領率＝⑥不含房貸÷①｜⑦＝(①−⑥)×(1＋報酬率)，就是下一年的 ①｜⑨＝護城河＋還沒花的一次性支出＋長照基金，⑧ 由預留款付，不動用 ①｜⑩＝①＋⑨，第一年等於上表「含一次金」的總額｜⑤ 是長照基金用完後才出現的長照費（長照費填 0 時這欄隱藏；長照基金填 0 時最後一欄隱藏）｜提領率超過警示線或參考值標紅色。</p>
+  <p class="note">每一行由左到右就是那一年的錢怎麼流：<b>年初帳戶總額</b>（＝上一年的 ⑩）→ ⑥＝②−③＋④＋⑤ 從核心資產提出來過生活 → ⑧ 一次性支出從預留款付 → 一年投資報酬 → <b>⑩ 年底帳戶總額＝⑦＋⑨</b>，也就是這一年花完以後剩多少。提領率＝⑥不含房貸÷①，超過警示線或參考值標紅色。⑤ 是長照基金用完後才出現的長照費（長照費填 0 時這欄隱藏；長照基金填 0 時最後一欄隱藏）。</p>
   <div class="bar" style="margin:6px 0 10px"><button class="btn" id="viewBtn" type="button">目前顯示：今日價值</button></div>
   <div class="scroll"><table id="post"></table></div>
   <h2 style="margin-top:20px">計算規則</h2>
@@ -238,8 +238,8 @@ function model(p){
   const mort=y=>(y<=p.mortEnd?p.mort:0);
   const endY=by+p.endAge;
   // LTC bucket (fixed, independent of core)
-  const ltcShort={}; let B=p.ltcFund*I(R); const bucket={};
-  for(let y=R+1;y<=endY;y++){bucket[y]=B; let need=y>=p.ltcStart?p.ltcCost*I(y):0; const pay=Math.min(B,need); ltcShort[y]=need-pay; B=(B-pay)*(1+r);}
+  const ltcShort={}; let B=p.ltcFund*I(R); const bucket={},bucketEnd={};
+  for(let y=R+1;y<=endY;y++){bucket[y]=B; let need=y>=p.ltcStart?p.ltcCost*I(y):0; const pay=Math.min(B,need); ltcShort[y]=need-pay; B=(B-pay)*(1+r); bucketEnd[y]=B;}
   const gap=y=>spendT(y-by)*I(y)-pen(y)+mort(y)+(ltcShort[y]||0);
   const sim=(P0,check)=>{let P=P0,w=-1,bal={};for(let y=R+1;y<=endY;y++){const g=gap(y);if(check&&y-by<=p.capAge&&P>0)w=Math.max(w,(g-mort(y))/P-p.cap/100);if(check&&P<=0)w=9;bal[y]=P;P=(P-g)*(1+r);}return {end:P,w,bal};};
   const solve=tgt=>{let lo=0,hi=50000;for(let i=0;i<80;i++){const m=(lo+hi)/2,s=sim(m,false);if(s.end>=tgt)hi=m;else lo=m;}return hi;};
@@ -266,10 +266,11 @@ function model(p){
   const tgtSg=Math.max(0,(p.leftAt100??500)-p.moat)*I(endY+1);
   const fl=line(0),sg=line(tgtSg);
   const oneY=y=>items.filter(it=>+it.year==y).reduce((s,it)=>s+it.amt*I(y),0);
-  const resE={};{let E=pvPost;for(let y=R+1;y<=endY;y++){resE[y]=E;E=Math.max(0,(E-oneY(y))*(1+r));}}
+  const resE={},resEEnd={};{let E=pvPost;for(let y=R+1;y<=endY;y++){resE[y]=E;E=Math.max(0,(E-oneY(y))*(1+r));resEEnd[y]=E;}}
   const moatY=y=>p.moat*I(y-1);
   const reserve=y=>(resE[y]||0)+moatY(y)+(bucket[y]||0);
-  return {R,by,endY,I,gap,oneY,resE,moatY,reserve,mort,pen,spendY:y=>spendT(y-by)*I(y),ltcS:y=>ltcShort[y]||0,fl,sg,moatN,pvPost,inR,gap5,ltcN,bucket};
+  const reserveEnd=y=>(resEEnd[y]||0)+moatY(y+1)+(bucketEnd[y]||0);
+  return {R,by,endY,I,gap,oneY,resE,moatY,reserve,reserveEnd,bucketEnd,mort,pen,spendY:y=>spendT(y-by)*I(y),ltcS:y=>ltcShort[y]||0,fl,sg,moatN,pvPost,inR,gap5,ltcN,bucket};
 }
 
 
@@ -364,9 +365,9 @@ function calc(){
   const tv=S.p.view!=='nom',dv=y=>tv?o.I(y):1;
   $('viewBtn').textContent=tv?'目前顯示：今日價值（點一下改看名目）':'目前顯示：名目金額（點一下改看今日價值）';
   const showL=+P.ltcFund>0,showC=+P.ltcCost>0;
-  let rowsP='';for(let y=R+1;y<=o.endY;y++){const a=y-1975,ref=a<=p.capAge?(+P.cap>0?P.cap:0):(a<=75?P.ref2:P.ref3),r=pr(y),hot=ref&&r>ref;
-    rowsP+=`<tr><td>${a}</td><td>${y}</td><td>${fmt(o.sg.bal[y]/dv(y))}</td><td class="s">${fmt(o.spendY(y)/dv(y))}</td><td>${fmt(o.pen(y)/dv(y))}</td><td>${fmt(o.mort(y)/dv(y))}</td>${showC?`<td>${fmt(o.ltcS(y)/dv(y))}</td>`:''}<td>${fmt(o.gap(y)/dv(y))}</td><td style="${hot?'color:var(--red);font-weight:700':''}">${r.toFixed(1)}%</td><td>${fmt((o.sg.bal[y]-o.gap(y))*(1+p.ret/100)/dv(y))}</td><td>${o.oneY(y)?fmt(o.oneY(y)/dv(y)):'—'}</td><td>${fmt(o.reserve(y)/dv(y))}</td><td class="s">${fmt((o.sg.bal[y]+o.reserve(y))/dv(y))}</td>${showL?`<td>${fmt((o.bucket[y]||0)/dv(y))}</td>`:''}</tr>`;}
-  $('post').innerHTML='<thead><tr><th>年齡</th><th>年份</th><th>①年初<br>核心資產</th><th>②當年<br>能花的錢</th><th>③月退</th><th>④房貸</th>'+(showC?'<th>⑤長照<br>基金不足</th>':'')+'<th>⑥從投資<br>提領</th><th>提領率</th><th>⑦年底<br>剩餘</th><th>⑧一次性<br>支出</th><th>⑨預留款<br>餘額</th><th>⑩帳戶<br>總額</th>'+(showL?'<th>長照<br>基金</th>':'')+'</tr></thead><tbody>'+rowsP+'</tbody>';
+  let rowsP='';for(let y=R+1;y<=o.endY;y++){const a=y-1975,ref=a<=p.capAge?(+P.cap>0?P.cap:0):(a<=75?P.ref2:P.ref3),r=pr(y),hot=ref&&r>ref,ce=(o.sg.bal[y]-o.gap(y))*(1+p.ret/100),re=o.reserveEnd(y);
+    rowsP+=`<tr><td>${a}</td><td>${y}</td><td>${fmt((o.sg.bal[y]+o.reserve(y))/dv(y))}</td><td>${fmt(o.sg.bal[y]/dv(y))}</td><td class="s">${fmt(o.spendY(y)/dv(y))}</td><td>${fmt(o.pen(y)/dv(y))}</td><td>${fmt(o.mort(y)/dv(y))}</td>${showC?`<td>${fmt(o.ltcS(y)/dv(y))}</td>`:''}<td>${fmt(o.gap(y)/dv(y))}</td><td style="${hot?'color:var(--red);font-weight:700':''}">${r.toFixed(1)}%</td><td>${fmt(ce/dv(y))}</td><td>${o.oneY(y)?fmt(o.oneY(y)/dv(y)):'—'}</td><td>${fmt(re/dv(y))}</td><td class="s">${fmt((ce+re)/dv(y))}</td>${showL?`<td>${fmt((o.bucketEnd[y]||0)/dv(y))}</td>`:''}</tr>`;}
+  $('post').innerHTML='<thead><tr><th>年齡</th><th>年份</th><th>年初<br>帳戶總額</th><th>①年初<br>核心資產</th><th>②當年<br>能花的錢</th><th>③月退</th><th>④房貸</th>'+(showC?'<th>⑤長照<br>基金不足</th>':'')+'<th>⑥從投資<br>提領</th><th>提領率</th><th>⑦年底<br>核心資產</th><th>⑧一次性<br>支出</th><th>⑨年底<br>預留款</th><th>⑩年底<br>帳戶總額</th>'+(showL?'<th>年底<br>長照基金</th>':'')+'</tr></thead><tbody>'+rowsP+'</tbody>';
   draw();
 }
 
@@ -457,7 +458,7 @@ function rep(){
   const items=S.items.map(i=>[i.name,+i.amt,String(i.year)]);
   const pj=o.pj,pv=v=>v==null?'—':v;const lines=[];for(let y=2026;y<R;y++)lines.push([y+'/12',y-1975,o.fl.vals[y],o.sg.vals[y],o.sg.vals[y]*H,pv(pj&&pj.vals[y])]);
   lines.push([R+'/7/31',R-1975,o.fl.A,o.sg.A,o.sg.A*H,pv(pj&&pj.A)]);lines.push([R+'/12 含一次金',R-1975,o.fl.T12,o.sg.T12,o.sg.T12*H,pv(pj&&pj.T12)]);
-  const post=[];for(let y=y1;y<=o.endY;y++){const d=o.I(y);post.push([y-1975,y,o.sg.bal[y],o.spendY(y),o.pen(y),o.mort(y),o.ltcS(y),o.gap(y),pr(y),o.bucket[y]||0,(o.sg.bal[y]-o.gap(y))*(1+p1r()),o.sg.bal[y]/d,o.spendY(y)/d,o.oneY(y),o.reserve(y),o.sg.bal[y]+o.reserve(y)]);}
+  const post=[];for(let y=y1;y<=o.endY;y++){const d=o.I(y);const ce=(o.sg.bal[y]-o.gap(y))*(1+p1r()),re=o.reserveEnd(y);post.push([y-1975,y,o.sg.bal[y],o.spendY(y),o.pen(y),o.mort(y),o.ltcS(y),o.gap(y),pr(y),o.bucketEnd[y]||0,ce,o.sg.bal[y]/d,o.spendY(y)/d,o.oneY(y),re,ce+re,o.sg.bal[y]+o.reserve(y)]);}
   const chk=[[`${R} 年總花費（名目）`,p1(P.s1*o.I(R))],[`${y1} 年生活缺口（含房貸）`,p1(o.gap(y1))],[`${1975+66} 年生活缺口`,p1(o.gap(1975+66))],[`${1975+76} 年生活缺口`,p1(o.gap(1975+76))],
    [`建議線生活核心資產（${y1} 年初）`,p1(o.sg.core)],[`${y1} 年提領率`,pr(y1).toFixed(1)+'%'],[`護城河（${R} 名目）`,p1(o.moatN)],[`長照基金（${R} 名目）`,p1(o.ltcN)],
    [`退休後一次性支出（折現到 ${y1} 年初）`,p1(o.pvPost)],['退休當年一次性支出',p1(o.inR)],['退休當年 8～12 月缺口',p1(o.gap5)],[`建議線 ${P.endAge} 歲時生活核心資產`,p1(o.sg.bal[o.endY])],[`建議線 ${P.endAge} 歲後留下（含護城河）`,(()=>{const t=o.sg.end/o.I(o.endY+1)+ +P.moat;return fmt(t)+' 萬（今日價值）≈ '+fmt(t*o.I(o.endY+1))+` 萬（${o.endY+1} 年帳面）`})()]];
@@ -484,7 +485,7 @@ function buildMd(){
   t+=`\n## C. 計算規則\n`+RULES.map((x,i)=>`${i+1}. ${x}`).join('\n')+'\n';
   t+=`\n## D-1. 每年 12/31 應有的自有資產\n`+mdTable(['年底','年齡','🛡 地板線','⭐ 建議線','😊 愉快線','📈 預估（照目前進度）'],r.lines);
   t+=`\n## D-2. 檢核值\n`+mdTable(['檢核項目','數值（萬）'],r.chk);
-  t+=`\n## 退休後逐年（建議線，名目金額；最後兩欄換算成今日價值）\n⑥從投資提領＝②−③＋④＋⑤；⑦年底剩餘＝(①−⑥)×(1＋報酬率)＝下一年的①；⑨預留款＝護城河＋還沒花的一次性支出＋長照基金；⑩帳戶總額＝①＋⑨（第一年等於退休當年 12 月含一次金的總額）。\n\n`+mdTable(['年齡','年份','①年初核心資產','②當年度能花的錢','③月退','④房貸','⑤長照（基金不足）','⑥從投資提領','提領率 %','⑦年底剩餘','⑧當年一次性支出','⑨預留款餘額','⑩帳戶總額','其中長照基金','①今日價值','②今日價值'],r.post.map(x=>[x[0],String(x[1]),x[2],x[3],x[4],x[5],x[6],x[7],x[8].toFixed(1),x[10],x[13],x[14],x[15],x[9],x[11],x[12]]));
+  t+=`\n## 退休後逐年（建議線，名目金額；最後兩欄換算成今日價值）\n年初帳戶總額＝上一年的⑩（第一年等於退休當年 12 月含一次金的總額）；⑥從投資提領＝②−③＋④＋⑤；⑦年底核心資產＝(①−⑥)×(1＋報酬率)＝下一年的①；⑨年底預留款＝護城河＋還沒花的一次性支出＋長照基金（已扣掉當年的⑧）；⑩年底帳戶總額＝⑦＋⑨。\n\n`+mdTable(['年齡','年份','年初帳戶總額','①年初核心資產','②當年度能花的錢','③月退','④房貸','⑤長照（基金不足）','⑥從投資提領','提領率 %','⑦年底核心資產','⑧當年一次性支出','⑨年底預留款','⑩年底帳戶總額','年底長照基金','①今日價值','②今日價值'],r.post.map(x=>[x[0],String(x[1]),x[16],x[2],x[3],x[4],x[5],x[6],x[7],x[8].toFixed(1),x[10],x[13],x[14],x[15],x[9],x[11],x[12]]));
   t+=`\n## 一次性支出進度\n`+mdTable(['項目','計畫年份','預算（今日價值）','已花（實際）','剩餘預算（今日價值）','狀態'],r.prog);
   if(r.spends.length)t+=`\n## 實際花費紀錄\n`+mdTable(['日期','類別','金額（萬）','備註'],r.spends);
   if(r.recs.length)t+=`\n## 年度紀錄\n`+mdTable(['日期','淨資產','當年建議線','區間','體驗金倍數','備註'],r.recs);
@@ -503,7 +504,7 @@ $('dlXlsx').onclick=()=>{
   add('三條線',['年底','年齡','地板線','建議線','愉快線','預估（照目前進度）'],r.lines.map(x=>x.map(rd)));
   add('參數',['類別','項目','內容'],r.params);
   add('一次性支出',['項目','金額（萬，今日價值）','年份'],r.items);
-  add('退休後逐年',['年齡','年份','①年初核心資產（名目）','②當年度能花的錢（名目）','③月退','④房貸','⑤長照（基金不足）','⑥從投資提領','提領率 %','⑦年底剩餘','⑧當年一次性支出','⑨預留款餘額','⑩帳戶總額','其中長照基金','①今日價值','②今日價值'],r.post.map(x=>[x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[10],x[13],x[14],x[15],x[9],x[11],x[12]].map(rd)));
+  add('退休後逐年',['年齡','年份','年初帳戶總額','①年初核心資產（名目）','②當年度能花的錢（名目）','③月退','④房貸','⑤長照（基金不足）','⑥從投資提領','提領率 %','⑦年底核心資產','⑧當年一次性支出','⑨年底預留款','⑩年底帳戶總額','年底長照基金','①今日價值','②今日價值'],r.post.map(x=>[x[0],x[1],x[16],x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[10],x[13],x[14],x[15],x[9],x[11],x[12]].map(rd)));
   add('檢核值',['檢核項目','數值'],r.chk);
   add('一次性支出進度',['項目','計畫年份','預算（今日價值）','已花（實際）','剩餘預算（今日價值）','狀態'],r.prog.map(x=>x.map(rd)));
   add('實際花費紀錄',['日期','類別','金額（萬）','備註'],r.spends);
