@@ -30,6 +30,7 @@ h2{font-size:18px;margin:4px 0 10px}h3{font-size:15px;margin:0 0 8px;color:var(-
 table{border-collapse:collapse;width:100%;font-size:14px}
 th,td{padding:7px 9px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
 th:first-child,td:first-child{text-align:left}th{color:var(--text2);font-weight:600;font-size:13px}
+#post th,#itemProg th,#tbl th{white-space:normal;line-height:1.25;vertical-align:bottom;font-size:12px}#post td{padding:6px 7px}#post th{padding:6px 7px;min-width:44px}
 tr.key td{font-weight:800;border-top:1px solid var(--border2)}td.s{color:var(--teal);font-weight:700}
 .scroll{overflow-x:auto}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
@@ -182,7 +183,7 @@ select{font:15px inherit;width:100%;padding:8px;border:1px solid var(--border2);
   <p class="note">拿這些數字對照其他 AI 的答案，差超過 5% 就要找原因。</p>
   <div class="scroll"><table id="chk"></table></div>
   <h2 style="margin-top:20px">退休後逐年：我每年能花多少、帳戶怎麼變（建議線）</h2>
-  <p class="note">⑦ 年底剩餘就是下一年的 ①。⑨ 預留款＝護城河＋還沒花的一次性支出＋長照基金，一次性支出（⑧）從預留款付，不動用 ①。⑩ 帳戶總額＝①＋⑨，第一年會等於上表「含一次金」的總額。長照基金用完以後，長照費才會出現在 ⑤。提領率超過警示線或參考值的年份標紅色。</p>
+  <p class="note">⑥＝②−③＋④＋⑤（從投資帳戶提出的錢）｜提領率＝⑥不含房貸÷①｜⑦＝(①−⑥)×(1＋報酬率)，就是下一年的 ①｜⑨＝護城河＋還沒花的一次性支出＋長照基金，⑧ 由預留款付，不動用 ①｜⑩＝①＋⑨，第一年等於上表「含一次金」的總額｜⑤ 是長照基金用完後才出現的長照費（長照費填 0 時這欄隱藏；長照基金填 0 時最後一欄隱藏）｜提領率超過警示線或參考值標紅色。</p>
   <div class="bar" style="margin:6px 0 10px"><button class="btn" id="viewBtn" type="button">目前顯示：今日價值</button></div>
   <div class="scroll"><table id="post"></table></div>
   <h2 style="margin-top:20px">計算規則</h2>
@@ -358,13 +359,14 @@ function calc(){
     [`建議線的生活核心資產（${y1} 年初）`,fmt(o.sg.core)+' 萬'],[`${y1} 年提領率`,pr(y1).toFixed(1)+'%'],[`${p.capAge} 歲以前提領率最高的一年（${capY}）`,pr(capY).toFixed(1)+'%'],
     [`護城河（${R} 名目）`,fmt(o.moatN)+' 萬'],[`長照基金（${R} 名目）`,fmt(o.ltcN)+' 萬'],[`退休後一次性支出（折現到 ${y1} 年初）`,fmt(o.pvPost)+' 萬'],
     ['退休當年的一次性支出＋8～12 月缺口',fmt(o.inR)+' ＋ '+fmt(o.gap5)+' 萬'],[`建議線 ${p.endAge} 歲時的生活核心資產`,fmt(o.sg.bal[o.endY])+' 萬（約今日 '+fmt(o.sg.bal[o.endY]/o.I(o.endY))+' 萬）'],
-    ['地板線 2026/12','約 '+fmt(o.fl.vals[2026])+' 萬'],[`建議線 ${p.endAge} 歲後留下（含護城河，今日價值）`,fmt(o.sg.end/o.I(o.endY+1)+ +P.moat)+' 萬']];
+    ['地板線 2026/12','約 '+fmt(o.fl.vals[2026])+' 萬'],[`建議線 ${p.endAge} 歲後留下（含護城河）`,(()=>{const t=o.sg.end/o.I(o.endY+1)+ +P.moat;return fmt(t)+' 萬（今日價值）≈ '+fmt(t*o.I(o.endY+1))+` 萬（${o.endY+1} 年帳面）`})()]];
   $('chk').innerHTML='<tbody>'+chk.map(c=>`<tr><td>${c[0]}</td><td>${c[1]}</td></tr>`).join('')+'</tbody>';
   const tv=S.p.view!=='nom',dv=y=>tv?o.I(y):1;
   $('viewBtn').textContent=tv?'目前顯示：今日價值（點一下改看名目）':'目前顯示：名目金額（點一下改看今日價值）';
+  const showL=+P.ltcFund>0,showC=+P.ltcCost>0;
   let rowsP='';for(let y=R+1;y<=o.endY;y++){const a=y-1975,ref=a<=p.capAge?(+P.cap>0?P.cap:0):(a<=75?P.ref2:P.ref3),r=pr(y),hot=ref&&r>ref;
-    rowsP+=`<tr><td>${a}</td><td>${y}</td><td>${fmt(o.sg.bal[y]/dv(y))}</td><td class="s">${fmt(o.spendY(y)/dv(y))}</td><td>${fmt(o.pen(y)/dv(y))}</td><td>${fmt(o.mort(y)/dv(y))}</td><td>${fmt(o.ltcS(y)/dv(y))}</td><td>${fmt(o.gap(y)/dv(y))}</td><td style="${hot?'color:var(--red);font-weight:700':''}">${r.toFixed(1)}%</td><td>${fmt((o.sg.bal[y]-o.gap(y))*(1+p.ret/100)/dv(y))}</td><td>${o.oneY(y)?fmt(o.oneY(y)/dv(y)):'—'}</td><td>${fmt(o.reserve(y)/dv(y))}</td><td class="s">${fmt((o.sg.bal[y]+o.reserve(y))/dv(y))}</td><td>${fmt((o.bucket[y]||0)/dv(y))}</td></tr>`;}
-  $('post').innerHTML='<thead><tr><th>年齡</th><th>年份</th><th>①年初核心資產</th><th>②我當年度能花的錢</th><th>③月退付掉</th><th>④房貸</th><th>⑤長照（基金不夠的部分）</th><th>⑥從投資提領＝②−③＋④＋⑤</th><th>提領率⑥不含房貸÷①</th><th>⑦年底剩餘＝(①−⑥)×1.055</th><th>⑧當年一次性支出（由預留款付）</th><th>⑨預留款餘額（護城河＋一次性支出＋長照基金）</th><th>⑩帳戶總額＝①＋⑨</th><th>其中長照基金</th></tr></thead><tbody>'+rowsP+'</tbody>';
+    rowsP+=`<tr><td>${a}</td><td>${y}</td><td>${fmt(o.sg.bal[y]/dv(y))}</td><td class="s">${fmt(o.spendY(y)/dv(y))}</td><td>${fmt(o.pen(y)/dv(y))}</td><td>${fmt(o.mort(y)/dv(y))}</td>${showC?`<td>${fmt(o.ltcS(y)/dv(y))}</td>`:''}<td>${fmt(o.gap(y)/dv(y))}</td><td style="${hot?'color:var(--red);font-weight:700':''}">${r.toFixed(1)}%</td><td>${fmt((o.sg.bal[y]-o.gap(y))*(1+p.ret/100)/dv(y))}</td><td>${o.oneY(y)?fmt(o.oneY(y)/dv(y)):'—'}</td><td>${fmt(o.reserve(y)/dv(y))}</td><td class="s">${fmt((o.sg.bal[y]+o.reserve(y))/dv(y))}</td>${showL?`<td>${fmt((o.bucket[y]||0)/dv(y))}</td>`:''}</tr>`;}
+  $('post').innerHTML='<thead><tr><th>年齡</th><th>年份</th><th>①年初<br>核心資產</th><th>②當年<br>能花的錢</th><th>③月退</th><th>④房貸</th>'+(showC?'<th>⑤長照<br>基金不足</th>':'')+'<th>⑥從投資<br>提領</th><th>提領率</th><th>⑦年底<br>剩餘</th><th>⑧一次性<br>支出</th><th>⑨預留款<br>餘額</th><th>⑩帳戶<br>總額</th>'+(showL?'<th>長照<br>基金</th>':'')+'</tr></thead><tbody>'+rowsP+'</tbody>';
   draw();
 }
 
@@ -458,7 +460,7 @@ function rep(){
   const post=[];for(let y=y1;y<=o.endY;y++){const d=o.I(y);post.push([y-1975,y,o.sg.bal[y],o.spendY(y),o.pen(y),o.mort(y),o.ltcS(y),o.gap(y),pr(y),o.bucket[y]||0,(o.sg.bal[y]-o.gap(y))*(1+p1r()),o.sg.bal[y]/d,o.spendY(y)/d,o.oneY(y),o.reserve(y),o.sg.bal[y]+o.reserve(y)]);}
   const chk=[[`${R} 年總花費（名目）`,p1(P.s1*o.I(R))],[`${y1} 年生活缺口（含房貸）`,p1(o.gap(y1))],[`${1975+66} 年生活缺口`,p1(o.gap(1975+66))],[`${1975+76} 年生活缺口`,p1(o.gap(1975+76))],
    [`建議線生活核心資產（${y1} 年初）`,p1(o.sg.core)],[`${y1} 年提領率`,pr(y1).toFixed(1)+'%'],[`護城河（${R} 名目）`,p1(o.moatN)],[`長照基金（${R} 名目）`,p1(o.ltcN)],
-   [`退休後一次性支出（折現到 ${y1} 年初）`,p1(o.pvPost)],['退休當年一次性支出',p1(o.inR)],['退休當年 8～12 月缺口',p1(o.gap5)],[`建議線 ${P.endAge} 歲時生活核心資產`,p1(o.sg.bal[o.endY])],[`建議線 ${P.endAge} 歲後留下（含護城河，今日價值）`,p1(o.sg.end/o.I(o.endY+1)+ +P.moat)]];
+   [`退休後一次性支出（折現到 ${y1} 年初）`,p1(o.pvPost)],['退休當年一次性支出',p1(o.inR)],['退休當年 8～12 月缺口',p1(o.gap5)],[`建議線 ${P.endAge} 歲時生活核心資產`,p1(o.sg.bal[o.endY])],[`建議線 ${P.endAge} 歲後留下（含護城河）`,(()=>{const t=o.sg.end/o.I(o.endY+1)+ +P.moat;return fmt(t)+' 萬（今日價值）≈ '+fmt(t*o.I(o.endY+1))+` 萬（${o.endY+1} 年帳面）`})()]];
   const recs=S.recs.map(r=>{const z=zone(+r.net,yearOf(r.date));return [r.date,+r.net,z?z.sg:'',z?z.t:'',z?'×'+z.m:'',r.note||'']});
   const texts=[['退休路線與決策點',S.t.route],['Die with Zero 原則',S.t.dwz],['提領與帳戶分工',S.t.accounts],['想定與假設說明',S.t.assume],['其他備註',S.t.memo]].filter(t=>t[1]);
   const spends=S.spends.map(s=>[s.date,s.cat,+s.amt,s.note||'']);const prog=S.items.map(it=>[it.name,String(it.year),+it.amt,spentNom(it.name),it.done?0:Math.max(0,+it.amt-spentOf(it.name)),it.done?'已完成':spentNom(it.name)>0?'進行中':'未開始']);
