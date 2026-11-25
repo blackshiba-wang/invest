@@ -49,6 +49,7 @@ tr.key td{font-weight:800;background:#fef3c7}td.s{color:#1B3D6B;font-weight:700}
 #printArea h1{font-size:20px;font-weight:700;margin:0 0 6px}#printArea h2{font-size:15px;font-weight:700;margin:14px 0 6px}#printArea table{font-size:11px;margin-bottom:6px}
 #printArea th,#printArea td{border:1px solid #999;padding:3px 6px;color:#000;background:#fff}#printArea p,#printArea li{font-size:11px;white-space:pre-wrap}}
 @media(max-width:640px){table{font-size:12px}th,td{padding:5px}.sp{grid-template-columns:1fr 1fr 34px}.sp .n{grid-column:1/-1}.rec{grid-template-columns:1fr 90px 34px}.rec .n{grid-column:1/-1}}
+.q{display:inline-grid;place-items:center;width:17px;height:17px;margin-left:4px;border-radius:50%;background:#e2e8f0;color:#1B3D6B;font-size:11.5px;font-weight:800;cursor:help;vertical-align:middle;line-height:1}thead .q{background:#f59e0b;color:#071324}
 /* 字體放大、加粗 */
 body{font-size:16px;font-weight:500}
 .text-xs{font-size:14px!important;line-height:1.5!important}.text-sm{font-size:15.5px!important}.text-\[11px\]{font-size:13px!important}
@@ -163,7 +164,7 @@ table{font-size:15px}td{font-weight:500}thead th{font-size:13.5px}
 
   <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
     <div class="flex overflow-x-auto border-b border-slate-200 bg-slate-50 px-2" role="tablist">
-      <button class="tab on" data-t="life">📈 全生涯軌跡</button><button class="tab" data-t="ov">🗓 退休前檢核</button><button class="tab" data-t="ck">📊 逐年現金流</button><button class="tab" data-t="ex">🧾 執行紀錄</button><button class="tab" data-t="rc">📒 年度紀錄</button><button class="tab" data-t="st">🧭 策略與原則</button><button class="tab" data-t="ru">✅ 檢核值與規則</button><button class="tab" data-t="se">💾 備份與同步</button>
+      <button class="tab on" data-t="life">📈 全生涯軌跡</button><button class="tab" data-t="ov">🗓 退休前檢核</button><button class="tab" data-t="ck">📊 逐年現金流</button><button class="tab" data-t="ex">🧾 執行紀錄</button><button class="tab" data-t="rc">📒 年度紀錄</button><button class="tab" data-t="st">🧭 策略與原則</button><button class="tab" data-t="ru">📖 名詞・檢核・規則</button><button class="tab" data-t="se">💾 備份與同步</button>
     </div>
     <div class="p-5">
     <div class="pane on" id="life">
@@ -229,6 +230,8 @@ table{font-size:15px}td{font-weight:500}thead th{font-size:13.5px}
       <div class="bar" style="margin:0 0 12px"><button class="btn p" id="dlMd2" type="button">⬇ 下載 md 檔</button><button class="btn p" id="dlXlsx2" type="button">⬇ 下載試算表</button><button class="btn" id="prt2" type="button">🖨 列印報告</button></div>
       <h3 class="font-bold text-ocean-900">檢核值</h3><p class="note mb-2">拿這些數字對照其他 AI 的答案，差超過 5% 就要找原因。</p>
       <div class="scroll"><table id="chk"></table></div>
+      <h3 class="font-bold text-ocean-900 mt-4">📖 名詞解釋</h3><p class="note mb-2">看板上名稱旁邊的 <span class="q" style="pointer-events:none">?</span>，滑鼠移上去（手機點一下）也會跳出同樣的說明。</p>
+      <div class="scroll"><table id="glossTbl"></table></div>
       <h3 class="font-bold text-ocean-900 mt-4">計算規則</h3>
       <ol class="note list-decimal pl-5 space-y-1" id="rulesList"></ol>
     </div>
@@ -668,8 +671,52 @@ function life(o,PJ){
   const left=o.sg.end/o.I(o.endY+1)+ +P.moat;
   $('lifeNote').textContent=`${R} 年那一點跳上去，是因為一次金 ${P.lump} 萬入帳。建議線在 ${P.endAge} 歲後留下約 ${fmt(left)} 萬（今日價值，含護城河）。`;
 }
-window.__ext=(o,PJ)=>{diag(o,PJ);life(o,PJ);};
+window.__ext=(o,PJ)=>{diag(o,PJ);life(o,PJ);if(window.qDecorate)setTimeout(window.qDecorate,0);};
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.t==='life'&&lifeC)lifeC.resize();}));
+
+// ===== 名詞解釋 =====
+const GLOSS=[
+['地板線','剛好夠用的最低存款：照設定的花費一路花到試算終點，最後只剩護城河，沒有任何緩衝。只當警戒線，不能長期跌破。',['地板線']],
+['建議線','存錢目標：照設定的花費過完一生，試算終點時還留下「100 歲想留下」的金額（含護城河）。',['建議線']],
+['愉快線','建議線 × 倍數（預設 1.2）。超過這條線的錢是「死前用不到的錢」，照比例拿去體驗、饋贈、公益。',['愉快線','天花板']],
+['照目前進度（預估路徑）','從目前淨資產出發，照每月定投、每年體驗金、還沒花的一次性支出和報酬率，往後推算每年年底大約會有多少。',['預估','照目前進度']],
+['自有資產','投資帳戶裡自己存的錢，不含一次金。退休前的三條線都用它。',['自有資產']],
+['一次金','兼領月退時，退休那年 8 月一次領到的退休金（383.7 萬），全數投入投資帳戶。',['一次金']],
+['月退','兼領月退時每月領的退休金（28,001 元），保守假設不調整，所以購買力每年被通膨吃掉。',['月退']],
+['今日價值','用 2026 年的錢來衡量。花費、一次性支出、護城河都填今日價值，看板會自動乘上通膨。',['今日價值']],
+['名目金額','帳面上的實際數字，就是 App 上看到的金額。對帳用名目，看生活水準用今日價值。',['名目']],
+['生活核心資產','退休後投資帳戶中，專門用來每年提錢過生活的那一份（不含護城河、一次性支出預留、長照基金）。',['核心資產']],
+['預留款','護城河＋還沒花的一次性支出預留＋長照基金，先另外放著，不拿來支付日常生活。',['預留款']],
+['護城河','一直不動的保命錢（今日價值），也就是 100 歲時最後留下的錢。',['護城河']],
+['一次性支出','換車、出國度假、老屋修繕、長輩後事等大筆錢。退休前從投資帳戶扣，退休後先預留起來。',['一次性']],
+['長照基金','為自己晚年長照另外放的一筆投資；長照費先從這裡付，用完才改由核心資產支付（⑤ 長照基金不足）。',['長照']],
+['爸媽看護','爸媽的外籍看護費，可以另外設定起訖年份，到期自動停止；有設定就要從總花費扣掉同樣金額。',['爸媽看護','看護']],
+['能花的錢（總花費）','你那一年可以自由安排的生活預算：生活、旅行、長住、爸媽零用。房貸、長照、另外設定的看護不包含在內。',['能花的錢','總花費']],
+['從投資提領','那一年要從生活核心資產拿出來的錢＝能花的錢 − 月退 ＋ 房貸 ＋ 看護 ＋ 長照不足。',['從投資','提領</']],
+['提領率','當年從投資提領的錢 ÷ 年初核心資產。照 Die with Zero 把錢花完，晚年提領率本來就會上升。',['提領率']],
+['提領率警示線','只用來把逐年表標紅提醒，不影響存錢目標。',['提領率警示','警示線']],
+['年初／年底帳戶總額','整個投資帳戶＝核心資產＋預留款。每一年的年底總額，就是下一年的年初總額。',['帳戶總額','帳戶<br>總額']],
+['固定金額模式','先決定每年花多少（120／100／80），反推要存多少。存錢目標一律用這個模式算。',['固定金額']],
+['比例提領模式','每年 1/1 提領核心資產的某個 %，錢多就多花、錢少就少花。只決定退休後怎麼花，不決定要存多少。',['比例提領']],
+['自動花光（剩餘年數法）','從指定年齡起，每年依剩下幾年重算提領比例，讓最後剛好留下「100 歲想留下」的金額。',['自動花光']],
+['100 歲想留下','試算終點時希望留下的錢（今日價值，含護城河）。建議線依此計算；和護城河一樣時，建議線＝地板線。',['100 歲想留下','想留下']],
+['體驗金','退休前每年 1 月從投資帳戶撥出、專門用來旅行和體驗的錢，金額依年度護欄調整。',['體驗金']],
+['年度護欄','每年 12/31 看淨資產落在哪一區，決定下一年體驗金要乘多少：愉快線以上 ×1.5、建議～愉快 ×1、地板～建議 ×0.75、地板以下 ×0.5。',['護欄']],
+['快照','你填入的某一天淨資產（扣掉質押借款），用來判斷目前落在哪一區，也是預估路徑的起點。',['快照','目前淨資產']]];
+const tip=document.createElement('div');tip.id='tip';tip.style.cssText='position:fixed;z-index:60;max-width:320px;background:#0B1D36;color:#fff;font-size:14px;line-height:1.55;padding:10px 12px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:none;font-weight:500';document.body.appendChild(tip);
+const gfind=txt=>{let best=null,bp=1e9,bl=0;for(const g of GLOSS)for(const k of g[2]){const i=txt.indexOf(k);if(i>=0&&(i<bp||(i==bp&&k.length>bl))){best=g;bp=i;bl=k.length;}}return best;};
+function qDecorate(){
+  document.querySelectorAll('label.f>span:first-child, thead th, #diag .note:first-child, .box>h3').forEach(el=>{
+    if(el.querySelector('.q'))return;const raw=el.innerHTML,txt=el.textContent;const g=gfind(txt)||gfind(raw);if(!g)return;
+    const q=document.createElement('span');q.className='q';q.dataset.q=GLOSS.indexOf(g);q.textContent='?';q.setAttribute('role','button');q.setAttribute('aria-label','說明：'+g[0]);
+    const em=el.querySelector('em');if(em)el.insertBefore(q,em);else el.appendChild(q);});
+}
+function showTip(q){const g=GLOSS[+q.dataset.q];tip.innerHTML=`<b style="color:#fbbf24">${esc(g[0])}</b><br>${esc(g[1])}`;tip.style.display='block';const r=q.getBoundingClientRect();let x=Math.min(window.innerWidth-tip.offsetWidth-8,Math.max(8,r.left-20)),y=r.bottom+8;if(y+tip.offsetHeight>window.innerHeight-8)y=r.top-tip.offsetHeight-8;tip.style.left=x+'px';tip.style.top=y+'px';}
+document.addEventListener('mouseover',e=>{const q=e.target.closest&&e.target.closest('.q');if(q)showTip(q);});
+document.addEventListener('mouseout',e=>{if(e.target.closest&&e.target.closest('.q'))tip.style.display='none';});
+document.addEventListener('click',e=>{const q=e.target.closest&&e.target.closest('.q');if(q){e.preventDefault();e.stopPropagation();showTip(q);}else tip.style.display='none';},true);
+$('glossTbl').innerHTML='<thead><tr><th>名詞</th><th style="text-align:left">白話說明</th></tr></thead><tbody>'+GLOSS.map(g=>`<tr><td style="font-weight:700;color:#0B1D36">${esc(g[0])}</td><td style="white-space:normal;text-align:left">${esc(g[1])}</td></tr>`).join('')+'</tbody>';
+window.qDecorate=qDecorate;qDecorate();
 
 fill();calc();pull(false);
 }
