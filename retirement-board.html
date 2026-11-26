@@ -156,8 +156,8 @@ table{font-size:15px}td{font-weight:500}thead th{font-size:13.5px}
     <div class="flex flex-wrap justify-between gap-3 items-start">
       <div><h2 class="text-base sm:text-lg font-bold text-ocean-900">12/31 年度盤點與三層水位診斷 <span class="unitTag text-sm text-amber-600"></span></h2>
       <p class="note">在左側「目前位置」填入 App 上的淨資產（不含一次金），立即看護欄動作。</p></div>
-      <div class="text-right"><div class="note">退休日自己要存到（⭐ 建議線，不含一次金）</div><div class="text-3xl sm:text-4xl font-extrabold text-ocean-900" id="bigA">—</div>
-      <div class="note">🛡 地板線 <b id="flA">—</b>｜😊 愉快線 <b id="hpA">—</b>｜退休當年 12 月含一次金 <b id="t12">—</b></div></div>
+      <div class="text-right"><div class="note"><b>終點</b>：退休日（<span class="retD">2033/7/31</span>）自己要存到（⭐ 建議線，不含一次金）</div><div class="text-3xl sm:text-4xl font-extrabold text-ocean-900" id="bigA">—</div>
+      <div class="note">退休日的 🛡 地板線 <b id="flA">—</b>｜😊 愉快線 <b id="hpA">—</b>｜退休當年 12 月含一次金 <b id="t12">—</b></div></div>
     </div>
     <div id="diag" class="mt-4"></div>
     <div class="grid md:grid-cols-2 gap-3 mt-3"><div id="status" class="rounded-xl bg-slate-50 p-3 text-sm"></div><div id="proj" class="rounded-xl bg-amber-50 p-3 text-sm"></div></div>
@@ -386,7 +386,8 @@ async function pull(force){
 
 // ---------- execution helpers ----------
 const BIRTH=new Date(1975,2,22);
-const pd=s=>{const m=String(s||'').match(/(\d{4})\D+(\d{1,2})(?:\D+(\d{1,2}))?/);return m?new Date(+m[1],+m[2]-1,+(m[3]||1)):null};
+const normD=s=>String(s??'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).trim();
+const pd=s=>{const t=normD(s);let m=t.match(/(\d{2,4})\D+(\d{1,2})(?:\D+(\d{1,2}))?/);if(!m){const k=t.match(/^(\d{4})(\d{2})(\d{2})$/);if(k)m=[0,k[1],k[2],k[3]];}if(!m)return null;let y=+m[1];if(y<1000)y+=1911;return new Date(y,+m[2]-1,+(m[3]||1));};
 const todayD=()=>pd(S.p.today)||new Date();
 const ymd=d=>`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
 const infI=y=>(1+(+S.p.inf)/100)**(y-(+S.p.baseYear||2026));
@@ -420,7 +421,7 @@ const zone=(net,y)=>{const o=O;if(!o||!net)return null;const R=o.R;
   const sg=y<R?o.sg.vals[y]:o.sg.A,fl=y<R?o.fl.vals[y]:o.fl.A;if(!sg)return null;const P=S.p,H=+P.happy||1.1;
   if(net>=sg*H)return{t:'高於愉快線',c:'var(--green)',m:P.gHi,sg,fl};if(net>=sg)return{t:'建議線～愉快線',c:'var(--teal)',m:P.gMid,sg,fl};
   if(net>=fl)return{t:'地板線～建議線',c:'var(--amber)',m:P.gLo,sg,fl};return{t:'低於地板線',c:'var(--red)',m:P.gFl,sg,fl};};
-const yearOf=d=>parseInt(String(d).slice(0,4))||0;
+const yearOf=d=>{const x=pd(d);if(x)return x.getFullYear();const m=normD(d).match(/\d{2,4}/);if(!m)return 0;let y=+m[0];return y<1000?y+1911:y;};
 
 function mkPA(o,PJ){
   if(S.p.mode==='pct'){const src=S.p.pctStart||'sg';let A,lab;
@@ -476,7 +477,7 @@ function execRender(o,PJ){
   const txt=`今天 <b>${ymd(T)}</b>｜<b>${ay} 歲 ${am} 個月</b>｜距離退休（${R}/7/31）還有 <b>${Math.floor(rm/12)} 年 ${rm%12} 個月</b>（${days.toLocaleString('en-US')} 天）`;
   $('today').innerHTML=txt;$('todayInfo').innerHTML=txt;
   if(PJ){const d=PJ.A-o.sg.A,z=PJ.A>=o.sg.A*H?'會超過愉快線':PJ.A>=o.sg.A?'會在建議線以上':PJ.A>=o.fl.A?'會在地板線和建議線之間':'會低於地板線';
-    $('proj').innerHTML=`📈 照目前進度（淨資產 ${fmt(window.__UV(+P.snapNet,yearOf(P.snapDate)||R))} 萬、每月定投、每年體驗金、報酬 ${esc(P.ret)}%），${R}/7/31 預估 <b>${fmt(window.__UV(PJ.A,R))} 萬</b>，比建議線${d>=0?'多':'少'} <b>${fmt(window.__UV(Math.abs(d),R))} 萬</b>，${z}。`;}
+    $('proj').innerHTML=`📈 照目前進度（淨資產 ${fmt(window.__UV(+P.snapNet,yearOf(P.snapDate)||todayD().getFullYear()))} 萬、每月定投、每年體驗金、報酬 ${esc(P.ret)}%），${R}/7/31 預估 <b>${fmt(window.__UV(PJ.A,R))} 萬</b>，比建議線${d>=0?'多':'少'} <b>${fmt(window.__UV(Math.abs(d),R))} 萬</b>，${z}。`;}
   else $('proj').innerHTML='';
   // items progress
   $('itemProg').innerHTML='<thead><tr><th>項目</th><th>計畫年份</th><th>預算（今日價值）</th><th>已花（實際金額）</th><th>剩餘預算（今日價值）</th><th>狀態</th><th>已完成</th></tr></thead><tbody>'+
@@ -658,9 +659,9 @@ function diag(o,PJ){
   const lo=Math.min(fl,net)*0.92,hi=Math.max(hp,net)*1.05,pos=v=>Math.max(0,Math.min(100,(v-lo)/(hi-lo)*100));
   const card=(t,v,sub,c)=>`<div class="rounded-xl border border-slate-200 p-3"><div class="note">${t}</div><div class="text-xl font-extrabold" style="color:${c}">${fmt(v)} <span class="text-xs font-medium text-slate-500">萬</span></div><div class="text-[11px] text-slate-500">${sub}</div></div>`;
   const d=x=>(net>=x?'+':'−')+fmt(Math.abs(net-x));
-  $('diag').innerHTML=`<div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">${card(`目前淨資產（${esc(P.snapDate)}）`,net,`對照 ${sy}/12 的三條線`,'#0B1D36')}${card('🛡 地板線',fl,`差距 ${d(fl)} 萬`,'#64748b')}${card('⭐ 建議線',sg,`差距 ${d(sg)} 萬`,'#1B3D6B')}${card(`😊 愉快線（×${H}）`,hp,`差距 ${d(hp)} 萬`,'#16a34a')}</div>
-  <div class="mt-4 relative h-3 rounded-full" style="background:linear-gradient(90deg,#fecaca 0%,#fde68a ${pos(fl)}%,#fde68a ${pos(sg)}%,#bbf7d0 ${pos(hp)}%,#86efac 100%)">
-   ${[['🛡',fl],['⭐',sg],['😊',hp]].map(([e,v])=>`<div class="absolute -top-1 h-5 w-0.5 bg-slate-500" style="left:${pos(v)}%"></div><div class="absolute top-5 text-[11px] text-slate-500 -translate-x-1/2 whitespace-nowrap" style="left:${pos(v)}%">${e} ${fmt(v)}</div>`).join('')}
+  $('diag').innerHTML=`<div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">${card(`目前淨資產（${esc(P.snapDate)}）`,net,`對照下面 ${sy}/12/31 的進度線`,'#0B1D36')}${card(`🛡 地板線（${sy}/12/31）`,fl,`差距 ${d(fl)} 萬`,'#64748b')}${card(`⭐ 建議線（${sy}/12/31）`,sg,`差距 ${d(sg)} 萬`,'#1B3D6B')}${card(`😊 愉快線 ×${H}（${sy}/12/31）`,hp,`差距 ${d(hp)} 萬`,'#16a34a')}</div>
+  <div class="note mt-3"><b>今年進度</b>：和 ${sy}/12/31 該達到的三條線比較（終點的三條線在右上方）</div><div class="mt-8 relative h-3 rounded-full" style="background:linear-gradient(90deg,#fecaca 0%,#fde68a ${pos(fl)}%,#fde68a ${pos(sg)}%,#bbf7d0 ${pos(hp)}%,#86efac 100%)">
+   ${(()=>{const L=[['🛡',fl],['⭐',sg],['😊',hp]];let prev=-99,up=false;return L.map(([e,v])=>{const p=pos(v);up=(p-prev<12)?!up:false;prev=p;return `<div class="absolute -top-1 h-5 w-0.5 bg-slate-500" style="left:${p}%"></div><div class="absolute ${up?'-top-7':'top-5'} text-[11px] text-slate-500 -translate-x-1/2 whitespace-nowrap" style="left:${p}%">${e} ${fmt(v)}</div>`}).join('')})()}
    <div class="absolute -top-2 w-5 h-5 rounded-full bg-ocean-900 border-2 border-amber-400 -translate-x-1/2 shadow" style="left:${pos(net)}%" title="目前"></div></div><div class="h-6"></div>`;
   const ex=net-hp;
   $('excess').innerHTML=ex>0?`<div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm"><b>超過愉快線 ${fmt(ex)} 萬，建議分配：</b> 🌍 體驗基金 ${fmt(ex*P.xExp/100)} 萬｜🎁 生前饋贈 ${fmt(ex*P.xGift/100)} 萬｜❤️ 公益 ${fmt(ex*P.xChar/100)} 萬</div>`:`<div class="note">距離愉快線還差 ${fmt(-ex)} 萬；超過愉快線的部分，才依「策略與原則」的比例拿去體驗、饋贈和公益。</div>`;
@@ -701,13 +702,15 @@ $('rebase').onclick=()=>{const by=+S.p.baseYear||2026,f=1+(+S.p.inf)/100;
   for(const k of ['s1','s2','s3','moat','ltcFund','ltcCost','careAmt','exp','leftAt100','minSpend'])P[k]=r1(+P[k]||0);
   S.items.forEach(it=>it.amt=r1(+it.amt||0));P.baseYear=by+1;
   fill();calc();touch();$('rebaseMsg').textContent=`已換到 ${by+1} 年幣值：今日價值參數都 ×${f.toFixed(2)}，購買力不變。`;};
-const _ext0=window.__ext;window.__ext=(o,PJ)=>{_ext0(o,PJ);unitUI();};
+document.querySelectorAll('.retD').forEach(x=>x.textContent=(S.p.retireYear||2033)+'/7/31');
+const _ext0=window.__ext;window.__ext=(o,PJ)=>{_ext0(o,PJ);unitUI();document.querySelectorAll('.retD').forEach(x=>x.textContent=o.R+'/7/31');};
 
 // ===== 名詞解釋 =====
 const GLOSS=[
 ['地板線','剛好夠用的最低存款：照設定的花費一路花到試算終點，最後只剩護城河，沒有任何緩衝。只當警戒線，不能長期跌破。',['地板線']],
 ['建議線','存錢目標：照設定的花費過完一生，試算終點時還留下「100 歲想留下」的金額（含護城河）。',['建議線']],
 ['愉快線','自己存的錢（建議線）× 倍數，倍數只乘自有資產，不乘一次金。超過這條線的錢是「死前用不到的錢」，照比例拿去體驗、饋贈、公益。',['愉快線','天花板']],
+['終點和今年進度','三條線有兩組數字：右上方大字那組是「退休日」的終點目標；下方四張卡片和水位條是「今年 12/31」該達到的進度，用來和目前淨資產比較。體驗金、定投只影響進度線，不影響終點。',['終點','今年進度','進度線']],
 ['照目前進度（預估路徑）','從目前淨資產出發，照每月定投、每年體驗金、還沒花的一次性支出和報酬率，往後推算每年年底大約會有多少。',['預估','照目前進度']],
 ['自有資產','投資帳戶裡自己存的錢，不含一次金。退休前的三條線都用它。',['自有資產']],
 ['一次金','兼領月退時，退休那年 8 月一次領到的退休金（383.7 萬），全數投入投資帳戶。',['一次金']],
